@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgIf, NgClass } from '@angular/common';
 import { AuthService } from '../../core/services/services';
+import { ApiService } from '../../core/services/api.service';
 
 // ── Login Component ───────────────────────────────────────────────────────────
 
@@ -136,6 +137,172 @@ export class LoginComponent {
       this.error.set('Invalid credentials. Please try again.');
       this.loading.set(false);
     }
+  }
+}
+
+// ── Register Component (pending SuperAdmin approval) ──────────────────────────
+
+@Component({
+  selector: 'app-register',
+  standalone: true,
+  imports: [ReactiveFormsModule, RouterLink, NgIf],
+  template: `
+    <div class="auth-shell">
+      <div class="auth-panel">
+        <div class="auth-brand">
+          <div class="auth-brand__icon">🕊️</div>
+          <h1 class="auth-brand__title">Pigeon Result Calculator</h1>
+          <p class="auth-brand__sub">Create your account</p>
+        </div>
+
+        @if (submitted()) {
+          <div class="pending-card">
+            <div class="pending-card__icon">✅</div>
+            <h2 class="pending-card__title">Request received!</h2>
+            <p class="pending-card__body">
+              Your account has been created. An administrator will review your
+              request and assign your role. You will be able to sign in once
+              your account is activated.
+            </p>
+            <a routerLink="/auth/login" class="pr-btn pr-btn--primary" style="margin-top:8px">
+              Go to Sign In
+            </a>
+          </div>
+        } @else {
+          <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+            <h2 class="auth-form__heading">Get Started</h2>
+
+            @if (error()) {
+              <div class="pr-alert pr-alert--error">{{ error() }}</div>
+            }
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div class="pr-form-group">
+                <label class="pr-label">First Name</label>
+                <input class="pr-input" formControlName="firstName" placeholder="John" autocomplete="given-name">
+              </div>
+              <div class="pr-form-group">
+                <label class="pr-label">Last Name</label>
+                <input class="pr-input" formControlName="lastName" placeholder="Smith" autocomplete="family-name">
+              </div>
+            </div>
+
+            <div class="pr-form-group">
+              <label class="pr-label">Email</label>
+              <input class="pr-input" type="email" formControlName="email" placeholder="you@example.com" autocomplete="email">
+            </div>
+
+            <div class="pr-form-group">
+              <label class="pr-label">Password</label>
+              <input class="pr-input" type="password" formControlName="password" placeholder="Min 8 characters" autocomplete="new-password">
+            </div>
+
+            <button class="pr-btn pr-btn--primary w-full"
+                    type="submit"
+                    [disabled]="loading() || form.invalid">
+              @if (loading()) { <span class="pr-spinner" style="width:16px;height:16px"></span> }
+              Request Account
+            </button>
+
+            <p class="auth-form__footer">
+              Already have an account? <a routerLink="/auth/login">Sign in</a>
+            </p>
+            <p class="auth-form__footer">
+              Have an invitation? <a routerLink="/auth/accept-invitation">Accept it here</a>
+            </p>
+          </form>
+        }
+      </div>
+
+      <div class="auth-visual">
+        <div class="auth-visual__content">
+          <blockquote class="auth-quote">
+            "Manage your club, publish results, celebrate champions."
+          </blockquote>
+          <div class="auth-visual__dots">
+            @for (d of [1,2,3,4,5]; track d) {
+              <span class="dot" [style.animation-delay]="d * 0.15 + 's'"></span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .auth-shell { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+    @media (max-width: 768px) { .auth-shell { grid-template-columns: 1fr; } .auth-visual { display: none; } }
+    .auth-panel {
+      display: flex; flex-direction: column; justify-content: center;
+      align-items: center; padding: 48px 32px; background: var(--pr-surface);
+    }
+    .auth-brand { text-align: center; margin-bottom: 40px; }
+    .auth-brand__icon { font-size: 3rem; margin-bottom: 8px; }
+    .auth-brand__title { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; color: var(--pr-text); }
+    .auth-brand__sub { color: var(--pr-text-muted); font-size: 0.875rem; margin-top: 4px; }
+    .auth-form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 20px; }
+    .auth-form__heading { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+    .auth-form__footer { text-align: center; font-size: 0.875rem; color: var(--pr-text-muted); }
+    .pending-card {
+      width: 100%; max-width: 400px; display: flex; flex-direction: column;
+      align-items: center; gap: 12px; text-align: center;
+      background: var(--pr-bg); border: 1px solid var(--pr-border);
+      border-radius: var(--pr-radius); padding: 40px 32px;
+    }
+    .pending-card__icon { font-size: 3rem; }
+    .pending-card__title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
+    .pending-card__body { color: var(--pr-text-muted); font-size: 0.9rem; line-height: 1.6; }
+    .auth-visual {
+      background: var(--pr-bg); display: flex; align-items: center;
+      justify-content: center; position: relative; overflow: hidden;
+    }
+    .auth-visual::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 40%, rgba(30,144,255,0.15) 0%, transparent 60%);
+    }
+    .auth-visual__content { position: relative; text-align: center; padding: 48px; }
+    .auth-quote {
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+      color: var(--pr-text); line-height: 1.4; border: none; max-width: 360px;
+    }
+    .auth-visual__dots { display: flex; gap: 12px; justify-content: center; margin-top: 32px; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--pr-primary);
+      opacity: 0.4; animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+  `]
+})
+export class RegisterComponent {
+  private fb  = inject(FormBuilder);
+  private api = inject(ApiService);
+
+  form = this.fb.group({
+    firstName: ['', Validators.required],
+    lastName:  ['', Validators.required],
+    email:     ['', [Validators.required, Validators.email]],
+    password:  ['', [Validators.required, Validators.minLength(8)]]
+  });
+
+  loading   = signal(false);
+  error     = signal<string | null>(null);
+  submitted = signal(false);
+
+  submit() {
+    if (this.form.invalid) return;
+    this.loading.set(true);
+    this.error.set(null);
+    const v = this.form.value;
+    this.api.register({
+      email: v.email!, password: v.password!,
+      firstName: v.firstName!, lastName: v.lastName!,
+      role: 0
+    }).subscribe({
+      next: () => { this.submitted.set(true); },
+      error: (e: any) => {
+        this.error.set(e?.error?.message ?? 'Registration failed. Please try again.');
+        this.loading.set(false);
+      }
+    });
   }
 }
 
