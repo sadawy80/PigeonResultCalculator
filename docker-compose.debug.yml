@@ -29,5 +29,5 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
     command: >
       dotnet run
-        --project PigeonRacing.API/PigeonRacing.API.csproj
+        --project backend/API/PigeonRacing.API.csproj
         --no-launch-profile

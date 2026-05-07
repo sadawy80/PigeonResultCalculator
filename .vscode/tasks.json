@@ -61,7 +61,7 @@
       "label": "api: build",
       "detail": "Build .NET API in Debug configuration",
       "type": "shell",
-      "command": "dotnet build PigeonRacing.API/PigeonRacing.API.csproj -c Debug",
+      "command": "dotnet build backend/API/PigeonRacing.API.csproj -c Debug",
       "options": { "cwd": "${workspaceFolder}" },
       "group": { "kind": "build", "isDefault": true },
       "presentation": { "reveal": "silent", "panel": "shared" },
@@ -81,7 +81,7 @@
       "label": "api: watch",
       "detail": "Run API with hot-reload locally (infra must be running)",
       "type": "shell",
-      "command": "dotnet watch run --project PigeonRacing.API/PigeonRacing.API.csproj --no-launch-profile",
+      "command": "dotnet watch run --project backend/API/PigeonRacing.API.csproj --no-launch-profile",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": { "ASPNETCORE_ENVIRONMENT": "Development" }
@@ -102,10 +102,10 @@
 
     {
       "label": "angular: install",
-      "detail": "npm install in pigeon-racing-ui",
+      "detail": "npm install in frontend",
       "type": "shell",
       "command": "npm install",
-      "options": { "cwd": "${workspaceFolder}/pigeon-racing-ui" },
+      "options": { "cwd": "${workspaceFolder}/frontend" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
     },
@@ -115,7 +115,7 @@
       "detail": "Start Angular dev-server locally on https://localhost:4300",
       "type": "shell",
       "command": "npm start",
-      "options": { "cwd": "${workspaceFolder}/pigeon-racing-ui" },
+      "options": { "cwd": "${workspaceFolder}/frontend" },
       "isBackground": true,
       "presentation": { "reveal": "always", "panel": "new", "group": "local" },
       "problemMatcher": {
@@ -133,7 +133,7 @@
       "detail": "Production build of the Angular app",
       "type": "shell",
       "command": "npm run build -- --configuration production",
-      "options": { "cwd": "${workspaceFolder}/pigeon-racing-ui" },
+      "options": { "cwd": "${workspaceFolder}/frontend" },
       "group": "build",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []

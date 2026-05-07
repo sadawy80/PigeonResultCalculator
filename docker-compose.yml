@@ -23,7 +23,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: PigeonRacing.API/Dockerfile
+      dockerfile: backend/API/Dockerfile
     container_name: pigeon-api
     restart: unless-stopped
     ports:
@@ -60,7 +60,7 @@ services:
 
   ui:
     build:
-      context: pigeon-racing-ui
+      context: frontend
       dockerfile: Dockerfile
     container_name: pigeon-ui
     restart: unless-stopped

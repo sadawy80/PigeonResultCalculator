@@ -1,6 +1,6 @@
 {
   // ── TypeScript / Angular ─────────────────────────────────────────────────────
-  "typescript.tsdk": "pigeon-racing-ui/node_modules/typescript/lib",
+  "typescript.tsdk": "frontend/node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "editor.formatOnSave": true,
   "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },

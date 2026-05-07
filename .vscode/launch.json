@@ -43,9 +43,9 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "api: build (infra first)",
-      "program": "${workspaceFolder}/PigeonRacing.API/bin/Debug/net9.0/PigeonRacing.API.dll",
+      "program": "${workspaceFolder}/backend/API/bin/Debug/net9.0/PigeonRacing.API.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/PigeonRacing.API",
+      "cwd": "${workspaceFolder}/backend/API",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -63,7 +63,7 @@
       "type": "chrome",
       "request": "launch",
       "url": "https://localhost:4300",
-      "webRoot": "${workspaceFolder}/pigeon-racing-ui/src",
+      "webRoot": "${workspaceFolder}/frontend/src",
       "sourceMapPathOverrides": {
         "webpack:///./src/*": "${webRoot}/*",
         "webpack:///src/*": "${webRoot}/*",
@@ -77,7 +77,7 @@
       "type": "msedge",
       "request": "launch",
       "url": "https://localhost:4300",
-      "webRoot": "${workspaceFolder}/pigeon-racing-ui/src",
+      "webRoot": "${workspaceFolder}/frontend/src",
       "sourceMapPathOverrides": {
         "webpack:///./src/*": "${webRoot}/*",
         "webpack:///src/*": "${webRoot}/*",

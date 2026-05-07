@@ -60,8 +60,8 @@ build-ui: ## Build only the UI image
 migrate: ## Run EF Core database migrations
 	@echo "Running migrations…"
 	$(COMPOSE) exec $(API_SERVICE) dotnet ef database update \
-	  --project PigeonRacing.Infrastructure \
-	  --startup-project PigeonRacing.API \
+	  --project backend/Infrastructure \
+	  --startup-project backend/API \
 	  --no-build
 
 db-shell: ## Open SQL Server interactive shell

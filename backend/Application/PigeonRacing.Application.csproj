@@ -14,6 +14,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PigeonRacing.Domain\PigeonRacing.Domain.csproj" />
+    <ProjectReference Include="..\Domain\PigeonRacing.Domain.csproj" />
   </ItemGroup>
 </Project>

@@ -3,16 +3,16 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy project files for layer-cached restore
-COPY PigeonRacing.Domain/PigeonRacing.Domain.csproj             PigeonRacing.Domain/
-COPY PigeonRacing.Application/PigeonRacing.Application.csproj   PigeonRacing.Application/
-COPY PigeonRacing.Infrastructure/PigeonRacing.Infrastructure.csproj PigeonRacing.Infrastructure/
-COPY PigeonRacing.API/PigeonRacing.API.csproj                    PigeonRacing.API/
+COPY backend/Domain/PigeonRacing.Domain.csproj             Domain/
+COPY backend/Application/PigeonRacing.Application.csproj   Application/
+COPY backend/Infrastructure/PigeonRacing.Infrastructure.csproj Infrastructure/
+COPY backend/API/PigeonRacing.API.csproj                    API/
 
-RUN dotnet restore PigeonRacing.API/PigeonRacing.API.csproj
+RUN dotnet restore API/PigeonRacing.API.csproj
 
-# Copy all source and build
-COPY . .
-RUN dotnet publish PigeonRacing.API/PigeonRacing.API.csproj \
+# Copy backend source only
+COPY backend/ .
+RUN dotnet publish API/PigeonRacing.API.csproj \
     -c Release \
     -o /app/publish \
     --no-restore

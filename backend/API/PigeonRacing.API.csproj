@@ -22,7 +22,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PigeonRacing.Application\PigeonRacing.Application.csproj" />
-    <ProjectReference Include="..\PigeonRacing.Infrastructure\PigeonRacing.Infrastructure.csproj" />
+    <ProjectReference Include="..\Application\PigeonRacing.Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\PigeonRacing.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

@@ -22,17 +22,17 @@ services:
     volumes:
       # Mount source for hot reload via dotnet watch
       - .:/src:cached
-      - /src/PigeonRacing.API/bin
-      - /src/PigeonRacing.API/obj
-      - /src/PigeonRacing.Application/bin
-      - /src/PigeonRacing.Application/obj
-      - /src/PigeonRacing.Domain/bin
-      - /src/PigeonRacing.Domain/obj
-      - /src/PigeonRacing.Infrastructure/bin
-      - /src/PigeonRacing.Infrastructure/obj
+      - /src/backend/API/bin
+      - /src/backend/API/obj
+      - /src/backend/Application/bin
+      - /src/backend/Application/obj
+      - /src/backend/Domain/bin
+      - /src/backend/Domain/obj
+      - /src/backend/Infrastructure/bin
+      - /src/backend/Infrastructure/obj
     command: >
       dotnet watch run
-        --project PigeonRacing.API/PigeonRacing.API.csproj
+        --project backend/API/PigeonRacing.API.csproj
         --no-launch-profile
     # Relax health check in dev — first build is slow
     healthcheck:
@@ -41,12 +41,12 @@ services:
 
   ui:
     build:
-      context: pigeon-racing-ui
+      context: frontend
       target: build
     environment:
       - NODE_ENV=development
     volumes:
-      - ./pigeon-racing-ui:/app:cached
+      - ./frontend:/app:cached
       - /app/node_modules
     command: npm start -- --host 0.0.0.0 --poll 2000
     ports:

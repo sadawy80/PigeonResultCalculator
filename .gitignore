@@ -17,10 +17,10 @@ appsettings.Production.json
 *.p12
 
 # Angular / Node
-pigeon-racing-ui/node_modules/
-pigeon-racing-ui/dist/
-pigeon-racing-ui/.angular/
-pigeon-racing-ui/.cache/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.cache/
 
 # Docker volumes & generated data
 monitoring/grafana/data/
