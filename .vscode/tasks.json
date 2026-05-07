@@ -119,7 +119,7 @@
       "isBackground": true,
       "presentation": { "reveal": "always", "panel": "new", "group": "local" },
       "problemMatcher": {
-        "pattern": [{ "regexp": "^(ERROR|error|WARNING)" }],
+        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
         "background": {
           "activeOnStart": true,
           "beginsPattern": "Starting compilation",
