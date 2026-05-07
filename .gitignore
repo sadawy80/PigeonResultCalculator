@@ -1,0 +1,44 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+launchSettings.json
+appsettings.Development.json
+appsettings.Production.json
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+
+# Angular / Node
+pigeon-racing-ui/node_modules/
+pigeon-racing-ui/dist/
+pigeon-racing-ui/.angular/
+pigeon-racing-ui/.cache/
+
+# Docker volumes & generated data
+monitoring/grafana/data/
+monitoring/prometheus/data/
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# VS Code (keep shared settings, ignore personal)
+.vscode/*.code-workspace

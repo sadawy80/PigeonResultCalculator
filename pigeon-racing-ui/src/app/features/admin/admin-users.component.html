@@ -1,0 +1,47 @@
+<div class="pr-page-header flex justify-between items-center">
+  <div>
+    <h1 class="pr-page-header__title">Users</h1>
+    <p class="pr-page-header__subtitle">Manage all platform users</p>
+  </div>
+</div>
+
+<div class="flex gap-4 mb-6">
+  <input class="pr-input" style="max-width:300px" placeholder="Search by name or email..." [(ngModel)]="search">
+  <select class="pr-select" style="max-width:180px" [(ngModel)]="roleFilter">
+    <option value="">All Roles</option>
+    <option value="SuperAdmin">Super Admin</option>
+    <option value="CountryManager">Country Manager</option>
+    <option value="ClubManager">Club Manager</option>
+    <option value="Fancier">Fancier</option>
+  </select>
+</div>
+
+<div class="pr-card">
+  <div class="pr-table-wrapper">
+    <table class="pr-table">
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Club / Country</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        @for (u of users(); track u.id) {
+          <tr>
+            <td class="font-bold">{{ u.fullName }}</td>
+            <td class="text-muted text-sm">{{ u.email }}</td>
+            <td><span class="pr-badge pr-badge--info">{{ u.role }}</span></td>
+            <td class="text-muted text-sm">{{ u.club ?? u.country ?? '—' }}</td>
+            <td class="text-muted text-sm">{{ u.joinedAt | date:'dd MMM yyyy' }}</td>
+            <td><span [class]="u.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ u.isActive ? 'Active' : 'Suspended' }}</span></td>
+            <td>
+              <div class="flex gap-2">
+                <button class="pr-btn pr-btn--ghost pr-btn--sm">Edit</button>
+                <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleUser(u.id)">
+                  {{ u.isActive ? 'Suspend' : 'Activate' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

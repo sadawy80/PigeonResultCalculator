@@ -1,0 +1,119 @@
+{
+  "version": "0.2.0",
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  //  Two workflows are supported:
+  //
+  //  A) Full Docker Debug  (recommended)
+  //     1. Terminal → Run Task → "docker: start debug stack"   (one-time setup)
+  //     2. Launch "Full Stack: Docker Debug"
+  //        ‣ Attaches C# debugger to pigeon-api container via vsdbg
+  //        ‣ Opens Chrome on https://localhost:4300 with Angular source maps
+  //
+  //  B) Local API + Docker infra
+  //     1. Terminal → Run Task → "docker: start infrastructure"
+  //     2. Launch "Full Stack: Local API + Angular"
+  //        ‣ Builds & runs API natively on http://localhost:5000
+  //        ‣ Starts Angular dev-server then opens Chrome
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  "configurations": [
+
+    // ── .NET: Attach to running Docker container ────────────────────────────────
+    {
+      "name": "API: Attach to Docker",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickRemoteProcess}",
+      "pipeTransport": {
+        "pipeProgram": "docker",
+        "pipeArgs": ["exec", "-i", "pigeon-api"],
+        "debuggerPath": "/vsdbg/vsdbg",
+        "pipeCwd": "${workspaceFolder}"
+      },
+      "sourceFileMap": {
+        "/src": "${workspaceFolder}"
+      },
+      "justMyCode": false
+    },
+
+    // ── .NET: Run API natively (infra in Docker) ─────────────────────────────
+    {
+      "name": "API: Launch Locally",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "api: build (infra first)",
+      "program": "${workspaceFolder}/PigeonRacing.API/bin/Debug/net9.0/PigeonRacing.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/PigeonRacing.API",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5000"
+      },
+      "console": "internalConsole",
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
+      }
+    },
+
+    // ── Angular: Chrome ──────────────────────────────────────────────────────
+    {
+      "name": "Angular: Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "https://localhost:4300",
+      "webRoot": "${workspaceFolder}/pigeon-racing-ui/src",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/*",
+        "webpack:///src/*": "${webRoot}/*",
+        "ng:///*": "${webRoot}/*"
+      }
+    },
+
+    // ── Angular: Edge ────────────────────────────────────────────────────────
+    {
+      "name": "Angular: Edge",
+      "type": "msedge",
+      "request": "launch",
+      "url": "https://localhost:4300",
+      "webRoot": "${workspaceFolder}/pigeon-racing-ui/src",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/*",
+        "webpack:///src/*": "${webRoot}/*",
+        "ng:///*": "${webRoot}/*"
+      }
+    }
+  ],
+
+  "compounds": [
+
+    // ── A) Full Docker Debug ─────────────────────────────────────────────────
+    //   Run task "docker: start debug stack" first, then launch this.
+    {
+      "name": "Full Stack: Docker Debug (Chrome)",
+      "configurations": ["API: Attach to Docker", "Angular: Chrome"],
+      "preLaunchTask": "docker: start debug stack",
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack: Docker Debug (Edge)",
+      "configurations": ["API: Attach to Docker", "Angular: Edge"],
+      "preLaunchTask": "docker: start debug stack",
+      "stopAll": true
+    },
+
+    // ── B) Local API + Angular ───────────────────────────────────────────────
+    //   Infrastructure (SQL Server + Redis) starts in Docker automatically.
+    {
+      "name": "Full Stack: Local API + Chrome",
+      "configurations": ["API: Launch Locally", "Angular: Chrome"],
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack: Local API + Edge",
+      "configurations": ["API: Launch Locally", "Angular: Edge"],
+      "stopAll": true
+    }
+  ]
+}

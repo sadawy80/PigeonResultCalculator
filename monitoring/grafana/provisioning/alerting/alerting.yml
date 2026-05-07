@@ -1,0 +1,107 @@
+apiVersion: 1
+
+# ── Contact Points ─────────────────────────────────────────────────────────────
+contactPoints:
+  - orgId: 1
+    name: Slack Platform
+    receivers:
+      - uid: slack-platform
+        type: slack
+        settings:
+          url: ${SLACK_WEBHOOK_URL}
+          channel: '#pigeon-alerts'
+          username: 'PigeonRacing Alerts'
+          icon_emoji: ':warning:'
+          title: |
+            [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}
+          text: |
+            {{ range .Alerts }}
+            *{{ .Annotations.summary }}*
+            {{ .Annotations.description }}
+            {{ end }}
+        disableResolveMessage: false
+
+  - orgId: 1
+    name: Slack Critical
+    receivers:
+      - uid: slack-critical
+        type: slack
+        settings:
+          url: ${SLACK_WEBHOOK_URL}
+          channel: '#pigeon-alerts-critical'
+          username: 'PigeonRacing CRITICAL'
+          icon_emoji: ':fire:'
+          title: '🚨 CRITICAL: {{ .CommonLabels.alertname }}'
+          text: |
+            {{ range .Alerts }}*{{ .Annotations.summary }}*
+            {{ .Annotations.description }}{{ end }}
+        disableResolveMessage: false
+
+  - orgId: 1
+    name: Email Ops
+    receivers:
+      - uid: email-ops
+        type: email
+        settings:
+          addresses: ${ALERT_EMAIL:-ops@pigeonracing.com}
+          singleEmail: false
+        disableResolveMessage: false
+
+  - orgId: 1
+    name: PagerDuty
+    receivers:
+      - uid: pagerduty-oncall
+        type: pagerduty
+        settings:
+          integrationKey: ${PAGERDUTY_KEY}
+          severity: critical
+          class: '{{ .CommonLabels.alertname }}'
+          component: '{{ .CommonLabels.service }}'
+          group: pigeon-racing
+        disableResolveMessage: false
+
+# ── Notification Policy ────────────────────────────────────────────────────────
+policies:
+  - orgId: 1
+    receiver: Slack Platform
+    group_by:
+      - alertname
+      - severity
+      - service
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - receiver: Slack Critical
+        matchers:
+          - severity = critical
+        group_wait: 0s
+        group_interval: 1m
+        repeat_interval: 30m
+        routes:
+          - receiver: PagerDuty
+            matchers:
+              - alertname =~ "APIDown|SQLServerDown|CriticalHostCPU|CriticalHostMemory"
+            continue: true
+          - receiver: Email Ops
+            matchers:
+              - alertname =~ "APIDown|SQLServerDown"
+            continue: false
+      - receiver: Slack Platform
+        matchers:
+          - severity = warning
+        group_wait: 1m
+        group_interval: 10m
+        repeat_interval: 6h
+
+# ── Mute Timings ───────────────────────────────────────────────────────────────
+muteTimes:
+  - orgId: 1
+    name: maintenance-window
+    time_intervals:
+      - weekdays:
+          - saturday
+          - sunday
+        times:
+          - start_time: '02:00'
+            end_time: '06:00'

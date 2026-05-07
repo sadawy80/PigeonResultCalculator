@@ -1,0 +1,225 @@
+{
+  "uid": "alerts-overview",
+  "title": "Alerts Overview",
+  "description": "Active firing alerts, alert history, silence status, and alert rule evaluation",
+  "tags": ["pigeon-racing", "alerts", "alertmanager"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "time": {"from": "now-6h", "to": "now"},
+  "panels": [
+
+    { "type": "row", "title": "🚨 Current Alert Status", "gridPos": {"h":1,"w":24,"x":0,"y":0} },
+
+    {
+      "id": 1, "title": "Firing Critical Alerts",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":0,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"count(ALERTS{alertstate=\"firing\", severity=\"critical\"}) or vector(0)","legendFormat":"critical"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"short",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"red","value":1}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background","orientation":"auto"}
+    },
+
+    {
+      "id": 2, "title": "Firing Warning Alerts",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":4,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"count(ALERTS{alertstate=\"firing\", severity=\"warning\"}) or vector(0)","legendFormat":"warning"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"short",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"orange","value":1}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background"}
+    },
+
+    {
+      "id": 3, "title": "Pending Alerts",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":8,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"count(ALERTS{alertstate=\"pending\"}) or vector(0)","legendFormat":"pending"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"short",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":1}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background"}
+    },
+
+    {
+      "id": 4, "title": "API Error Rate Now",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":12,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:http_error_rate5m","legendFormat":"error %"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"percent",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"colorMode":"background"}
+    },
+
+    {
+      "id": 5, "title": "p99 Latency Now",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":16,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[5m])) by (le))","legendFormat":"p99"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"s",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":1},{"color":"red","value":2}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"colorMode":"background"}
+    },
+
+    {
+      "id": 6, "title": "Alertmanager Status",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":20,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"up{job=\"alertmanager\"}","legendFormat":"AM"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings":[{"type":"value","options":{"0":{"text":"DOWN","color":"red"},"1":{"text":"UP","color":"green"}}}],
+          "thresholds":{"mode":"absolute","steps":[{"color":"red","value":0},{"color":"green","value":1}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","colorMode":"background"}
+    },
+
+    { "type": "row", "title": "📋 Firing Alerts Detail", "gridPos": {"h":1,"w":24,"x":0,"y":5} },
+
+    {
+      "id": 10, "title": "Currently Firing Alerts",
+      "type": "table",
+      "gridPos": {"h":8,"w":24,"x":0,"y":6},
+      "targets": [
+        {
+          "datasource": {"uid":"prometheus"},
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "legendFormat": "{{alertname}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {"color":{"mode":"thresholds"}},
+        "overrides": [
+          {"matcher":{"id":"byName","options":"alertname"},"properties":[{"id":"custom.width","value":220},{"id":"displayName","value":"Alert"}]},
+          {"matcher":{"id":"byName","options":"severity"},"properties":[
+            {"id":"custom.width","value":100},
+            {"id":"custom.displayMode","value":"color-background"},
+            {"id":"thresholds","value":{"mode":"absolute","steps":[{"color":"green","value":null}]}},
+            {"id":"mappings","value":[
+              {"type":"value","options":{"critical":{"color":"red","index":0},"warning":{"color":"orange","index":1}}}
+            ]}
+          ]},
+          {"matcher":{"id":"byName","options":"alertstate"},"properties":[{"id":"custom.width","value":100}]},
+          {"matcher":{"id":"byName","options":"Value"},"properties":[{"id":"custom.hidden","value":true}]},
+          {"matcher":{"id":"byName","options":"__name__"},"properties":[{"id":"custom.hidden","value":true}]}
+        ]
+      },
+      "options":{"sortBy":[{"desc":true,"displayName":"severity"}]}
+    },
+
+    { "type": "row", "title": "📈 Alert History", "gridPos": {"h":1,"w":24,"x":0,"y":14} },
+
+    {
+      "id": 20, "title": "Alert State Over Time",
+      "type": "timeseries",
+      "gridPos": {"h":8,"w":24,"x":0,"y":15},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"count(ALERTS{alertstate=\"firing\",severity=\"critical\"}) or vector(0)","legendFormat":"critical firing"},
+        {"datasource":{"uid":"prometheus"},"expr":"count(ALERTS{alertstate=\"firing\",severity=\"warning\"}) or vector(0)","legendFormat":"warning firing"},
+        {"datasource":{"uid":"prometheus"},"expr":"count(ALERTS{alertstate=\"pending\"}) or vector(0)","legendFormat":"pending"}
+      ],
+      "fieldConfig": {
+        "defaults":{"unit":"short","custom":{"lineWidth":2,"fillOpacity":20}},
+        "overrides":[
+          {"matcher":{"id":"byName","options":"critical firing"},"properties":[{"id":"color","value":{"fixedColor":"red","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"warning firing"},"properties":[{"id":"color","value":{"fixedColor":"orange","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"pending"},"properties":[{"id":"color","value":{"fixedColor":"yellow","mode":"fixed"}}]}
+        ]
+      },
+      "options":{"legend":{"displayMode":"table","placement":"right","calcs":["sum","max"]},"tooltip":{"mode":"multi"}}
+    },
+
+    { "type": "row", "title": "🎯 SLO Compliance", "gridPos": {"h":1,"w":24,"x":0,"y":23} },
+
+    {
+      "id": 30, "title": "API Availability SLO (99.9%)",
+      "type": "timeseries",
+      "gridPos": {"h":7,"w":12,"x":0,"y":24},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"avg_over_time(up{job=\"pigeon-api\"}[6h]) * 100","legendFormat":"availability %"},
+        {"datasource":{"uid":"prometheus"},"expr":"vector(99.9)","legendFormat":"SLO target"}
+      ],
+      "fieldConfig": {
+        "defaults":{"unit":"percent","min":95,"max":100.1,"custom":{"lineWidth":2}},
+        "overrides":[
+          {"matcher":{"id":"byName","options":"SLO target"},"properties":[
+            {"id":"custom.lineStyle","value":{"fill":"dash"}},
+            {"id":"color","value":{"fixedColor":"red","mode":"fixed"}},
+            {"id":"custom.lineWidth","value":1}
+          ]},
+          {"matcher":{"id":"byName","options":"availability %"},"properties":[{"id":"color","value":{"fixedColor":"green","mode":"fixed"}}]}
+        ]
+      },
+      "options":{"legend":{"displayMode":"list","placement":"bottom"},"tooltip":{"mode":"multi"}}
+    },
+
+    {
+      "id": 31, "title": "Error Budget Burn Rate",
+      "type": "timeseries",
+      "gridPos": {"h":7,"w":12,"x":12,"y":24},
+      "targets": [
+        {
+          "datasource":{"uid":"prometheus"},
+          "expr": "(\n  sum(rate(http_requests_received_total{job=\"pigeon-api\",code=~\"5..\"}[1h]))\n  /\n  sum(rate(http_requests_received_total{job=\"pigeon-api\"}[1h]))\n) / (1 - 0.999)",
+          "legendFormat":"error budget burn rate (1h)"
+        },
+        {"datasource":{"uid":"prometheus"},"expr":"vector(1)","legendFormat":"burn rate = 1x (at SLO)"},
+        {"datasource":{"uid":"prometheus"},"expr":"vector(14.4)","legendFormat":"fast burn (page)"}
+      ],
+      "fieldConfig": {
+        "defaults":{"unit":"short","custom":{"lineWidth":2}},
+        "overrides":[
+          {"matcher":{"id":"byName","options":"burn rate = 1x (at SLO)"},"properties":[{"id":"custom.lineStyle","value":{"fill":"dash"}},{"id":"color","value":{"fixedColor":"green","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"fast burn (page)"},"properties":[{"id":"custom.lineStyle","value":{"fill":"dash"}},{"id":"color","value":{"fixedColor":"red","mode":"fixed"}}]}
+        ]
+      },
+      "options":{"legend":{"displayMode":"list","placement":"bottom"},"tooltip":{"mode":"multi"}}
+    },
+
+    { "type": "row", "title": "📋 Alert Event Logs", "gridPos": {"h":1,"w":24,"x":0,"y":31} },
+
+    {
+      "id": 40, "title": "Alertmanager Logs",
+      "type": "logs",
+      "gridPos": {"h":8,"w":24,"x":0,"y":32},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=\"alertmanager\"} | json",
+          "legendFormat": ""
+        }
+      ],
+      "options":{"dedupStrategy":"none","enableLogDetails":true,"showLabels":false,"showTime":true,"sortOrder":"Descending"}
+    }
+
+  ]
+}

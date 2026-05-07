@@ -1,0 +1,233 @@
+{
+  "uid": "infrastructure",
+  "title": "Infrastructure",
+  "description": "Host resources, Docker container metrics, disk I/O, and network traffic",
+  "tags": ["pigeon-racing", "infrastructure", "host"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "time": {"from": "now-1h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "container",
+        "type": "query",
+        "label": "Container",
+        "datasource": {"uid":"prometheus"},
+        "definition": "label_values(container_cpu_usage_seconds_total{name=~\"pigeon-.*\"}, name)",
+        "query": "label_values(container_cpu_usage_seconds_total{name=~\"pigeon-.*\"}, name)",
+        "includeAll": true,
+        "multi": true,
+        "current": {"text":"All","value":"$__all"},
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+
+    { "type": "row", "title": "🖥️ Host Resources", "gridPos": {"h":1,"w":24,"x":0,"y":0} },
+
+    {
+      "id": 1, "title": "CPU Utilisation",
+      "type": "gauge",
+      "gridPos": {"h":6,"w":4,"x":0,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:host_cpu_utilisation","legendFormat":"CPU"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"percent","min":0,"max":100,
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":70},{"color":"red","value":90}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"showThresholdLabels":false,"showThresholdMarkers":true}
+    },
+
+    {
+      "id": 2, "title": "Memory Utilisation",
+      "type": "gauge",
+      "gridPos": {"h":6,"w":4,"x":4,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:host_memory_utilisation","legendFormat":"Memory"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"percent","min":0,"max":100,
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":75},{"color":"red","value":90}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"showThresholdLabels":false,"showThresholdMarkers":true}
+    },
+
+    {
+      "id": 3, "title": "Root Disk Usage",
+      "type": "gauge",
+      "gridPos": {"h":6,"w":4,"x":8,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"(1 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs\"})) * 100","legendFormat":"Disk /"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"percent","min":0,"max":100,
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":75},{"color":"red","value":85}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"showThresholdLabels":false,"showThresholdMarkers":true}
+    },
+
+    {
+      "id": 4, "title": "Available Memory",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":12,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"node_memory_MemAvailable_bytes","legendFormat":"available"}],
+      "fieldConfig": {"defaults":{"unit":"bytes","color":{"mode":"palette-classic"}}}
+    },
+
+    {
+      "id": 5, "title": "Load Average (1m)",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":12,"y":4},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"node_load1","legendFormat":"load1"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"short",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":4},{"color":"red","value":8}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"colorMode":"background"}
+    },
+
+    {
+      "id": 6, "title": "Uptime",
+      "type": "stat",
+      "gridPos": {"h":6,"w":4,"x":16,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"time() - node_boot_time_seconds","legendFormat":"uptime"}],
+      "fieldConfig": {"defaults":{"unit":"s","color":{"mode":"palette-classic"}}}
+    },
+
+    {
+      "id": 7, "title": "Network I/O",
+      "type": "stat",
+      "gridPos": {"h":6,"w":4,"x":20,"y":1},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(node_network_receive_bytes_total{device!~\"lo|docker.*|br-.*|veth.*\"}[5m]))","legendFormat":"↓ in"},
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(node_network_transmit_bytes_total{device!~\"lo|docker.*|br-.*|veth.*\"}[5m]))","legendFormat":"↑ out"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"Bps","color":{"mode":"palette-classic"}}}
+    },
+
+    {
+      "id": 10, "title": "CPU Usage Over Time",
+      "type": "timeseries",
+      "gridPos": {"h":7,"w":12,"x":0,"y":7},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"(1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) by (cpu)) * 100","legendFormat":"cpu{{cpu}}"},
+        {"datasource":{"uid":"prometheus"},"expr":"pigeon:host_cpu_utilisation","legendFormat":"total avg"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"percent","max":100,"custom":{"lineWidth":1,"fillOpacity":5}},
+        "overrides": [{"matcher":{"id":"byName","options":"total avg"},"properties":[{"id":"custom.lineWidth","value":3},{"id":"color","value":{"fixedColor":"blue","mode":"fixed"}}]}]
+      },
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]},"tooltip":{"mode":"multi"}}
+    },
+
+    {
+      "id": 11, "title": "Memory Breakdown",
+      "type": "timeseries",
+      "gridPos": {"h":7,"w":12,"x":12,"y":7},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes","legendFormat":"used"},
+        {"datasource":{"uid":"prometheus"},"expr":"node_memory_Buffers_bytes","legendFormat":"buffers"},
+        {"datasource":{"uid":"prometheus"},"expr":"node_memory_Cached_bytes","legendFormat":"cached"},
+        {"datasource":{"uid":"prometheus"},"expr":"node_memory_MemFree_bytes","legendFormat":"free"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"bytes","custom":{"lineWidth":1,"fillOpacity":20,"stacking":{"mode":"normal"}}},
+        "overrides": [
+          {"matcher":{"id":"byName","options":"used"},"properties":[{"id":"color","value":{"fixedColor":"red","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"free"},"properties":[{"id":"color","value":{"fixedColor":"green","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"cached"},"properties":[{"id":"color","value":{"fixedColor":"blue","mode":"fixed"}}]}
+        ]
+      },
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["lastNotNull"]},"tooltip":{"mode":"multi"}}
+    },
+
+    { "type": "row", "title": "🐳 Container Resources", "gridPos": {"h":1,"w":24,"x":0,"y":14} },
+
+    {
+      "id": 20, "title": "Container CPU Usage",
+      "type": "timeseries",
+      "gridPos": {"h":7,"w":12,"x":0,"y":15},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(container_cpu_usage_seconds_total{name=~\"$container\"}[5m])) by (name) * 100","legendFormat":"{{name}}"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"percent","custom":{"lineWidth":2,"fillOpacity":5}}},
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]},"tooltip":{"mode":"multi"}}
+    },
+
+    {
+      "id": 21, "title": "Container Memory (working set)",
+      "type": "timeseries",
+      "gridPos": {"h":7,"w":12,"x":12,"y":15},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(container_memory_working_set_bytes{name=~\"$container\"}) by (name)","legendFormat":"{{name}}"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"bytes","custom":{"lineWidth":2,"fillOpacity":5}}},
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]},"tooltip":{"mode":"multi"}}
+    },
+
+    {
+      "id": 22, "title": "Container Network Receive",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":12,"x":0,"y":22},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(container_network_receive_bytes_total{name=~\"$container\"}[5m])) by (name)","legendFormat":"{{name}}"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"Bps","custom":{"lineWidth":1,"fillOpacity":5}}},
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]}}
+    },
+
+    {
+      "id": 23, "title": "Container Network Transmit",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":12,"x":12,"y":22},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(container_network_transmit_bytes_total{name=~\"$container\"}[5m])) by (name)","legendFormat":"{{name}}"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"Bps","custom":{"lineWidth":1,"fillOpacity":5}}},
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]}}
+    },
+
+    { "type": "row", "title": "💾 Disk I/O", "gridPos": {"h":1,"w":24,"x":0,"y":28} },
+
+    {
+      "id": 30, "title": "Disk Read/Write Throughput",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":12,"x":0,"y":29},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"rate(node_disk_read_bytes_total[5m])","legendFormat":"read {{device}}"},
+        {"datasource":{"uid":"prometheus"},"expr":"rate(node_disk_written_bytes_total[5m])","legendFormat":"write {{device}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"Bps","custom":{"lineWidth":2}},
+        "overrides": [{"matcher":{"id":"byRegexp","options":"write.*"},"properties":[{"id":"custom.transform","value":"negative-Y"}]}]
+      },
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]}}
+    },
+
+    {
+      "id": 31, "title": "Disk I/O Utilisation",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":12,"x":12,"y":29},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"rate(node_disk_io_time_seconds_total[5m]) * 100","legendFormat":"{{device}} util %"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"percent","max":100,"custom":{"lineWidth":2,"fillOpacity":10},
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":60},{"color":"red","value":90}]}
+        }
+      },
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]}}
+    }
+
+  ]
+}

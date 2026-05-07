@@ -1,0 +1,207 @@
+{
+  "uid": "logs-explorer",
+  "title": "Logs Explorer",
+  "description": "Pre-built Loki queries for API errors, slow requests, auth events, ETS ingestion, and full-text search",
+  "tags": ["pigeon-racing", "logs", "loki"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "time": {"from": "now-1h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "label": "Service",
+        "datasource": {"uid":"loki"},
+        "definition": "label_values(service)",
+        "query": {"label":"service","type":"1"},
+        "includeAll": true,
+        "multi": false,
+        "current": {"text":"pigeon-api","value":"pigeon-api"},
+        "refresh": 2
+      },
+      {
+        "name": "level",
+        "type": "custom",
+        "label": "Log Level",
+        "options": [
+          {"text":"All","value":".*"},
+          {"text":"Error","value":"error"},
+          {"text":"Warning","value":"warning"},
+          {"text":"Information","value":"information"},
+          {"text":"Debug","value":"debug"}
+        ],
+        "current": {"text":"Error","value":"error"},
+        "includeAll": false,
+        "multi": false
+      },
+      {
+        "name": "search",
+        "type": "textbox",
+        "label": "Search Text",
+        "description": "Full-text search across log lines",
+        "current": {"text":"","value":""}
+      }
+    ]
+  },
+  "panels": [
+
+    { "type": "row", "title": "Log Volume", "gridPos": {"h":1,"w":24,"x":0,"y":0} },
+
+    {
+      "id": 1, "title": "Log Volume by Level",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":16,"x":0,"y":1},
+      "targets": [
+        {"datasource":{"uid":"loki"},"expr":"sum(rate({service=\"$service\"}[5m])) by (level)","legendFormat":"{{level}}"}
+      ],
+      "fieldConfig": {
+        "defaults":{"unit":"logs/s","custom":{"lineWidth":2,"fillOpacity":20,"stacking":{"mode":"normal"}}},
+        "overrides":[
+          {"matcher":{"id":"byName","options":"error"},"properties":[{"id":"color","value":{"fixedColor":"red","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"warning"},"properties":[{"id":"color","value":{"fixedColor":"orange","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"information"},"properties":[{"id":"color","value":{"fixedColor":"blue","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"debug"},"properties":[{"id":"color","value":{"fixedColor":"gray","mode":"fixed"}}]}
+        ]
+      },
+      "options":{"legend":{"displayMode":"table","placement":"right","calcs":["sum"]},"tooltip":{"mode":"multi"}}
+    },
+
+    {
+      "id": 2, "title": "Error Count (1h)",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":16,"y":1},
+      "targets": [{"datasource":{"uid":"loki"},"expr":"sum(count_over_time({service=\"$service\"} | json | level=\"error\" [1h]))","legendFormat":"errors"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"short",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":10},{"color":"red","value":50}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"colorMode":"background"}
+    },
+
+    {
+      "id": 3, "title": "Warning Count (1h)",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":20,"y":1},
+      "targets": [{"datasource":{"uid":"loki"},"expr":"sum(count_over_time({service=\"$service\"} | json | level=\"warning\" [1h]))","legendFormat":"warnings"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit":"short",
+          "thresholds":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":1}]},
+          "color":{"mode":"thresholds"}
+        }
+      },
+      "options":{"colorMode":"background"}
+    },
+
+    {
+      "id": 4, "title": "Services Log Rate",
+      "type": "bargauge",
+      "gridPos": {"h":3,"w":8,"x":16,"y":4},
+      "targets": [{"datasource":{"uid":"loki"},"expr":"sum(rate({service=~\".+\"}[5m])) by (service)","legendFormat":"{{service}}","instant":true}],
+      "fieldConfig": {"defaults":{"unit":"logs/s","color":{"mode":"palette-classic"}}},
+      "options":{"reduceOptions":{"calcs":["lastNotNull"]},"orientation":"horizontal","displayMode":"lcd"}
+    },
+
+    { "type": "row", "title": "🚨 Errors & Exceptions", "gridPos": {"h":1,"w":24,"x":0,"y":7} },
+
+    {
+      "id": 10, "title": "Errors with Stack Traces",
+      "type": "logs",
+      "gridPos": {"h":10,"w":24,"x":0,"y":8},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=\"$service\"} | json | level=\"error\" | line_format \"[{{.timestamp}}] {{.message}}\\n{{.exception}}\"",
+          "legendFormat": ""
+        }
+      ],
+      "options":{"dedupStrategy":"signature","enableLogDetails":true,"prettifyLogMessage":false,"showLabels":true,"showTime":true,"sortOrder":"Descending","wrapLogMessage":true}
+    },
+
+    { "type": "row", "title": "🐌 Slow HTTP Requests", "gridPos": {"h":1,"w":24,"x":0,"y":18} },
+
+    {
+      "id": 20, "title": "Requests Taking > 1s",
+      "type": "logs",
+      "gridPos": {"h":8,"w":24,"x":0,"y":19},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=\"pigeon-api\"} | json | elapsed_ms > 1000 | line_format \"[{{.request_method}}] {{.request_path}} → {{.status_code}} in {{.elapsed_ms}}ms\"",
+          "legendFormat": ""
+        }
+      ],
+      "options":{"dedupStrategy":"none","enableLogDetails":true,"showLabels":false,"showTime":true,"sortOrder":"Descending"}
+    },
+
+    { "type": "row", "title": "🔒 Auth & Security Events", "gridPos": {"h":1,"w":24,"x":0,"y":27} },
+
+    {
+      "id": 30, "title": "Auth Events Log",
+      "type": "logs",
+      "gridPos": {"h":8,"w":24,"x":0,"y":28},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=\"pigeon-api\"} | json | source_context=~\".*Auth.*|.*Login.*|.*Token.*\"",
+          "legendFormat": ""
+        }
+      ],
+      "options":{"dedupStrategy":"none","enableLogDetails":true,"showLabels":true,"showTime":true,"sortOrder":"Descending"}
+    },
+
+    { "type": "row", "title": "📥 ETS Ingestion Events", "gridPos": {"h":1,"w":24,"x":0,"y":36} },
+
+    {
+      "id": 40, "title": "ETS File Ingestion Log",
+      "type": "logs",
+      "gridPos": {"h":8,"w":24,"x":0,"y":37},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=\"pigeon-api\"} | json | source_context=~\".*ETS.*|.*Ingest.*|.*Parser.*\"",
+          "legendFormat": ""
+        }
+      ],
+      "options":{"dedupStrategy":"none","enableLogDetails":true,"showLabels":true,"showTime":true,"sortOrder":"Descending"}
+    },
+
+    { "type": "row", "title": "🔍 Full Text Search", "gridPos": {"h":1,"w":24,"x":0,"y":45} },
+
+    {
+      "id": 50, "title": "Search All Logs",
+      "type": "logs",
+      "gridPos": {"h":10,"w":24,"x":0,"y":46},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=~\"$service\"} | json | level=~\"$level\" |= `$search`",
+          "legendFormat": ""
+        }
+      ],
+      "options":{"dedupStrategy":"none","enableLogDetails":true,"prettifyLogMessage":false,"showLabels":true,"showTime":true,"sortOrder":"Descending","wrapLogMessage":true}
+    },
+
+    { "type": "row", "title": "📊 All Services Log Stream", "gridPos": {"h":1,"w":24,"x":0,"y":56} },
+
+    {
+      "id": 60, "title": "Live Log Stream (All Services)",
+      "type": "logs",
+      "gridPos": {"h":10,"w":24,"x":0,"y":57},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=~\"pigeon-.*|prometheus|grafana|loki\"} | json | level=~\"error|warning\"",
+          "legendFormat": ""
+        }
+      ],
+      "options":{"dedupStrategy":"none","enableLogDetails":true,"showLabels":true,"showTime":true,"sortOrder":"Descending","wrapLogMessage":false}
+    }
+
+  ]
+}

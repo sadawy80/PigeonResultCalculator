@@ -1,0 +1,142 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+
+    // ── Docker Compose ──────────────────────────────────────────────────────────
+
+    {
+      "label": "docker: start infrastructure",
+      "detail": "Start SQL Server + Redis only (for local API / Angular dev)",
+      "type": "shell",
+      "command": "docker compose up sqlserver redis -d",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared", "group": "docker" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "docker: start dev stack",
+      "detail": "Start full dev stack — API (watch), UI dev-server, DB, Redis, monitoring",
+      "type": "shell",
+      "command": "docker compose up",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "shared", "group": "docker" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "docker: start debug stack",
+      "detail": "Start full stack with vsdbg installed in the API container for debugger attach",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.debug.yml up -d",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared", "group": "docker" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "docker: stop all",
+      "detail": "Stop all Docker Compose services",
+      "type": "shell",
+      "command": "docker compose down",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared", "group": "docker" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "docker: logs api",
+      "detail": "Follow API container logs",
+      "type": "shell",
+      "command": "docker compose logs -f api",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "new", "group": "docker" },
+      "problemMatcher": []
+    },
+
+    // ── .NET ────────────────────────────────────────────────────────────────────
+
+    {
+      "label": "api: build",
+      "detail": "Build .NET API in Debug configuration",
+      "type": "shell",
+      "command": "dotnet build PigeonRacing.API/PigeonRacing.API.csproj -c Debug",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "silent", "panel": "shared" },
+      "problemMatcher": "$msCompile"
+    },
+
+    {
+      "label": "api: build (infra first)",
+      "detail": "Start infrastructure in Docker, then build the .NET API",
+      "dependsOn": ["docker: start infrastructure", "api: build"],
+      "dependsOrder": "sequence",
+      "presentation": { "reveal": "silent", "panel": "shared" },
+      "problemMatcher": "$msCompile"
+    },
+
+    {
+      "label": "api: watch",
+      "detail": "Run API with hot-reload locally (infra must be running)",
+      "type": "shell",
+      "command": "dotnet watch run --project PigeonRacing.API/PigeonRacing.API.csproj --no-launch-profile",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": { "ASPNETCORE_ENVIRONMENT": "Development" }
+      },
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "new", "group": "local" },
+      "problemMatcher": {
+        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building...",
+          "endsPattern": "Application started|Now listening"
+        }
+      }
+    },
+
+    // ── Angular ─────────────────────────────────────────────────────────────────
+
+    {
+      "label": "angular: install",
+      "detail": "npm install in pigeon-racing-ui",
+      "type": "shell",
+      "command": "npm install",
+      "options": { "cwd": "${workspaceFolder}/pigeon-racing-ui" },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "angular: serve",
+      "detail": "Start Angular dev-server locally on https://localhost:4300",
+      "type": "shell",
+      "command": "npm start",
+      "options": { "cwd": "${workspaceFolder}/pigeon-racing-ui" },
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "new", "group": "local" },
+      "problemMatcher": {
+        "pattern": [{ "regexp": "^(ERROR|error|WARNING)" }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting compilation",
+          "endsPattern": "Compiled successfully|compiled successfully|Browser application bundle"
+        }
+      }
+    },
+
+    {
+      "label": "angular: build prod",
+      "detail": "Production build of the Angular app",
+      "type": "shell",
+      "command": "npm run build -- --configuration production",
+      "options": { "cwd": "${workspaceFolder}/pigeon-racing-ui" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    }
+  ]
+}

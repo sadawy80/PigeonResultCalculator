@@ -1,0 +1,339 @@
+name: pigeon-racing
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  PigeonRacing Platform — Full Stack with Observability
+#
+#  Services:
+#    Application:  api, ui, sqlserver, redis
+#    Observability: prometheus, grafana, loki, promtail, alertmanager
+#    Exporters:    node-exporter, cadvisor, redis-exporter, postgres-exporter
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+    labels: "service"
+
+services:
+
+  # ── Application ─────────────────────────────────────────────────────────────
+
+  api:
+    build:
+      context: .
+      dockerfile: PigeonRacing.API/Dockerfile
+    container_name: pigeon-api
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PigeonRacingDb;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
+      ConnectionStrings__Redis: redis:6379
+      Jwt__Key: ${JWT_KEY:-CHANGE_THIS_TO_A_STRONG_SECRET_KEY_AT_LEAST_32_CHARS}
+      Jwt__Issuer: PigeonRacing
+      Jwt__Audience: PigeonRacing
+      Serilog__SeqUrl: ""
+      # Metrics & health
+      METRICS_ENABLED: "true"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+      - monitoring
+    labels:
+      service: pigeon-api
+      logging: promtail
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  ui:
+    build:
+      context: pigeon-racing-ui
+      dockerfile: Dockerfile
+    container_name: pigeon-ui
+    restart: unless-stopped
+    ports:
+      - "4300:80"
+    depends_on:
+      - api
+    networks:
+      - internal
+    labels:
+      service: pigeon-ui
+      logging: promtail
+    logging: *default-logging
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pigeon-sqlserver
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${SQL_PASSWORD:-Str0ngP@ssword!}
+      MSSQL_PID: Developer
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - internal
+      - monitoring
+    labels:
+      service: pigeon-sqlserver
+      logging: promtail
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${SQL_PASSWORD:-Str0ngP@ssword!}", "-Q", "SELECT 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    container_name: pigeon-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+      - monitoring
+    labels:
+      service: pigeon-redis
+      logging: promtail
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Observability ────────────────────────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: pigeon-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.size=10GB"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    labels:
+      service: prometheus
+      logging: promtail
+    logging: *default-logging
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: pigeon-grafana
+    restart: unless-stopped
+    ports:
+      - "7000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_DOMAIN: ${GRAFANA_DOMAIN:-localhost}
+      GF_SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      GF_SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com:587}
+      GF_SMTP_FROM_ADDRESS: ${SMTP_FROM:-alerts@pigeonracing.com}
+      GF_SMTP_USER: ${SMTP_USER:-}
+      GF_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      # Unified alerting
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+      GF_ALERTING_ENABLED: "false"
+      GF_FEATURE_TOGGLES_ENABLE: "publicDashboards"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/01-platform-overview.json
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - loki
+    labels:
+      service: grafana
+      logging: promtail
+    logging: *default-logging
+
+  loki:
+    image: grafana/loki:2.9.5
+    container_name: pigeon-loki
+    restart: unless-stopped
+    ports:
+      - "7100:3100"
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+    labels:
+      service: loki
+      logging: promtail
+    logging: *default-logging
+
+  promtail:
+    image: grafana/promtail:2.9.5
+    container_name: pigeon-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /run/docker.sock:/run/docker.sock:ro
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+    labels:
+      service: promtail
+    logging: *default-logging
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: pigeon-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--cluster.advertise-address=0.0.0.0:9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - monitoring
+    labels:
+      service: alertmanager
+      logging: promtail
+    logging: *default-logging
+
+  # ── Exporters ────────────────────────────────────────────────────────────────
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: pigeon-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      - "--path.rootfs=/host"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring
+    pid: host
+    labels:
+      service: node-exporter
+    logging: *default-logging
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: pigeon-cadvisor
+    restart: unless-stopped
+    ports:
+      - "9082:8080"
+    command:
+      - "--housekeeping_interval=15s"
+      - "--docker_only=true"
+      - "--store_container_labels=false"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - monitoring
+    devices:
+      - /dev/kmsg
+    labels:
+      service: cadvisor
+    logging: *default-logging
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    container_name: pigeon-redis-exporter
+    restart: unless-stopped
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    networks:
+      - monitoring
+    depends_on:
+      - redis
+    labels:
+      service: redis-exporter
+    logging: *default-logging
+
+  sql-exporter:
+    image: burningalchemist/sql_exporter:0.14
+    container_name: pigeon-sql-exporter
+    restart: unless-stopped
+    ports:
+      - "9399:9399"
+    environment:
+      SQLEXPORTER_CONFIG: /etc/sql_exporter/sql_exporter.yml
+    volumes:
+      - ./monitoring/sql_exporter/sql_exporter.yml:/etc/sql_exporter/sql_exporter.yml:ro
+    networks:
+      - monitoring
+      - internal
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    labels:
+      service: sql-exporter
+    logging: *default-logging
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+
+networks:
+  internal:
+    driver: bridge
+  monitoring:
+    driver: bridge
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+
+volumes:
+  sqlserver_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  alertmanager_data:

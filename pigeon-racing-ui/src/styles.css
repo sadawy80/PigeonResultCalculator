@@ -1,0 +1,441 @@
+/* ── Google Fonts ────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+/* ── CSS Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Default theme tokens (Skyline) ──────────────────────────────────────── */
+:root {
+  --pr-primary:    #1E90FF;
+  --pr-primary-dk: #0D6ECC;
+  --pr-accent:     #00D4FF;
+  --pr-bg:         #0A1520;
+  --pr-surface:    #132030;
+  --pr-surface-2:  #1A2940;
+  --pr-text:       #E8F0FE;
+  --pr-text-muted: #8FA8C8;
+  --pr-border:     #1E3450;
+  --pr-success:    #00E676;
+  --pr-warning:    #FFD740;
+  --pr-error:      #FF5252;
+  --pr-radius:     8px;
+
+  /* Typography */
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* Spacing scale */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 24px rgba(30,144,255,0.2);
+
+  /* Transitions */
+  --t-fast: 120ms ease;
+  --t-base: 200ms ease;
+  --t-slow: 350ms cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--pr-bg);
+  color: var(--pr-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--t-slow), color var(--t-slow);
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--pr-text);
+}
+
+h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+h2 { font-size: clamp(1.375rem, 3vw, 1.875rem); }
+h3 { font-size: 1.375rem; }
+h4 { font-size: 1.125rem; }
+
+a { color: var(--pr-primary); text-decoration: none; transition: color var(--t-fast); }
+a:hover { color: var(--pr-accent); }
+
+p { color: var(--pr-text); margin-bottom: var(--sp-4); }
+p:last-child { margin-bottom: 0; }
+
+/* ── Shared Components ───────────────────────────────────────────────────── */
+
+/* Card */
+.pr-card {
+  background: var(--pr-surface);
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius);
+  padding: var(--sp-6);
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+.pr-card:hover { border-color: var(--pr-primary); box-shadow: var(--shadow-glow); }
+.pr-card--flat:hover { border-color: var(--pr-border); box-shadow: none; }
+
+/* Buttons */
+.pr-btn {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--pr-radius);
+  font-family: var(--font-body);
+  font-size: 0.9rem; font-weight: 500;
+  border: none; cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+}
+.pr-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.pr-btn--primary {
+  background: var(--pr-primary);
+  color: #fff;
+}
+.pr-btn--primary:hover:not(:disabled) { background: var(--pr-primary-dk); transform: translateY(-1px); }
+
+.pr-btn--outline {
+  background: transparent;
+  color: var(--pr-primary);
+  border: 1px solid var(--pr-primary);
+}
+.pr-btn--outline:hover:not(:disabled) { background: rgba(30,144,255,0.08); }
+
+.pr-btn--ghost {
+  background: transparent;
+  color: var(--pr-text-muted);
+  border: 1px solid var(--pr-border);
+}
+.pr-btn--ghost:hover:not(:disabled) { color: var(--pr-text); border-color: var(--pr-text-muted); }
+
+.pr-btn--danger { background: var(--pr-error); color: #fff; }
+.pr-btn--danger:hover:not(:disabled) { filter: brightness(0.88); }
+
+.pr-btn--sm { padding: var(--sp-2) var(--sp-3); font-size: 0.8rem; }
+.pr-btn--lg { padding: var(--sp-4) var(--sp-8); font-size: 1rem; }
+.pr-btn--icon { padding: var(--sp-2); border-radius: 50%; }
+
+/* Form controls */
+.pr-form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.pr-label {
+  font-size: 0.8rem; font-weight: 500; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--pr-text-muted);
+}
+
+.pr-input, .pr-select, .pr-textarea {
+  background: var(--pr-surface-2);
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius);
+  color: var(--pr-text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: var(--sp-3) var(--sp-4);
+  width: 100%;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  outline: none;
+}
+.pr-input:focus, .pr-select:focus, .pr-textarea:focus {
+  border-color: var(--pr-primary);
+  box-shadow: 0 0 0 3px rgba(30,144,255,0.15);
+}
+.pr-input::placeholder { color: var(--pr-text-muted); }
+.pr-select { appearance: none; cursor: pointer; }
+.pr-textarea { resize: vertical; min-height: 100px; }
+
+/* Table */
+.pr-table-wrapper { overflow-x: auto; border-radius: var(--pr-radius); border: 1px solid var(--pr-border); }
+.pr-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.pr-table thead { background: var(--pr-surface-2); }
+.pr-table th {
+  padding: var(--sp-3) var(--sp-4);
+  text-align: left; font-family: var(--font-display);
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--pr-text-muted);
+  border-bottom: 1px solid var(--pr-border);
+}
+.pr-table td {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--pr-border);
+  color: var(--pr-text);
+}
+.pr-table tbody tr { transition: background var(--t-fast); }
+.pr-table tbody tr:hover { background: var(--pr-surface-2); }
+.pr-table tbody tr:last-child td { border-bottom: none; }
+
+/* Badges */
+.pr-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px var(--sp-3);
+  border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pr-badge--success { background: rgba(0,230,118,0.12); color: var(--pr-success); }
+.pr-badge--warning { background: rgba(255,215,64,0.12); color: var(--pr-warning); }
+.pr-badge--error   { background: rgba(255,82,82,0.12);  color: var(--pr-error); }
+.pr-badge--info    { background: rgba(30,144,255,0.12); color: var(--pr-primary); }
+.pr-badge--muted   { background: var(--pr-surface-2);   color: var(--pr-text-muted); }
+
+/* Alert */
+.pr-alert {
+  padding: var(--sp-4); border-radius: var(--pr-radius);
+  font-size: 0.9rem; border-left: 3px solid;
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+}
+.pr-alert--error   { background: rgba(255,82,82,0.08);   border-color: var(--pr-error);   color: var(--pr-error); }
+.pr-alert--success { background: rgba(0,230,118,0.08);   border-color: var(--pr-success); color: var(--pr-success); }
+.pr-alert--warning { background: rgba(255,215,64,0.08);  border-color: var(--pr-warning); color: var(--pr-warning); }
+.pr-alert--info    { background: rgba(30,144,255,0.08);  border-color: var(--pr-primary); color: var(--pr-primary); }
+
+/* Spinner */
+.pr-spinner {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--pr-border);
+  border-top-color: var(--pr-primary);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Page header */
+.pr-page-header { margin-bottom: var(--sp-8); }
+.pr-page-header__title { font-family: var(--font-display); font-size: 1.875rem; font-weight: 800; }
+.pr-page-header__subtitle { color: var(--pr-text-muted); margin-top: var(--sp-1); }
+.pr-page-header__actions { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-4); }
+
+/* Grid layouts */
+.pr-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-6); }
+.pr-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-6); }
+.pr-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-4); }
+
+/* Stat card */
+.pr-stat { text-align: center; }
+.pr-stat__value {
+  font-family: var(--font-display);
+  font-size: 2.25rem; font-weight: 800;
+  color: var(--pr-primary); line-height: 1;
+}
+.pr-stat__label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--pr-text-muted); margin-top: var(--sp-1); }
+
+/* Empty state */
+.pr-empty { text-align: center; padding: var(--sp-16) var(--sp-8); color: var(--pr-text-muted); }
+.pr-empty__icon { font-size: 3rem; margin-bottom: var(--sp-4); opacity: 0.4; }
+.pr-empty__title { font-size: 1.125rem; font-weight: 600; color: var(--pr-text); }
+.pr-empty__desc { font-size: 0.9rem; margin-top: var(--sp-2); }
+
+/* Rank pill (top 3) */
+.pr-rank { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 700; font-size: 0.8rem; }
+.pr-rank--1 { background: #FFD700; color: #000; }
+.pr-rank--2 { background: #C0C0C0; color: #000; }
+.pr-rank--3 { background: #CD7F32; color: #fff; }
+.pr-rank--other { background: var(--pr-surface-2); color: var(--pr-text-muted); }
+
+/* Utility */
+.flex { display: flex; } .items-center { align-items: center; } .justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--sp-2); } .gap-4 { gap: var(--sp-4); } .gap-6 { gap: var(--sp-6); }
+.mt-4 { margin-top: var(--sp-4); } .mt-6 { margin-top: var(--sp-6); } .mt-8 { margin-top: var(--sp-8); }
+.mb-4 { margin-bottom: var(--sp-4); } .mb-6 { margin-bottom: var(--sp-6); }
+.text-muted { color: var(--pr-text-muted); } .text-sm { font-size: 0.875rem; }
+.text-right { text-align: right; } .font-bold { font-weight: 700; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-full { width: 100%; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--pr-bg); }
+::-webkit-scrollbar-thumb { background: var(--pr-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--pr-text-muted); }
+
+/* View transitions */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) { animation: 180ms ease both fade-out; }
+  ::view-transition-new(root) { animation: 220ms ease both fade-in; }
+  @keyframes fade-out { to { opacity: 0; transform: scale(0.98); } }
+  @keyframes fade-in { from { opacity: 0; transform: scale(1.02); } }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RTL (Right-to-Left) Support — Arabic
+   Applied automatically when TranslationService sets dir="rtl" on <html>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[dir="rtl"] {
+  /* Flip directional layout */
+  --pr-sidebar-float: right;
+}
+
+[dir="rtl"] .pr-sidebar {
+  border-right: none;
+  border-left: 1px solid var(--pr-border);
+}
+
+[dir="rtl"] .pr-main {
+  margin-left: 0;
+  margin-right: var(--sidebar-width, 240px);
+}
+
+/* Reverse flex row directions for RTL */
+[dir="rtl"] .flex { flex-direction: row-reverse; }
+[dir="rtl"] .flex.gap-2,
+[dir="rtl"] .flex.gap-3,
+[dir="rtl"] .flex.gap-4 { flex-direction: row-reverse; }
+
+/* Allow explicit override */
+[dir="rtl"] .flex-ltr  { flex-direction: row !important; }
+[dir="rtl"] .flex-col  { flex-direction: column !important; }
+
+/* Text alignment flip */
+[dir="rtl"] .text-right { text-align: left; }
+[dir="rtl"] .text-left  { text-align: right; }
+
+/* Card and form margins */
+[dir="rtl"] .pr-card__body   { text-align: right; }
+[dir="rtl"] .pr-form-group   { text-align: right; }
+[dir="rtl"] .pr-label        { text-align: right; }
+
+/* Navigation sidebar RTL */
+[dir="rtl"] .pr-nav-item {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+[dir="rtl"] .pr-nav-item .nav-icon { margin-left: 12px; margin-right: 0; }
+
+/* Table RTL */
+[dir="rtl"] .pr-table th,
+[dir="rtl"] .pr-table td { text-align: right; }
+[dir="rtl"] .pr-table td:first-child { text-align: center; }
+
+/* Breadcrumb RTL */
+[dir="rtl"] .flex.items-center.gap-3 { flex-direction: row-reverse; }
+
+/* Buttons — icon + text reversed */
+[dir="rtl"] .pr-btn { flex-direction: row-reverse; }
+
+/* Input text direction */
+[dir="rtl"] .pr-input,
+[dir="rtl"] .pr-select,
+[dir="rtl"] .pr-textarea {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Numbers and codes stay LTR even in RTL layout */
+[dir="rtl"] code,
+[dir="rtl"] .ring-code,
+[dir="rtl"] .pr-stat__value,
+[dir="rtl"] .vel-cell,
+[dir="rtl"] .rank-cell {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Page header in RTL */
+[dir="rtl"] .pr-page-header { text-align: right; }
+[dir="rtl"] .pr-page-header.flex { flex-direction: row-reverse; }
+
+/* Alerts */
+[dir="rtl"] .pr-alert { flex-direction: row-reverse; text-align: right; }
+
+/* Badges */
+[dir="rtl"] .pr-badge { direction: rtl; }
+
+/* Arabic font — use a font that supports Arabic well */
+[dir="rtl"] body {
+  font-family: 'Segoe UI', 'Tahoma', 'Arial Unicode MS', Arial, sans-serif;
+  letter-spacing: 0;  /* Arabic doesn't use letter spacing */
+}
+
+/* Chinese font stack */
+[data-locale="zh"] body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC',
+               'Segoe UI', Arial, sans-serif;
+}
+
+/* Language switcher positioning adjustments */
+[dir="rtl"] .ls-dropdown {
+  right: auto;
+  left: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RTL — Shell / Sidebar
+   The shell uses border-inline-end (logical property) so no border overrides
+   are needed here. Layout + link reversals are handled in the component styles
+   via :host-context([dir="rtl"]).
+   The only global rules needed are for elements that cannot use host-context.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Section labels align to start in RTL */
+[dir="rtl"] .sidebar__section-label { text-align: right; }
+
+/* Language switcher dropdown: open above the trigger when inside sidebar controls */
+.sidebar__controls .ls-dropdown {
+  top: auto;
+  bottom: calc(100% + 6px);
+  /* keep it within sidebar width */
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+}
+
+/* User footer */
+[dir="rtl"] .sidebar__footer { align-items: flex-start; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RTL — Template browser & modals
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Template browser shell — sidebar on right in RTL */
+[dir="rtl"] .tb-shell {
+  direction: rtl;
+}
+[dir="rtl"] .tb-shell:has(.tb-preview-panel) {
+  /* Grid columns stay logical; direction:rtl reverses visual order */
+}
+[dir="rtl"] .tb-sidebar {
+  border-right: none;
+  border-left: 1px solid var(--pr-border);
+}
+[dir="rtl"] .tb-preview-panel {
+  border-left: none;
+  border-right: 1px solid var(--pr-border);
+}
+[dir="rtl"] .tb-filter-btn { flex-direction: row-reverse; text-align: right; }
+[dir="rtl"] .tb-filter-btn__count { margin-left: 0; margin-right: auto; }
+
+/* Modal overlay — keep centred, inner content mirrors */
+[dir="rtl"] .tb-modal { direction: rtl; }
+[dir="rtl"] .tb-modal__header { flex-direction: row-reverse; }
+
+/* Preview panel inside template browser */
+[dir="rtl"] .tb-preview-panel__header { flex-direction: row-reverse; }
+[dir="rtl"] .tb-meta-row { flex-direction: row-reverse; }
+[dir="rtl"] .tb-preview-panel__actions { align-items: flex-end; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RTL — Quick-print / certificate picker modals
+   ═══════════════════════════════════════════════════════════════════════════ */
+[dir="rtl"] .pr-modal,
+[dir="rtl"] .cp-modal { direction: rtl; text-align: right; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RTL — Print button dropdown
+   ═══════════════════════════════════════════════════════════════════════════ */
+[dir="rtl"] .pb-dropdown {
+  right: auto;
+  left: 0;
+  text-align: right;
+}
+[dir="rtl"] .pb-item { flex-direction: row-reverse; }

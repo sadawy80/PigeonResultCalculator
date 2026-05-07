@@ -1,0 +1,19 @@
+# sql_exporter.yml — SQL Server metrics for Prometheus
+# https://github.com/burningalchemist/sql_exporter
+
+global:
+  scrape_timeout: 10s
+  scrape_timeout_jitter: 500ms
+  min_interval: 0s
+  max_connections: 3
+  max_idle_connections: 3
+
+target:
+  data_source_name: "sqlserver://sa:${SQL_PASSWORD}@sqlserver:1433?database=PigeonRacingDb&encrypt=disable&TrustServerCertificate=true"
+
+  collectors:
+    - mssql_standard
+    - pigeon_racing
+
+collector_files:
+  - /etc/sql_exporter/collectors/*.yml

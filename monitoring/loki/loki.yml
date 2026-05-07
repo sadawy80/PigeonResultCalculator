@@ -1,0 +1,84 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+# ── Schema ────────────────────────────────────────────────────────────────────
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# ── Ingestion limits ──────────────────────────────────────────────────────────
+limits_config:
+  # Global rate limits
+  ingestion_rate_mb: 16
+  ingestion_burst_size_mb: 32
+  per_stream_rate_limit: 8MB
+  per_stream_rate_limit_burst: 16MB
+
+  # Cardinality
+  max_label_names_per_series: 30
+  max_label_value_length: 2048
+
+  # Query limits
+  max_query_lookback: 0               # no lookback limit
+  max_query_length: 7776h             # 90 days
+  max_query_parallelism: 16
+  max_entries_limit_per_query: 50000
+
+  # Retention
+  retention_period: 744h              # 31 days
+
+# ── Query range ───────────────────────────────────────────────────────────────
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
+
+# ── Ruler (alert rules from Loki) ─────────────────────────────────────────────
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /loki/rules
+  rule_path: /loki/rules-temp
+  alertmanager_url: http://alertmanager:9093
+  ring:
+    kvstore:
+      store: inmemory
+  enable_api: true
+
+# ── Compactor (retention enforcement) ────────────────────────────────────────
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  delete_request_store: filesystem
+
+# ── Analytics (disable telemetry) ────────────────────────────────────────────
+analytics:
+  reporting_enabled: false

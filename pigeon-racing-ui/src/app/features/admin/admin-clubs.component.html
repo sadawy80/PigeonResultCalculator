@@ -1,0 +1,44 @@
+<div class="pr-page-header flex justify-between items-center">
+  <div>
+    <h1 class="pr-page-header__title">All Clubs</h1>
+    <p class="pr-page-header__subtitle">{{ clubs().length }} clubs across all countries</p>
+  </div>
+</div>
+
+<div class="flex gap-4 mb-6">
+  <input class="pr-input" style="max-width:300px" placeholder="Search clubs..." [(ngModel)]="search">
+  <select class="pr-select" style="max-width:200px" [(ngModel)]="countryFilter">
+    <option value="">All Countries</option>
+    <option value="BE">Belgium</option>
+    <option value="NL">Netherlands</option>
+    <option value="GB">United Kingdom</option>
+  </select>
+</div>
+
+<div class="pr-card">
+  <div class="pr-table-wrapper">
+    <table class="pr-table">
+      <thead>
+        <tr><th>Club</th><th>Code</th><th>Country</th><th>Members</th><th>Subscription</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        @for (c of filteredClubs(); track c.id) {
+          <tr>
+            <td class="font-bold">{{ c.name }}</td>
+            <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 8px;border-radius:4px">{{ c.code }}</code></td>
+            <td>{{ c.country }}</td>
+            <td>{{ c.memberCount }}</td>
+            <td><span class="pr-badge pr-badge--info">{{ c.plan }}</span></td>
+            <td><span [class]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ c.isActive ? 'Active' : 'Suspended' }}</span></td>
+            <td>
+              <div class="flex gap-2">
+                <button class="pr-btn pr-btn--ghost pr-btn--sm">Edit</button>
+                <button class="pr-btn pr-btn--danger pr-btn--sm">Suspend</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

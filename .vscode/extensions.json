@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    // .NET / C#
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.vscode-dotnet-runtime",
+    // Angular / TypeScript
+    "angular.ng-template",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    // Docker
+    "ms-azuretools.vscode-docker",
+    // General DX
+    "editorconfig.editorconfig",
+    "mikestead.dotenv",
+    "usernamehw.errorlens",
+    "pkief.material-icon-theme"
+  ]
+}

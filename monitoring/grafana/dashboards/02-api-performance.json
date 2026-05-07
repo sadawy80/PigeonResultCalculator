@@ -1,0 +1,272 @@
+{
+  "uid": "api-performance",
+  "title": "API Performance",
+  "description": "HTTP request rates, latency distributions, error analysis, and per-route breakdown",
+  "tags": ["pigeon-racing", "api", "performance"],
+  "timezone": "browser",
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "time": {"from": "now-1h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "route",
+        "type": "query",
+        "label": "Route",
+        "datasource": {"uid":"prometheus"},
+        "definition": "label_values(http_requests_received_total{job=\"pigeon-api\"}, route)",
+        "query": "label_values(http_requests_received_total{job=\"pigeon-api\"}, route)",
+        "includeAll": true,
+        "multi": true,
+        "current": {"text":"All","value":"$__all"},
+        "refresh": 2
+      },
+      {
+        "name": "interval",
+        "type": "interval",
+        "label": "Interval",
+        "options": [{"text":"30s","value":"30s"},{"text":"1m","value":"1m"},{"text":"5m","value":"5m"}],
+        "current": {"text":"1m","value":"1m"}
+      }
+    ]
+  },
+  "panels": [
+
+    { "type": "row", "title": "Request Rate & Throughput", "gridPos": {"h":1,"w":24,"x":0,"y":0} },
+
+    {
+      "id": 1, "title": "Total Request Rate",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":0,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"sum(rate(http_requests_received_total{job=\"pigeon-api\"}[$interval]))","legendFormat":"req/s"}],
+      "fieldConfig": {"defaults":{"unit":"reqps","color":{"mode":"palette-classic"}}}
+    },
+
+    {
+      "id": 2, "title": "5xx Error Rate",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":4,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:http_error_rate5m","legendFormat":"5xx %"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"colorMode":"background"}
+    },
+
+    {
+      "id": 3, "title": "p50 Latency",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":8,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[$interval])) by (le))","legendFormat":"p50"}],
+      "fieldConfig": {"defaults":{"unit":"s","color":{"mode":"palette-classic"}}}
+    },
+
+    {
+      "id": 4, "title": "p95 Latency",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":12,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[$interval])) by (le))","legendFormat":"p95"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"colorMode":"background"}
+    },
+
+    {
+      "id": 5, "title": "p99 Latency",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":16,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[$interval])) by (le))","legendFormat":"p99"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":1},{"color":"red","value":2}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"colorMode":"background"}
+    },
+
+    {
+      "id": 6, "title": "Active SignalR Connections",
+      "type": "stat",
+      "gridPos": {"h":3,"w":4,"x":20,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon_signalr_connections_active{job=\"pigeon-api\"}","legendFormat":"connections"}],
+      "fieldConfig": {"defaults":{"unit":"short","color":{"mode":"palette-classic"}}}
+    },
+
+    {
+      "id": 10, "title": "Request Rate by Route",
+      "type": "timeseries",
+      "gridPos": {"h":8,"w":12,"x":0,"y":4},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"topk(10, sum(rate(http_requests_received_total{job=\"pigeon-api\",route=~\"$route\"}[$interval])) by (route))","legendFormat":"{{route}}"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"reqps","custom":{"lineWidth":2,"fillOpacity":5}}},
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["mean","max"]},"tooltip":{"mode":"multi"}}
+    },
+
+    {
+      "id": 11, "title": "Request Rate by Status Code",
+      "type": "timeseries",
+      "gridPos": {"h":8,"w":12,"x":12,"y":4},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(http_requests_received_total{job=\"pigeon-api\"}[$interval])) by (code)","legendFormat":"HTTP {{code}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"reqps","custom":{"lineWidth":2,"fillOpacity":10}},
+        "overrides": [
+          {"matcher":{"id":"byRegexp","options":"5.."},"properties":[{"id":"color","value":{"fixedColor":"dark-red","mode":"fixed"}}]},
+          {"matcher":{"id":"byRegexp","options":"4.."},"properties":[{"id":"color","value":{"fixedColor":"orange","mode":"fixed"}}]},
+          {"matcher":{"id":"byRegexp","options":"2.."},"properties":[{"id":"color","value":{"fixedColor":"green","mode":"fixed"}}]},
+          {"matcher":{"id":"byRegexp","options":"3.."},"properties":[{"id":"color","value":{"fixedColor":"blue","mode":"fixed"}}]}
+        ]
+      },
+      "options": {"legend":{"displayMode":"table","placement":"right","calcs":["sum"]},"tooltip":{"mode":"multi"}}
+    },
+
+    { "type": "row", "title": "Latency Distribution", "gridPos": {"h":1,"w":24,"x":0,"y":12} },
+
+    {
+      "id": 20, "title": "Latency Heatmap",
+      "type": "heatmap",
+      "gridPos": {"h":8,"w":24,"x":0,"y":13},
+      "targets": [
+        {
+          "datasource": {"uid":"prometheus"},
+          "expr": "sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\",route=~\"$route\"}[$interval])) by (le)",
+          "legendFormat": "{{le}}",
+          "format": "heatmap"
+        }
+      ],
+      "fieldConfig": {"defaults":{"color":{"mode":"scheme","scheme":"Spectral"}}},
+      "options": {
+        "calculate": false,
+        "yAxis": {"unit":"s","decimals":3},
+        "color": {"mode":"scheme","scheme":"Spectral","steps":64},
+        "tooltip": {"show":true,"yHistogram":true},
+        "legend": {"show":true}
+      }
+    },
+
+    { "type": "row", "title": "Per-Route Analysis", "gridPos": {"h":1,"w":24,"x":0,"y":21} },
+
+    {
+      "id": 30, "title": "Top Routes by p99 Latency",
+      "type": "table",
+      "gridPos": {"h":8,"w":12,"x":0,"y":22},
+      "targets": [
+        {
+          "datasource": {"uid":"prometheus"},
+          "expr": "topk(15, histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[$interval])) by (le, route)))",
+          "legendFormat": "{{route}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"s"},
+        "overrides": [
+          {"matcher":{"id":"byName","options":"Value"},"properties":[
+            {"id":"displayName","value":"p99 Latency"},
+            {"id":"custom.width","value":120},
+            {"id":"thresholds","value":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}]}},
+            {"id":"custom.displayMode","value":"color-background"}
+          ]},
+          {"matcher":{"id":"byName","options":"route"},"properties":[{"id":"custom.width","value":300}]}
+        ]
+      },
+      "options": {"sortBy":[{"desc":true,"displayName":"p99 Latency"}]}
+    },
+
+    {
+      "id": 31, "title": "Top Routes by Error Count",
+      "type": "table",
+      "gridPos": {"h":8,"w":12,"x":12,"y":22},
+      "targets": [
+        {
+          "datasource": {"uid":"prometheus"},
+          "expr": "topk(15, sum(rate(http_requests_received_total{job=\"pigeon-api\",code=~\"5..\"}[$interval])) by (route, code)) * 300",
+          "legendFormat": "{{route}} ({{code}})",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"short"},
+        "overrides": [
+          {"matcher":{"id":"byName","options":"Value"},"properties":[
+            {"id":"displayName","value":"Errors/5min"},
+            {"id":"thresholds","value":{"mode":"absolute","steps":[{"color":"green","value":0},{"color":"red","value":1}]}},
+            {"id":"custom.displayMode","value":"color-background"}
+          ]}
+        ]
+      },
+      "options": {"sortBy":[{"desc":true,"displayName":"Errors/5min"}]}
+    },
+
+    { "type": "row", "title": ".NET Runtime", "gridPos": {"h":1,"w":24,"x":0,"y":30} },
+
+    {
+      "id": 40, "title": "GC Heap Size",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":8,"x":0,"y":31},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"dotnet_gc_heap_size_bytes{job=\"pigeon-api\"}","legendFormat":"Gen {{generation}}"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"bytes","custom":{"lineWidth":2,"fillOpacity":10}}},
+      "options": {"legend":{"displayMode":"table","placement":"bottom","calcs":["lastNotNull"]}}
+    },
+
+    {
+      "id": 41, "title": "GC Pause Duration",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":8,"x":8,"y":31},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"rate(dotnet_gc_duration_seconds_total{job=\"pigeon-api\"}[5m])","legendFormat":"GC pause rate"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"s","custom":{"lineWidth":2,"fillOpacity":5}}}
+    },
+
+    {
+      "id": 42, "title": "Thread Pool Queue Length",
+      "type": "timeseries",
+      "gridPos": {"h":6,"w":8,"x":16,"y":31},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"dotnet_threadpool_queue_length{job=\"pigeon-api\"}","legendFormat":"queue length"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":100},{"color":"red","value":500}]},
+          "custom": {"lineWidth":2}
+        }
+      }
+    },
+
+    { "type": "row", "title": "Logs — API Errors", "gridPos": {"h":1,"w":24,"x":0,"y":37} },
+
+    {
+      "id": 50, "title": "API Error Logs",
+      "type": "logs",
+      "gridPos": {"h":8,"w":24,"x":0,"y":38},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=\"pigeon-api\"} | json | level=\"error\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {"dedupStrategy":"signature","enableLogDetails":true,"showLabels":false,"showTime":true,"sortOrder":"Descending","wrapLogMessage":false}
+    }
+
+  ]
+}

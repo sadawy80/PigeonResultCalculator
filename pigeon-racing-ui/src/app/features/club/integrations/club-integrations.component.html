@@ -1,0 +1,320 @@
+<div class="pr-page-header flex justify-between items-center">
+  <div>
+    <h1 class="pr-page-header__title">🔗 {{ 'integ.title' | translate }}</h1>
+    <p class="pr-page-header__subtitle">{{ 'integ.subtitle' | translate }}</p>
+  </div>
+  <div class="flex gap-3">
+    <div class="int-stat-pill">
+      <span class="int-stat-pill__val">{{ pending().length }}</span>
+      <span class="int-stat-pill__label">{{ 'integ.pending' | translate }}</span>
+    </div>
+    <div class="int-stat-pill int-stat-pill--green">
+      <span class="int-stat-pill__val">{{ approved().length }}</span>
+      <span class="int-stat-pill__label">{{ 'integ.active' | translate }}</span>
+    </div>
+  </div>
+</div>
+
+@if (allLinks().length === 0 && !loading()) {
+  <div class="int-explainer pr-card mb-6">
+    <div class="int-explainer__icon">🔗</div>
+    <div>
+      <h3>{{ 'integ.howTitle' | translate }}</h3>
+      <p>{{ 'integ.howDesc' | translate }}</p>
+      <div class="int-steps">
+        <div class="int-step"><span class="int-step__num">1</span>{{ 'integ.step1' | translate }}</div>
+        <div class="int-step"><span class="int-step__num">2</span>{{ 'integ.step2' | translate }}</div>
+        <div class="int-step"><span class="int-step__num">3</span>{{ 'integ.step3' | translate }}</div>
+        <div class="int-step"><span class="int-step__num">4</span>{{ 'integ.step4' | translate }}</div>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="int-tabs mb-6">
+  @for (tab of tabs; track tab.key) {
+    <button
+      class="int-tab"
+      [class.int-tab--active]="activeTab() === tab.key"
+      (click)="activeTab.set(tab.key)">
+      {{ tab.icon }} {{ tab.labelKey | translate }}
+      @if (tabCount(tab.key) > 0) {
+        <span class="int-tab__badge" [class.int-tab__badge--red]="tab.key === 'pending'">
+          {{ tabCount(tab.key) }}
+        </span>
+      }
+    </button>
+  }
+</div>
+
+@if (loading()) {
+  <div class="pr-empty"><div class="pr-spinner" style="margin:0 auto"></div></div>
+}
+
+<!-- PENDING TAB -->
+@if (activeTab() === 'pending' && !loading()) {
+  @if (pending().length === 0) {
+    <div class="pr-empty">
+      <div class="pr-empty__icon">📭</div>
+      <div class="pr-empty__title">{{ 'integ.noPending' | translate }}</div>
+      <p class="pr-empty__desc">{{ 'integ.noPendingDesc' | translate }}</p>
+    </div>
+  } @else {
+    <div class="int-request-list">
+      @for (link of pending(); track link.id) {
+        <div class="int-request-card pr-card" [class.int-request-card--expanded]="expandedId() === link.id">
+
+          <div class="int-request-card__header" (click)="toggleExpand(link.id)">
+            <div class="int-platform-badge">
+              <span class="int-platform-badge__icon">🏠</span>
+              <span class="int-platform-badge__name">{{ link.externalPlatformName }}</span>
+            </div>
+            <div class="flex-1 ml-4">
+              <div class="font-bold text-base">{{ link.externalLoftName }}</div>
+              <div class="text-muted text-sm">
+                {{ 'integ.externalUserId' | translate }}: <code class="ring-code">{{ link.externalUserId }}</code>
+                @if (link.fancierName && link.fancierName !== 'Unknown') {
+                  &bull; {{ 'integ.matchedAccount' | translate }}: <strong>{{ link.fancierName }}</strong>
+                } @else {
+                  &bull; <span class="text-muted">{{ 'integ.noMatchedAccount' | translate }}</span>
+                }
+              </div>
+            </div>
+            <div class="text-muted text-sm">{{ link.requestedAt | date:'dd MMM yyyy HH:mm' }}</div>
+            <span class="pr-badge pr-badge--warning ml-3">{{ 'integ.pending' | translate }}</span>
+            <span class="ml-3 text-muted">{{ expandedId() === link.id ? '▲' : '▼' }}</span>
+          </div>
+
+          @if (expandedId() === link.id) {
+            <div class="int-request-card__body">
+              <div class="int-detail-grid">
+                <div class="int-detail-item">
+                  <span class="int-detail-item__label">{{ 'integ.linkToken' | translate }}</span>
+                  <code class="ring-code text-sm">{{ link.linkToken }}</code>
+                  <button class="pr-btn pr-btn--ghost pr-btn--sm ml-2" (click)="copyToken(link.linkToken)">
+                    📋 {{ 'integ.copy' | translate }}
+                  </button>
+                </div>
+                <div class="int-detail-item">
+                  <span class="int-detail-item__label">{{ 'integ.externalLoftId' | translate }}</span>
+                  <span>{{ link.externalLoftId }}</span>
+                </div>
+                <div class="int-detail-item">
+                  <span class="int-detail-item__label">{{ 'integ.requested' | translate }}</span>
+                  <span>{{ link.requestedAt | date:'dd MMM yyyy, HH:mm' }}</span>
+                </div>
+              </div>
+
+              <div class="int-info-box mb-4">
+                <strong>{{ 'integ.approvingMeansTitle' | translate }}:</strong>
+                {{ i18n.t('integ.approvingMeansDesc', { platform: link.externalPlatformName }) }}
+              </div>
+
+              @if (rejectingId() === link.id) {
+                <div class="int-reject-form">
+                  <label class="pr-label">{{ 'integ.rejectReasonLabel' | translate }}</label>
+                  <input class="pr-input mb-3" [(ngModel)]="rejectReason"
+                         [placeholder]="'integ.rejectReasonPlaceholder' | translate">
+                  <div class="flex gap-3">
+                    <button class="pr-btn pr-btn--danger" (click)="confirmReject(link.id)">
+                      {{ 'integ.confirmReject' | translate }}
+                    </button>
+                    <button class="pr-btn pr-btn--ghost" (click)="rejectingId.set(null)">
+                      {{ 'common.cancel' | translate }}
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="flex gap-3">
+                  <button class="pr-btn pr-btn--primary" [disabled]="actioning()" (click)="approve(link.id)">
+                    @if (actioning()) { <span class="pr-spinner" style="width:12px;height:12px"></span> }
+                    ✓ {{ 'integ.approveAccess' | translate }}
+                  </button>
+                  <button class="pr-btn pr-btn--danger pr-btn--outline" (click)="startReject(link.id)">
+                    ✕ {{ 'integ.reject' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+}
+
+<!-- ACTIVE TAB -->
+@if (activeTab() === 'active' && !loading()) {
+  @if (approved().length === 0) {
+    <div class="pr-empty">
+      <div class="pr-empty__icon">🔗</div>
+      <div class="pr-empty__title">{{ 'integ.noActive' | translate }}</div>
+      <p class="pr-empty__desc">{{ 'integ.noActiveDesc' | translate }}</p>
+    </div>
+  } @else {
+    <div class="pr-card">
+      <table class="pr-table">
+        <thead>
+          <tr>
+            <th>{{ 'integ.platform' | translate }}</th>
+            <th>{{ 'integ.loftName' | translate }}</th>
+            <th>{{ 'integ.fancier' | translate }}</th>
+            <th>{{ 'integ.approvedCol' | translate }}</th>
+            <th>{{ 'integ.lastAccess' | translate }}</th>
+            <th>{{ 'integ.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (link of approved(); track link.id) {
+            <tr>
+              <td>
+                <span class="int-platform-badge">
+                  <span class="int-platform-badge__icon">🏠</span>
+                  {{ link.externalPlatformName }}
+                </span>
+              </td>
+              <td class="font-bold">{{ link.externalLoftName }}</td>
+              <td>{{ link.fancierName }}</td>
+              <td class="text-muted text-sm">{{ link.approvedAt | date:'dd MMM yyyy' }}</td>
+              <td class="text-muted text-sm">
+                {{ link.lastDataAccessAt
+                   ? (link.lastDataAccessAt | date:'dd MMM HH:mm')
+                   : ('integ.never' | translate) }}
+              </td>
+              <td>
+                <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="previewData(link)">
+                  👁 {{ 'integ.previewData' | translate }}
+                </button>
+                <button class="pr-btn pr-btn--danger pr-btn--sm ml-2" (click)="revoke(link.id)">
+                  {{ 'integ.revoke' | translate }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+<!-- HISTORY TAB -->
+@if (activeTab() === 'history' && !loading()) {
+  <div class="pr-card">
+    @if (rejected().length === 0 && revoked().length === 0) {
+      <div class="pr-empty">
+        <div class="pr-empty__icon">📋</div>
+        <div class="pr-empty__title">{{ 'integ.noHistory' | translate }}</div>
+      </div>
+    } @else {
+      <table class="pr-table">
+        <thead>
+          <tr>
+            <th>{{ 'integ.platform' | translate }}</th>
+            <th>{{ 'integ.loftName' | translate }}</th>
+            <th>{{ 'common.status' | translate }}</th>
+            <th>{{ 'integ.reviewedBy' | translate }}</th>
+            <th>{{ 'common.date' | translate }}</th>
+            <th>{{ 'integ.reason' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (link of rejectedAndRevoked(); track link.id) {
+            <tr>
+              <td>{{ link.externalPlatformName }}</td>
+              <td>{{ link.externalLoftName }}</td>
+              <td>
+                <span [class]="'pr-badge ' + statusBadge(link.status)">
+                  {{ link.statusName }}
+                </span>
+              </td>
+              <td class="text-muted text-sm">{{ link.reviewedByName ?? '—' }}</td>
+              <td class="text-muted text-sm">
+                {{ (link.rejectedAt ?? link.revokedAt) | date:'dd MMM yyyy' }}
+              </td>
+              <td class="text-muted text-sm">{{ link.rejectionReason ?? link.revokedReason ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<!-- DATA PREVIEW PANEL -->
+@if (previewLink()) {
+  <div class="int-preview-overlay" (click)="closePreview()">
+    <div class="int-preview-panel" (click)="$event.stopPropagation()">
+      <div class="int-preview-panel__header">
+        <div>
+          <h3>{{ 'integ.previewTitle' | translate }} — {{ previewLink()!.externalLoftName }}</h3>
+          <div class="text-muted text-sm">
+            {{ i18n.t('integ.previewSeenBy', { platform: previewLink()!.externalPlatformName }) }}
+          </div>
+        </div>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="closePreview()">✕</button>
+      </div>
+
+      @if (previewLoading()) {
+        <div class="pr-empty"><div class="pr-spinner" style="margin:0 auto"></div></div>
+      } @else if (previewSummary()) {
+        <div class="int-preview-body">
+          <div class="int-kpi-grid mb-6">
+            <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.totalRaceResults }}</span><span class="int-kpi__label">{{ 'integ.raceResults' | translate }}</span></div>
+            <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.totalAcePigeonResults }}</span><span class="int-kpi__label">{{ 'integ.acePigeon' | translate }}</span></div>
+            <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.totalSuperAcePigeonResults }}</span><span class="int-kpi__label">{{ 'integ.superAce' | translate }}</span></div>
+            <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.totalBestLoftResults }}</span><span class="int-kpi__label">{{ 'integ.bestLoft' | translate }}</span></div>
+            <div class="int-kpi"><span class="int-kpi__val">#{{ previewSummary()!.bestEverClubRank || '—' }}</span><span class="int-kpi__label">{{ 'integ.bestRank' | translate }}</span></div>
+            <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.bestEverVelocityMperMin | number:'1.0-0' }}</span><span class="int-kpi__label">{{ 'integ.bestMpm' | translate }}</span></div>
+          </div>
+
+          @if (previewSummary()!.achievements.length > 0) {
+            <h4 class="mb-3">{{ 'integ.achievements' | translate }}</h4>
+            <div class="int-achievement-grid mb-4">
+              @for (ach of previewSummary()!.achievements; track ach.programmeName + ach.category) {
+                <div class="int-achievement" [class]="'int-achievement--' + ach.category.toLowerCase()">
+                  <span class="int-achievement__icon">{{ achIcon(ach.category) }}</span>
+                  <div class="int-achievement__desc">{{ ach.description }}</div>
+                  <div class="int-achievement__score">{{ ach.score | number:'1.2-2' }} pts</div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (previewResults().length > 0) {
+            <h4 class="mb-3">{{ 'integ.recentRaces' | translate }}</h4>
+            <table class="pr-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{{ 'result.ring' | translate }}</th>
+                  <th>{{ 'result.pigeon' | translate }}</th>
+                  <th>{{ 'result.race' | translate }}</th>
+                  <th>{{ 'result.distance' | translate }}</th>
+                  <th>{{ 'result.velocity' | translate }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of previewResults().slice(0, 10); track r.ringNumber + r.raceName) {
+                  <tr>
+                    <td><span [class]="'pr-rank ' + rankClass(r.clubRank)">{{ r.clubRank ?? '—' }}</span></td>
+                    <td><code class="ring-code">{{ r.ringNumber }}</code></td>
+                    <td>{{ r.pigeonName ?? '—' }}</td>
+                    <td class="text-sm">{{ r.raceName }}</td>
+                    <td class="text-sm">{{ r.distanceKm | number:'1.0-0' }} km</td>
+                    <td class="font-bold">{{ r.velocityMperMin | number:'1.4-4' }}</td>
+                    <td class="flex gap-1">
+                      @if (r.isAcePigeon) { <span class="int-badge int-badge--ace">🕊️ Ace</span> }
+                      @if (r.isSuperAcePigeon) { <span class="int-badge int-badge--super">⭐ Super</span> }
+                      @if (r.isBestLoft) { <span class="int-badge int-badge--loft">🏠 Loft</span> }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

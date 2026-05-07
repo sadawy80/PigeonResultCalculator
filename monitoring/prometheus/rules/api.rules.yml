@@ -1,0 +1,132 @@
+groups:
+  - name: api.availability
+    interval: 30s
+    rules:
+
+      # ── API Down ──────────────────────────────────────────────────────────────
+      - alert: APIDown
+        expr: up{job="pigeon-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "PigeonRacing API is down"
+          description: "The API has been unreachable for more than 1 minute. Last seen: {{ $value }}"
+          runbook: "https://wiki.pigeonracing.com/runbooks/api-down"
+          dashboard: "http://grafana:3000/d/api-performance"
+
+      # ── High Error Rate ───────────────────────────────────────────────────────
+      - alert: HighHTTPErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_received_total{job="pigeon-api", code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_received_total{job="pigeon-api"}[5m]))
+          ) * 100 > 1
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "API error rate above 1%"
+          description: "HTTP 5xx rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes."
+
+      # ── Elevated Error Rate ───────────────────────────────────────────────────
+      - alert: ElevatedHTTPErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_received_total{job="pigeon-api", code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_received_total{job="pigeon-api"}[5m]))
+          ) * 100 > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "API error rate elevated (>0.5%)"
+          description: "HTTP 5xx rate is {{ $value | printf \"%.2f\" }}% — monitor closely."
+
+      # ── High Latency p99 ──────────────────────────────────────────────────────
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{job="pigeon-api"}[5m])) by (le, route)
+          ) > 2
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "API p99 latency above 2 seconds"
+          description: "Route {{ $labels.route }} p99 latency is {{ $value | printf \"%.2f\" }}s."
+
+      # ── High Latency p95 ──────────────────────────────────────────────────────
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="pigeon-api"}[5m])) by (le, route)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "API p95 latency above 1 second"
+          description: "Route {{ $labels.route }} p95 latency is {{ $value | printf \"%.2f\" }}s."
+
+      # ── Auth Failure Spike ────────────────────────────────────────────────────
+      - alert: AuthFailureSpike
+        expr: |
+          rate(pigeon_auth_failures_total{job="pigeon-api"}[5m]) > 5
+        for: 3m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Auth failure rate spike"
+          description: "More than 5 auth failures/second over 5 minutes. Possible brute-force attack."
+
+  - name: api.business
+    interval: 60s
+    rules:
+
+      # ── ETS Parse Failure ─────────────────────────────────────────────────────
+      - alert: ETSParseFailureRate
+        expr: |
+          (
+            sum(rate(pigeon_ets_parse_failures_total{job="pigeon-api"}[15m]))
+            /
+            sum(rate(pigeon_ets_parse_total{job="pigeon-api"}[15m]))
+          ) * 100 > 10
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "ETS file parse failure rate above 10%"
+          description: "{{ $value | printf \"%.1f\" }}% of ETS file imports are failing."
+
+      # ── Programme Calculation Failure ────────────────────────────────────────
+      - alert: ProgrammeCalculationFailed
+        expr: |
+          increase(pigeon_programme_calculation_errors_total{job="pigeon-api"}[30m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Programme calculation error"
+          description: "A programme result calculation failed in the last 30 minutes."
+
+      # ── SignalR Connection Spike ──────────────────────────────────────────────
+      - alert: SignalRConnectionSpike
+        expr: pigeon_signalr_connections_active{job="pigeon-api"} > 500
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Unusually high SignalR connection count"
+          description: "{{ $value }} active SignalR connections. Check for connection leaks."

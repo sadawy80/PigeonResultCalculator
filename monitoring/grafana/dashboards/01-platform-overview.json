@@ -1,0 +1,294 @@
+{
+  "uid": "platform-overview",
+  "title": "Platform Overview",
+  "description": "Top-level health, SLO indicators, and KPIs for the PigeonRacing platform",
+  "tags": ["pigeon-racing", "overview", "slo"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "interval",
+        "type": "interval",
+        "label": "Interval",
+        "options": [{"text":"1m","value":"1m"},{"text":"5m","value":"5m"},{"text":"15m","value":"15m"},{"text":"1h","value":"1h"}],
+        "current": {"text":"5m","value":"5m"},
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+
+    { "type": "row", "title": "🟢 Service Health", "gridPos": {"h":1,"w":24,"x":0,"y":0} },
+
+    {
+      "id": 1, "title": "API Status",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":0,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"up{job=\"pigeon-api\"}","legendFormat":"API"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"type":"value","options":{"0":{"text":"DOWN","color":"red"},"1":{"text":"UP","color":"green"}}}],
+          "thresholds": {"mode":"absolute","steps":[{"color":"red","value":0},{"color":"green","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background","orientation":"auto"}
+    },
+
+    {
+      "id": 2, "title": "SQL Server",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":4,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"up{job=\"sqlserver-exporter\"}","legendFormat":"SQL"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"type":"value","options":{"0":{"text":"DOWN","color":"red"},"1":{"text":"UP","color":"green"}}}],
+          "thresholds": {"mode":"absolute","steps":[{"color":"red","value":0},{"color":"green","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background","orientation":"auto"}
+    },
+
+    {
+      "id": 3, "title": "Redis",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":8,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"up{job=\"redis-exporter\"}","legendFormat":"Redis"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"type":"value","options":{"0":{"text":"DOWN","color":"red"},"1":{"text":"UP","color":"green"}}}],
+          "thresholds": {"mode":"absolute","steps":[{"color":"red","value":0},{"color":"green","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background","orientation":"auto"}
+    },
+
+    {
+      "id": 4, "title": "Promtail",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":12,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"up{job=\"loki\"}","legendFormat":"Loki"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"type":"value","options":{"0":{"text":"DOWN","color":"red"},"1":{"text":"UP","color":"green"}}}],
+          "thresholds": {"mode":"absolute","steps":[{"color":"red","value":0},{"color":"green","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background","orientation":"auto"}
+    },
+
+    {
+      "id": 5, "title": "Firing Alerts",
+      "type": "stat",
+      "gridPos": {"h":4,"w":8,"x":16,"y":1},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"count(ALERTS{alertstate=\"firing\"}) or vector(0)","legendFormat":"Firing"}],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":1},{"color":"red","value":3}]},
+          "color": {"mode":"thresholds"},
+          "unit": "short"
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"none","textMode":"auto","colorMode":"background","orientation":"auto"}
+    },
+
+    { "type": "row", "title": "📊 SLO Indicators", "gridPos": {"h":1,"w":24,"x":0,"y":5} },
+
+    {
+      "id": 10, "title": "Request Rate (req/s)",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":0,"y":6},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"sum(rate(http_requests_received_total{job=\"pigeon-api\"}[5m]))","legendFormat":"req/s"}],
+      "fieldConfig": {"defaults":{"unit":"reqps","color":{"mode":"palette-classic"},"thresholds":{"mode":"absolute","steps":[{"color":"green","value":0}]}}}
+    },
+
+    {
+      "id": 11, "title": "Error Rate",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":4,"y":6},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:http_error_rate5m","legendFormat":"error %"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"area","colorMode":"background"}
+    },
+
+    {
+      "id": 12, "title": "p99 Latency",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":8,"y":6},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[5m])) by (le))","legendFormat":"p99"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":1},{"color":"red","value":2}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"area","colorMode":"background"}
+    },
+
+    {
+      "id": 13, "title": "p95 Latency",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":12,"y":6},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[5m])) by (le))","legendFormat":"p95"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"area","colorMode":"background"}
+    },
+
+    {
+      "id": 14, "title": "Redis Hit Rate",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":16,"y":6},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:redis_hit_rate5m","legendFormat":"hit %"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {"mode":"absolute","steps":[{"color":"red","value":0},{"color":"yellow","value":50},{"color":"green","value":80}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"area","colorMode":"background"}
+    },
+
+    {
+      "id": 15, "title": "Host CPU",
+      "type": "stat",
+      "gridPos": {"h":4,"w":4,"x":20,"y":6},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:host_cpu_utilisation","legendFormat":"CPU %"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":75},{"color":"red","value":90}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"graphMode":"area","colorMode":"background"}
+    },
+
+    { "type": "row", "title": "📈 Traffic Overview", "gridPos": {"h":1,"w":24,"x":0,"y":10} },
+
+    {
+      "id": 20, "title": "HTTP Request Rate by Status",
+      "type": "timeseries",
+      "gridPos": {"h":8,"w":12,"x":0,"y":11},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(http_requests_received_total{job=\"pigeon-api\"}[5m])) by (code)","legendFormat":"{{code}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"reqps","custom":{"lineWidth":2,"fillOpacity":10}},
+        "overrides": [
+          {"matcher":{"id":"byRegexp","options":"5.."},"properties":[{"id":"color","value":{"fixedColor":"red","mode":"fixed"}}]},
+          {"matcher":{"id":"byRegexp","options":"4.."},"properties":[{"id":"color","value":{"fixedColor":"orange","mode":"fixed"}}]},
+          {"matcher":{"id":"byRegexp","options":"2.."},"properties":[{"id":"color","value":{"fixedColor":"green","mode":"fixed"}}]}
+        ]
+      },
+      "options": {"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"tooltip":{"mode":"multi"}}
+    },
+
+    {
+      "id": 21, "title": "Request Latency Percentiles",
+      "type": "timeseries",
+      "gridPos": {"h":8,"w":12,"x":12,"y":11},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[$interval])) by (le))","legendFormat":"p50"},
+        {"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[$interval])) by (le))","legendFormat":"p95"},
+        {"datasource":{"uid":"prometheus"},"expr":"histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pigeon-api\"}[$interval])) by (le))","legendFormat":"p99"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit":"s","custom":{"lineWidth":2,"fillOpacity":5}},
+        "overrides": [
+          {"matcher":{"id":"byName","options":"p99"},"properties":[{"id":"color","value":{"fixedColor":"red","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"p95"},"properties":[{"id":"color","value":{"fixedColor":"orange","mode":"fixed"}}]},
+          {"matcher":{"id":"byName","options":"p50"},"properties":[{"id":"color","value":{"fixedColor":"green","mode":"fixed"}}]}
+        ]
+      },
+      "options": {"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"tooltip":{"mode":"multi"}}
+    },
+
+    { "type": "row", "title": "🖥️ Infrastructure Summary", "gridPos": {"h":1,"w":24,"x":0,"y":19} },
+
+    {
+      "id": 30, "title": "Host Memory Usage",
+      "type": "gauge",
+      "gridPos": {"h":6,"w":6,"x":0,"y":20},
+      "targets": [{"datasource":{"uid":"prometheus"},"expr":"pigeon:host_memory_utilisation","legendFormat":"Memory"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":75},{"color":"red","value":90}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"showThresholdLabels":false,"showThresholdMarkers":true}
+    },
+
+    {
+      "id": 31, "title": "Container CPU Usage",
+      "type": "bargauge",
+      "gridPos": {"h":6,"w":10,"x":6,"y":20},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(rate(container_cpu_usage_seconds_total{name=~\"pigeon-.*\"}[5m])) by (name) * 100","legendFormat":"{{name}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":60},{"color":"red","value":80}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"orientation":"horizontal","displayMode":"lcd","showUnfilled":true}
+    },
+
+    {
+      "id": 32, "title": "Container Memory Usage",
+      "type": "bargauge",
+      "gridPos": {"h":6,"w":8,"x":16,"y":20},
+      "targets": [
+        {"datasource":{"uid":"prometheus"},"expr":"sum(container_memory_working_set_bytes{name=~\"pigeon-.*\"}) by (name)","legendFormat":"{{name}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {"mode":"absolute","steps":[{"color":"green","value":0},{"color":"yellow","value":500000000},{"color":"red","value":800000000}]},
+          "color": {"mode":"thresholds"}
+        }
+      },
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]},"orientation":"horizontal","displayMode":"lcd","showUnfilled":true}
+    },
+
+    { "type": "row", "title": "📋 Recent Errors (Loki)", "gridPos": {"h":1,"w":24,"x":0,"y":26} },
+
+    {
+      "id": 40, "title": "Recent Errors & Warnings",
+      "type": "logs",
+      "gridPos": {"h":8,"w":24,"x":0,"y":27},
+      "targets": [
+        {
+          "datasource": {"uid":"loki"},
+          "expr": "{service=\"pigeon-api\"} |= `` | json | level=~\"error|warning\" | line_format \"[{{.level}}] {{.message}}\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {"dedupStrategy":"none","enableLogDetails":true,"prettifyLogMessage":false,"showLabels":false,"showTime":true,"sortOrder":"Descending","wrapLogMessage":true}
+    }
+
+  ]
+}

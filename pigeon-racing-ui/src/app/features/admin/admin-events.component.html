@@ -1,0 +1,41 @@
+<div class="pr-page-header">
+  <h1 class="pr-page-header__title">Event Log</h1>
+  <p class="pr-page-header__subtitle">Immutable audit trail of all platform domain events</p>
+</div>
+
+<div class="flex gap-4 mb-6">
+  <input class="pr-input" style="max-width:300px" placeholder="Search events..." [(ngModel)]="search">
+  <select class="pr-select" style="max-width:200px" [(ngModel)]="typeFilter">
+    <option value="">All Types</option>
+    <option value="RaceCreated">Race Created</option>
+    <option value="ResultPublished">Result Published</option>
+    <option value="UserInvited">User Invited</option>
+    <option value="SubscriptionChanged">Subscription Changed</option>
+  </select>
+</div>
+
+<div class="pr-card">
+  <div class="pr-table-wrapper">
+    <table class="pr-table">
+      <thead>
+        <tr><th>Event</th><th>Aggregate</th><th>Entity ID</th><th>Triggered By</th><th>Timestamp</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        @for (ev of filteredEvents(); track ev.id) {
+          <tr>
+            <td><code class="event-type">{{ ev.eventType }}</code></td>
+            <td class="text-muted text-sm">{{ ev.aggregateType }}</td>
+            <td class="text-muted text-sm" style="font-family:monospace;font-size:0.75rem">{{ ev.aggregateId }}</td>
+            <td class="text-muted text-sm">{{ ev.triggeredBy ?? 'System' }}</td>
+            <td class="text-muted text-sm">{{ ev.createdAt | date:'dd MMM HH:mm:ss' }}</td>
+            <td>
+              <span [class]="ev.isProcessed ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--warning'">
+                {{ ev.isProcessed ? 'Processed' : 'Pending' }}
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

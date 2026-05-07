@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE / OS
+.vs
+.vscode
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Build outputs — .NET
+**/bin/
+**/obj/
+**/publish/
+
+# Build outputs — Node
+**/node_modules/
+**/dist/
+**/.angular/
+
+# Test results
+**/TestResults/
+**/coverage/
+
+# Logs
+**/*.log
+**/logs/
+
+# Docker
+docker-compose.override.yml
+**/.dockerignore
+**/Dockerfile
+
+# Secrets (never send to build)
+**/*.pfx
+**/*.p12
+**/*.key
+.env
+.env.*
+!.env.example
+
+# Documentation (save context space)
+docs/
+*.md
+!README.md
+
+# Monitoring config (not needed in app images)
+monitoring/
+
+# Angular source (not needed in API image)
+pigeon-racing-ui/
+
+# Temporary files
+**/tmp/
+**/.tmp/

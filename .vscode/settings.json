@@ -1,0 +1,37 @@
+{
+  // ── TypeScript / Angular ─────────────────────────────────────────────────────
+  "typescript.tsdk": "pigeon-racing-ui/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "editor.formatOnSave": true,
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[scss]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  // ── C# ───────────────────────────────────────────────────────────────────────
+  "[csharp]": { "editor.defaultFormatter": "ms-dotnettools.csharp" },
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.enableEditorConfigSupport": true,
+
+  // ── File explorer — hide build artefacts ────────────────────────────────────
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/node_modules": true,
+    "**/.angular": true
+  },
+
+  // ── Docker ───────────────────────────────────────────────────────────────────
+  "docker.composeFiles": [
+    "${workspaceFolder}/docker-compose.yml",
+    "${workspaceFolder}/docker-compose.override.yml"
+  ],
+
+  // ── Debug ────────────────────────────────────────────────────────────────────
+  "debug.javascript.coerceToSafari": false,
+  "debug.openDebug": "openOnDebugBreak"
+}

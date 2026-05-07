@@ -1,0 +1,27 @@
+<button class="pr-btn pr-btn--outline pr-btn--sm print-btn" (click)="openPicker()">
+  🖨 Print / PDF
+</button>
+
+@if (pickerOpen()) {
+  <div class="print-sheet-overlay" (click)="closePicker()">
+    <div class="print-sheet" (click)="$event.stopPropagation()">
+      <div class="print-sheet__header">
+        <div>
+          <h3 style="margin:0">Choose a Template</h3>
+          <div style="font-size:0.8rem;color:var(--pr-text-muted)">
+            {{ categoryLabel() }} &bull; {{ templates().length }} templates available
+          </div>
+        </div>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="closePicker()">✕</button>
+      </div>
+
+      <app-template-browser
+        [initialCategory]="category"
+        [raceId]="raceId"
+        [programmeId]="programmeId"
+        [raceResultId]="raceResultId"
+        (templateSelected)="onTemplateSelected($event)">
+      </app-template-browser>
+    </div>
+  </div>
+}

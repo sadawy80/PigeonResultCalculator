@@ -1,0 +1,419 @@
+<!-- NAV ──────────────────────────────────────────────────────────── -->
+<nav class="nav" [class.nav--scrolled]="scrolled">
+  <div class="nav__inner">
+    <a class="nav__brand" routerLink="/">
+      <span class="nav__brand-bird">🕊️</span>
+      <span class="nav__brand-text">
+        Pigeon<span class="nav__brand-accent">Result</span>Calculator
+      </span>
+    </a>
+    <div class="nav__links">
+      <a href="#features">{{ 'landing.navFeatures' | translate }}</a>
+      <a href="#integrations">{{ 'landing.navIntegrations' | translate }}</a>
+      <a href="#season">{{ 'landing.navSeason' | translate }}</a>
+    </div>
+    <app-language-switcher />
+    <div class="nav__actions">
+      @if (isLoggedIn()) {
+        <a [routerLink]="dashboardRoute()" class="nav__cta">{{ 'landing.navDashboard' | translate }}</a>
+      } @else {
+        <a routerLink="/auth/login" class="nav__login">{{ 'landing.navLogin' | translate }}</a>
+        <a routerLink="/auth/register" class="nav__cta">{{ 'landing.navGetStarted' | translate }}</a>
+      }
+    </div>
+  </div>
+</nav>
+
+<!-- HERO ─────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero__grid"></div>
+  <div class="hero__orb hero__orb--1"></div>
+  <div class="hero__orb hero__orb--2"></div>
+  <div class="hero__orb hero__orb--3"></div>
+
+  <div class="hero__inner">
+    <div class="hero__content">
+      <div class="hero__eyebrow">
+        <span class="hero__eyebrow-dot"></span>
+        {{ 'landing.heroEyebrow' | translate }}
+      </div>
+
+      <h1 class="hero__title">
+        {{ 'landing.heroLine1' | translate }}<br>
+        {{ 'landing.heroLine2' | translate }}<br>
+        <em>{{ 'landing.heroLine3' | translate }}</em>
+      </h1>
+
+      <p class="hero__sub">{{ 'landing.heroSub' | translate }}</p>
+
+      <div class="hero__actions">
+        @if (isLoggedIn()) {
+          <a [routerLink]="dashboardRoute()" class="btn btn--primary">
+            {{ 'landing.navDashboard' | translate }}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        } @else {
+          <a routerLink="/auth/register" class="btn btn--primary">
+            {{ 'landing.heroStartFree' | translate }}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        }
+        <a href="#features" class="btn btn--ghost">
+          {{ 'landing.heroSeeIncluded' | translate }}
+        </a>
+      </div>
+
+      <div class="hero__trust">
+        @for (item of trustItems; track item) {
+          <span class="hero__trust-item">✓ {{ item | translate }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- Hero visual: race result preview -->
+    <div class="hero__visual">
+      <div class="hero__window">
+        <div class="hero__window-bar">
+          <span class="hero__dot"></span>
+          <span class="hero__dot"></span>
+          <span class="hero__dot"></span>
+          <span class="hero__window-title">500km Championship — Race Results</span>
+        </div>
+        <div class="hero__window-body">
+          <div class="hero__result hero__result--gold">
+            <span class="hero__rank">1</span>
+            <div class="hero__pigeon-info">
+              <span class="hero__ring">BE-2023-1042587</span>
+              <span class="hero__name">Blue Thunder · ♂ 2023</span>
+            </div>
+            <div class="hero__badges">
+              <span class="hero__badge hero__badge--ace">🕊️ Ace #1</span>
+              <span class="hero__badge hero__badge--super">⭐ Super Ace</span>
+            </div>
+            <span class="hero__vel">1623.4402 m/min</span>
+          </div>
+          <div class="hero__result hero__result--silver">
+            <span class="hero__rank">2</span>
+            <div class="hero__pigeon-info">
+              <span class="hero__ring">BE-2022-8871204</span>
+              <span class="hero__name">Storm Rider · ♀ 2022</span>
+            </div>
+            <div class="hero__badges">
+              <span class="hero__badge hero__badge--loft">🏠 Loft #1</span>
+            </div>
+            <span class="hero__vel">1618.7731 m/min</span>
+          </div>
+          <div class="hero__result">
+            <span class="hero__rank">3</span>
+            <div class="hero__pigeon-info">
+              <span class="hero__ring">NL-2023-5501033</span>
+              <span class="hero__name">Midnight Wing · ♂ 2023</span>
+            </div>
+            <div class="hero__badges"></div>
+            <span class="hero__vel">1611.2290 m/min</span>
+          </div>
+          <div class="hero__result">
+            <span class="hero__rank">4</span>
+            <div class="hero__pigeon-info">
+              <span class="hero__ring">BE-2021-4432107</span>
+              <span class="hero__name">Desert Wind · ♀ 2021</span>
+            </div>
+            <div class="hero__badges"></div>
+            <span class="hero__vel">1608.9914 m/min</span>
+          </div>
+          <div class="hero__result">
+            <span class="hero__rank">5</span>
+            <div class="hero__pigeon-info">
+              <span class="hero__ring">BE-2023-9920341</span>
+              <span class="hero__name">Golden Arrow · ♂ 2023</span>
+            </div>
+            <div class="hero__badges">
+              <span class="hero__badge hero__badge--ace">🕊️ Ace #3</span>
+            </div>
+            <span class="hero__vel">1605.1188 m/min</span>
+          </div>
+          <div class="hero__window-footer">
+            <span>287 entries · 22 Sep 2024 · Limoges, France</span>
+            <span class="hero__print-hint">🖨 Print / PDF</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating cards -->
+      <div class="hero__float hero__float--1">
+        <span class="hero__float-icon">⭐</span>
+        <div>
+          <div class="hero__float-title">Super Ace Qualified</div>
+          <div class="hero__float-sub">100% participation · 4 races</div>
+        </div>
+      </div>
+      <div class="hero__float hero__float--2">
+        <span class="hero__float-icon">🏠</span>
+        <div>
+          <div class="hero__float-title">Best Loft #1</div>
+          <div class="hero__float-sub">Spring Programme 2024</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero__scroll">
+    <div class="hero__scroll-line"></div>
+    <span>{{ 'landing.scrollHint' | translate }}</span>
+  </div>
+</section>
+
+<!-- STATS ────────────────────────────────────────────────────────── -->
+<section class="stats stats-trigger reveal">
+  <div class="stats__inner">
+    @for (stat of displayStats; track stat.labelKey) {
+      <div class="stats__item">
+        <span class="stats__icon">{{ stat.icon }}</span>
+        <div class="stats__value">{{ stat.display }}<span class="stats__suffix">{{ stat.suffix }}</span></div>
+        <div class="stats__label">{{ stat.labelKey | translate }}</div>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- FEATURES ─────────────────────────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="features__inner">
+
+    <div class="features__header reveal">
+      <div class="section-eyebrow">{{ 'landing.featEyebrow' | translate }}</div>
+      <h2 class="section-title">{{ 'landing.featTitle' | translate }}</h2>
+      <p class="section-sub">{{ 'landing.featSub' | translate }}</p>
+    </div>
+
+    <div class="features__layout">
+      <div class="features__tabs reveal">
+        @for (feat of features; track feat.tagKey; let i = $index) {
+          <button
+            class="features__tab"
+            [class.features__tab--active]="activeFeature === i"
+            (click)="setActiveFeature(i)">
+            <span class="features__tab-icon">{{ feat.icon }}</span>
+            <div class="features__tab-text">
+              <span class="features__tab-tag">{{ feat.tagKey | translate }}</span>
+              <span class="features__tab-title">{{ feat.titleKey | translate }}</span>
+            </div>
+            <div class="features__tab-arrow">→</div>
+          </button>
+        }
+      </div>
+
+      <div class="features__panel reveal"
+           [style.--feat-color]="features[activeFeature].color"
+           [style.--feat-accent]="features[activeFeature].accent">
+        <div class="features__panel-icon">{{ features[activeFeature].icon }}</div>
+        <div class="features__panel-tag">{{ features[activeFeature].tagKey | translate }}</div>
+        <h3 class="features__panel-title">{{ features[activeFeature].titleKey | translate }}</h3>
+        <p class="features__panel-desc">{{ features[activeFeature].descKey | translate }}</p>
+        <div class="features__panel-detail">{{ features[activeFeature].detailKey | translate }}</div>
+        <div class="features__panel-glow"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEMPLATES SHOWCASE ────────────────────────────────────────────── -->
+<section class="templates">
+  <div class="templates__inner">
+    <div class="templates__header reveal">
+      <div class="section-eyebrow">{{ 'landing.tplEyebrow' | translate }}</div>
+      <h2 class="section-title">{{ 'landing.tplTitle' | translate }}</h2>
+    </div>
+
+    <div class="templates__grid reveal">
+      <div class="tpl-card tpl-card--navy">
+        <div class="tpl-card__header">{{ 'landing.tplRaceResults' | translate }}</div>
+        <div class="tpl-card__count">50</div>
+        <div class="tpl-card__body">
+          <div class="tpl-card__row tpl-card__row--gold">1 · Blue Thunder · 1623.4402</div>
+          <div class="tpl-card__row">2 · Storm Rider · 1618.7731</div>
+          <div class="tpl-card__row">3 · Midnight Wing · 1611.2290</div>
+          <div class="tpl-card__row">4 · Desert Wind · 1608.9914</div>
+        </div>
+        <div class="tpl-card__tag">Portrait · Landscape · Dark · Branded</div>
+      </div>
+
+      <div class="tpl-card tpl-card--green">
+        <div class="tpl-card__header">{{ 'landing.tplBestLoft' | translate }}</div>
+        <div class="tpl-card__count">20</div>
+        <div class="tpl-card__body">
+          <div class="tpl-card__row tpl-card__row--gold">1 · De Witte Duiven · 842.30 pts</div>
+          <div class="tpl-card__row">2 · Claeys Familie · 796.14 pts</div>
+          <div class="tpl-card__row">3 · Van den Berg · 773.08 pts</div>
+        </div>
+        <div class="tpl-card__tag">Avg Velocity · Points by Rank · % Score</div>
+      </div>
+
+      <div class="tpl-card tpl-card--gold">
+        <div class="tpl-card__header">{{ 'landing.tplAcePigeon' | translate }}</div>
+        <div class="tpl-card__count">20</div>
+        <div class="tpl-card__body">
+          <div class="tpl-card__row tpl-card__row--gold">🕊️ #1 BE-2023-1042587 · 96.4%</div>
+          <div class="tpl-card__row">🕊️ #2 BE-2022-8871204 · 92.1%</div>
+          <div class="tpl-card__row">🕊️ #3 NL-2023-5501033 · 88.7%</div>
+        </div>
+        <div class="tpl-card__tag">Ring no. · Part% · Best m/min · Score</div>
+      </div>
+
+      <div class="tpl-card tpl-card--purple">
+        <div class="tpl-card__header">{{ 'landing.tplSuperAce' | translate }}</div>
+        <div class="tpl-card__count">20</div>
+        <div class="tpl-card__body">
+          <div class="tpl-card__row tpl-card__row--gold">⭐ #1 · 100% all races · 1623 m/min</div>
+          <div class="tpl-card__row">⭐ #2 · 100% all races · 1618 m/min</div>
+        </div>
+        <div class="tpl-card__tag">Elite · All races qualified</div>
+      </div>
+
+      <div class="tpl-card tpl-card--cert">
+        <div class="tpl-card__header">{{ 'landing.tplCertificates' | translate }}</div>
+        <div class="tpl-card__count">50</div>
+        <div class="tpl-card__body tpl-card__body--cert">
+          <div class="tpl-cert-preview">
+            <div class="tpl-cert-title">Certificate of Achievement</div>
+            <div class="tpl-cert-name">Jan Claeys</div>
+            <div class="tpl-cert-sub">1st place · 500km Championship</div>
+          </div>
+        </div>
+        <div class="tpl-card__tag">Portrait · Landscape · Podium · Branded</div>
+      </div>
+    </div>
+
+    <p class="templates__note reveal">{{ 'landing.tplNote' | translate }}</p>
+  </div>
+</section>
+
+<!-- INTEGRATION FLOW ─────────────────────────────────────────────── -->
+<section class="integration" id="integrations">
+  <div class="integration__inner">
+
+    <div class="integration__header reveal">
+      <div class="section-eyebrow">{{ 'landing.integEyebrow' | translate }}</div>
+      <h2 class="section-title">{{ 'landing.integTitle' | translate }}</h2>
+      <p class="section-sub">{{ 'landing.integSub' | translate }}</p>
+    </div>
+
+    <div class="integration__flow reveal">
+      @for (step of steps; track step.num; let last = $last) {
+        <div class="flow-step">
+          <div class="flow-step__num">{{ step.num }}</div>
+          <div class="flow-step__icon">{{ step.icon }}</div>
+          <h4 class="flow-step__title">{{ step.titleKey | translate }}</h4>
+          <p class="flow-step__desc">{{ step.descKey | translate }}</p>
+        </div>
+        @if (!last) {
+          <div class="flow-connector">
+            <div class="flow-connector__line"></div>
+            <div class="flow-connector__arrow">→</div>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="integration__sync reveal">
+      <div class="integration__api-header">
+        <span class="integration__api-label">{{ 'landing.syncLabel' | translate }}</span>
+      </div>
+      <div class="sync-grid">
+        @for (item of syncItems; track item.titleKey) {
+          <div class="sync-card">
+            <span class="sync-card__icon">{{ item.icon }}</span>
+            <h4 class="sync-card__title">{{ item.titleKey | translate }}</h4>
+            <p class="sync-card__desc">{{ item.descKey | translate }}</p>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- RACING SEASON ────────────────────────────────────────────────── -->
+<section class="season" id="season">
+  <div class="season__inner">
+    <div class="season__header reveal">
+      <div class="section-eyebrow">{{ 'landing.seasonEyebrow' | translate }}</div>
+      <h2 class="section-title">{{ 'landing.seasonTitle' | translate }}</h2>
+      <p class="section-sub">{{ 'landing.seasonSub' | translate }}</p>
+    </div>
+
+    <div class="season__phases reveal">
+      @for (phase of phases; track phase.titleKey) {
+        <div class="phase-card">
+          <div class="phase-card__num">{{ phase.num }}</div>
+          <div class="phase-card__icon">{{ phase.icon }}</div>
+          <h3 class="phase-card__title">{{ phase.titleKey | translate }}</h3>
+          <p class="phase-card__desc">{{ phase.descKey | translate }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="season__distances reveal">
+      <div class="section-eyebrow">{{ 'landing.distEyebrow' | translate }}</div>
+      <div class="dist-row">
+        @for (dist of distances; track dist.labelKey) {
+          <div class="dist-badge">
+            <span class="dist-badge__icon">{{ dist.icon }}</span>
+            <span class="dist-badge__label">{{ dist.labelKey | translate }}</span>
+            <span class="dist-badge__range">{{ dist.rangeKey | translate }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA ──────────────────────────────────────────────────────────── -->
+<section class="cta">
+  <div class="cta__orb cta__orb--1"></div>
+  <div class="cta__orb cta__orb--2"></div>
+  <div class="cta__inner reveal">
+    <div class="cta__bird">🕊️</div>
+    <h2 class="cta__title">{{ 'landing.ctaTitle' | translate }}</h2>
+    <p class="cta__sub">{{ 'landing.ctaSub' | translate }}</p>
+    <div class="cta__actions">
+      @if (isLoggedIn()) {
+        <a [routerLink]="dashboardRoute()" class="btn btn--primary btn--lg">
+          {{ 'landing.navDashboard' | translate }}
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      } @else {
+        <a routerLink="/auth/register" class="btn btn--primary btn--lg">
+          {{ 'landing.heroStartFree' | translate }}
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a routerLink="/auth/login" class="btn btn--ghost btn--lg">{{ 'landing.ctaLogin' | translate }}</a>
+      }
+    </div>
+    <div class="cta__footnote">{{ 'landing.ctaFootnote' | translate }}</div>
+  </div>
+</section>
+
+<!-- FOOTER ───────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__brand">
+      <span class="footer__bird">🕊️</span>
+      <span class="footer__name">PigeonResultCalculator</span>
+    </div>
+    <div class="footer__links">
+      <a routerLink="/auth/login">{{ 'landing.footerLogin' | translate }}</a>
+      <a routerLink="/auth/register">{{ 'landing.footerRegister' | translate }}</a>
+      <a href="https://github.com/sadawy/PigeonResultCalculator" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="footer__copy">{{ i18n.t('landing.footerCopy', { year: currentYear.toString() }) }}</div>
+  </div>
+</footer>

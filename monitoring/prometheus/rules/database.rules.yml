@@ -1,0 +1,146 @@
+groups:
+  - name: database.sqlserver
+    interval: 30s
+    rules:
+
+      # ── SQL Server Down ───────────────────────────────────────────────────────
+      - alert: SQLServerDown
+        expr: up{job="sqlserver-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "SQL Server is unreachable"
+          description: "SQL Server exporter cannot reach the database. API will fail immediately."
+
+      # ── DB Connection Pool Exhausted ──────────────────────────────────────────
+      - alert: DBConnectionPoolExhausted
+        expr: |
+          pigeon_db_connection_pool_available{job="pigeon-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "DB connection pool exhausted"
+          description: "No available database connections. All API requests requiring DB will fail."
+
+      # ── DB Connection Pool Low ────────────────────────────────────────────────
+      - alert: DBConnectionPoolLow
+        expr: |
+          (pigeon_db_connection_pool_available{job="pigeon-api"}
+           / pigeon_db_connection_pool_size{job="pigeon-api"}) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "DB connection pool below 20% available"
+          description: "Only {{ $value | printf \"%.0f\" }}% of DB connections are free."
+
+      # ── Slow SQL Queries ──────────────────────────────────────────────────────
+      - alert: SlowDBQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(pigeon_db_query_duration_seconds_bucket{job="pigeon-api"}[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "DB query p95 latency above 1s"
+          description: "95th percentile DB query duration is {{ $value | printf \"%.2f\" }}s."
+
+  - name: database.redis
+    interval: 30s
+    rules:
+
+      # ── Redis Down ────────────────────────────────────────────────────────────
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Redis is unreachable"
+          description: "Redis exporter cannot connect. Caching will fall back to memory (performance degraded)."
+
+      # ── Redis High Memory ─────────────────────────────────────────────────────
+      - alert: RedisHighMemory
+        expr: |
+          (redis_memory_used_bytes / redis_config_maxmemory) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis memory above 80% of max"
+          description: "Redis memory usage is {{ $value | printf \"%.1f\" }}% of the configured maximum."
+
+      - alert: RedisMemoryCritical
+        expr: |
+          (redis_memory_used_bytes / redis_config_maxmemory) * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Redis memory critically high (>90%)"
+          description: "Redis eviction will start. Cache hit rate will drop."
+
+      # ── Redis Low Hit Rate ────────────────────────────────────────────────────
+      - alert: RedisLowHitRate
+        expr: |
+          (
+            rate(redis_keyspace_hits_total[5m])
+            / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))
+          ) * 100 < 50
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis cache hit rate below 50%"
+          description: "Cache hit rate is {{ $value | printf \"%.1f\" }}%. Cache may have been flushed or keys expired."
+
+      # ── Redis Rejected Connections ────────────────────────────────────────────
+      - alert: RedisRejectedConnections
+        expr: redis_rejected_connections_total > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Redis is rejecting connections"
+          description: "Redis rejected {{ $value }} connections. maxclients limit may be reached."
+
+  - name: business.slo
+    interval: 60s
+    rules:
+
+      # ── Race Result Publish Failure SLO ──────────────────────────────────────
+      - alert: RacePublishFailureSLOBreach
+        expr: |
+          increase(pigeon_race_publish_failures_total{job="pigeon-api"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Race publish failure detected"
+          description: "{{ $value }} race publish(es) failed in the last hour. Fanciers will not be notified."
+
+      # ── No Activity Alert (Dead Instance) ────────────────────────────────────
+      - alert: APINoTraffic
+        expr: |
+          sum(rate(http_requests_received_total{job="pigeon-api"}[15m])) == 0
+        for: 30m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "API received no traffic for 30 minutes"
+          description: "Either the API is down or traffic routing is broken."

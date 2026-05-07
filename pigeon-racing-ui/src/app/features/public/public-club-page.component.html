@@ -1,0 +1,124 @@
+@if (loading()) {
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh">
+    <div class="pr-spinner" style="width:40px;height:40px;border-width:3px"></div>
+  </div>
+} @else if (!club()) {
+  <div class="pr-empty" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center">
+    <div class="pr-empty__icon">🕊️</div>
+    <div class="pr-empty__title">Club not found</div>
+    <p class="pr-empty__desc">This club page doesn't exist or hasn't been published yet.</p>
+  </div>
+} @else {
+  <header class="pub-header" [style.background]="'var(--pr-surface)'">
+    <div class="pub-container">
+      <div class="pub-header__brand">
+        @if (club()!.logoUrl) {
+          <img [src]="club()!.logoUrl" [alt]="club()!.name" class="pub-header__logo">
+        } @else {
+          <div class="pub-header__logo-placeholder">🕊️</div>
+        }
+        <div>
+          <div class="pub-header__name">{{ club()!.name }}</div>
+          <div class="pub-header__sub">{{ club()!.city }} · Established Racing Club</div>
+        </div>
+      </div>
+
+      <div class="pub-header__meta">
+        <div class="pub-meta-item">
+          <span class="pub-meta-label">Members</span>
+          <span class="pub-meta-value">{{ club()!.memberCount }}</span>
+        </div>
+        <div class="pub-meta-item">
+          <span class="pub-meta-label">Races</span>
+          <span class="pub-meta-value">{{ publishedRaces().length }}</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  @if (liveRaces().length > 0) {
+    <div class="live-banner">
+      <div class="pub-container">
+        <div class="flex items-center gap-3">
+          <span class="live-dot"></span>
+          <strong>{{ liveRaces().length }} race{{ liveRaces().length > 1 ? 's' : '' }} in progress:</strong>
+          @for (r of liveRaces(); track r.id) {
+            <span class="live-race-chip">{{ r.name }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <main class="pub-main">
+    <div class="pub-container">
+
+      @if (announcements().length > 0) {
+        <section class="pub-section">
+          <h2 class="pub-section__title">📢 Announcements</h2>
+          <div class="announcement-list">
+            @for (a of announcements(); track a.id) {
+              <div class="announcement-item">
+                <div class="announcement-item__title">{{ a.title }}</div>
+                <div class="announcement-item__body">{{ a.body }}</div>
+                <div class="announcement-item__date text-muted text-sm">{{ a.date | date:'dd MMM yyyy' }}</div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="pub-section">
+        <h2 class="pub-section__title">🏁 Race Results</h2>
+        @if (publishedRaces().length === 0) {
+          <div class="pr-empty">
+            <div class="pr-empty__icon">🏁</div>
+            <div class="pr-empty__title">No published results yet</div>
+          </div>
+        } @else {
+          @for (race of publishedRaces(); track race.id) {
+            <div class="race-card mb-6">
+              <div class="race-card__header">
+                <div>
+                  <div class="race-card__name">{{ race.name }}</div>
+                  <div class="race-card__meta text-muted text-sm">
+                    📍 {{ race.releaseLocation }} ·
+                    Released {{ race.actualReleaseTime | date:'dd MMM yyyy HH:mm' }} ·
+                    {{ race.totalPigeonsEntered }} entries
+                  </div>
+                </div>
+                <span class="pr-badge pr-badge--success">Published</span>
+              </div>
+
+              <div class="pr-table-wrapper">
+                <table class="pr-table">
+                  <thead>
+                    <tr><th>#</th><th>Ring Number</th><th>Fancier</th><th>Velocity</th><th>Distance</th><th>Category</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (r of resultsByRace()[race.id].slice(0, 10); track r.id) {
+                      <tr>
+                        <td><span [class]="'pr-rank ' + rankClass(r.clubRank)">{{ r.clubRank }}</span></td>
+                        <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 6px;border-radius:4px">{{ r.ringNumber }}</code></td>
+                        <td class="font-bold">{{ r.fancierName ?? '—' }}</td>
+                        <td>{{ r.velocityMperMin | number:'1.0-1' }} <span class="text-muted text-sm">m/min</span></td>
+                        <td>{{ r.distanceKm | number:'1.1-1' }} km</td>
+                        <td class="text-muted text-sm">{{ r.categoryName ?? '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        }
+      </section>
+    </div>
+  </main>
+
+  <footer class="pub-footer">
+    <div class="pub-container">
+      <p>© {{ currentYear }} {{ club()!.name }} · Powered by Pigeon Result Calculator</p>
+    </div>
+  </footer>
+}

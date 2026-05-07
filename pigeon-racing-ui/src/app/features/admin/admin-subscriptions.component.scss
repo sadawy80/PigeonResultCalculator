@@ -1,0 +1,9 @@
+.plan-card {
+  text-align: center;
+
+  &__name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--pr-text-muted); margin-bottom: 8px; }
+  &__price { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--pr-primary); }
+  &__price-unit { font-size: 0.8rem; font-weight: 400; }
+  &__detail { margin: 8px 0; }
+  &__count { margin-top: 8px; }
+}

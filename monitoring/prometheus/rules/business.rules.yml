@@ -1,0 +1,58 @@
+groups:
+  - name: business.recording_rules
+    interval: 60s
+    rules:
+
+      # ── Pre-compute request rate by route ─────────────────────────────────────
+      - record: pigeon:http_request_rate5m
+        expr: |
+          sum(rate(http_requests_received_total{job="pigeon-api"}[5m])) by (route, method, code)
+
+      # ── Pre-compute p50/p95/p99 latency by route ──────────────────────────────
+      - record: pigeon:http_latency_p50
+        expr: |
+          histogram_quantile(0.50,
+            sum(rate(http_request_duration_seconds_bucket{job="pigeon-api"}[5m])) by (le, route))
+
+      - record: pigeon:http_latency_p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="pigeon-api"}[5m])) by (le, route))
+
+      - record: pigeon:http_latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{job="pigeon-api"}[5m])) by (le, route))
+
+      # ── Error rate percentage ─────────────────────────────────────────────────
+      - record: pigeon:http_error_rate5m
+        expr: |
+          (
+            sum(rate(http_requests_received_total{job="pigeon-api", code=~"5.."}[5m]))
+            / sum(rate(http_requests_received_total{job="pigeon-api"}[5m]))
+          ) * 100
+
+      # ── Redis hit rate ────────────────────────────────────────────────────────
+      - record: pigeon:redis_hit_rate5m
+        expr: |
+          (
+            rate(redis_keyspace_hits_total[5m])
+            / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))
+          ) * 100
+
+      # ── Host CPU utilisation ──────────────────────────────────────────────────
+      - record: pigeon:host_cpu_utilisation
+        expr: |
+          (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) * 100
+
+      # ── Host memory utilisation ───────────────────────────────────────────────
+      - record: pigeon:host_memory_utilisation
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+  - name: business.alerts
+    interval: 60s
+    rules:
+
+      # No new alert rules here — business alerting is in database.rules.yml
+      # This group is reserved for future business KPI thresholds

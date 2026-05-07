@@ -1,0 +1,41 @@
+<div class="pr-page-header">
+  <h1 class="pr-page-header__title">Subscriptions</h1>
+  <p class="pr-page-header__subtitle">Manage plans and billing across all countries</p>
+</div>
+
+<div class="pr-grid-4 mb-8">
+  @for (p of plans; track p.name) {
+    <div class="pr-card pr-card--flat plan-card">
+      <div class="plan-card__name">{{ p.name }}</div>
+      <div class="plan-card__price">&#36;{{ p.price }}<span class="plan-card__price-unit">/mo</span></div>
+      <div class="plan-card__detail text-muted text-sm">Up to {{ p.maxClubs }} clubs · {{ p.maxMembers }} members</div>
+      <div class="plan-card__count">
+        <span class="pr-badge pr-badge--info">{{ p.activeCount }} active</span>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="pr-card">
+  <h3 style="margin-bottom:20px">Active Subscriptions</h3>
+  <div class="pr-table-wrapper">
+    <table class="pr-table">
+      <thead>
+        <tr><th>Country</th><th>Plan</th><th>Clubs</th><th>Billing</th><th>Renews</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (s of subscriptions(); track s.id) {
+          <tr>
+            <td class="font-bold">{{ s.country }}</td>
+            <td>{{ s.plan }}</td>
+            <td>{{ s.clubCount }} / {{ s.maxClubs }}</td>
+            <td class="text-muted text-sm">{{ s.billing }}</td>
+            <td class="text-muted text-sm">{{ s.renewsAt | date:'dd MMM yyyy' }}</td>
+            <td><span [class]="s.status === 'Active' ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ s.status }}</span></td>
+            <td><button class="pr-btn pr-btn--ghost pr-btn--sm">Manage</button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

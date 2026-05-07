@@ -1,0 +1,157 @@
+groups:
+  - name: infrastructure.host
+    interval: 30s
+    rules:
+
+      # ── High CPU ──────────────────────────────────────────────────────────────
+      - alert: HighHostCPU
+        expr: |
+          (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Host CPU above 85%"
+          description: "Host {{ $labels.instance }} CPU usage is {{ $value | printf \"%.1f\" }}%."
+
+      - alert: CriticalHostCPU
+        expr: |
+          (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Host CPU critically high (>95%)"
+          description: "Host {{ $labels.instance }} CPU is {{ $value | printf \"%.1f\" }}%. Immediate action required."
+
+      # ── High Memory ───────────────────────────────────────────────────────────
+      - alert: HighHostMemory
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Host memory above 85%"
+          description: "Host {{ $labels.instance }} memory usage is {{ $value | printf \"%.1f\" }}%."
+
+      - alert: CriticalHostMemory
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Host memory critically high (>95%)"
+          description: "Host {{ $labels.instance }} memory at {{ $value | printf \"%.1f\" }}%. OOM risk."
+
+      # ── Disk Space ────────────────────────────────────────────────────────────
+      - alert: DiskSpaceWarning
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs"}
+                / node_filesystem_size_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs"})) * 100 > 75
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Disk space above 75%"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is {{ $value | printf \"%.1f\" }}% full."
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs"}
+                / node_filesystem_size_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Disk space critically high (>85%)"
+          description: "Filesystem {{ $labels.mountpoint }} at {{ $value | printf \"%.1f\" }}%. Will fill within hours."
+
+      # ── Disk I/O Saturation ───────────────────────────────────────────────────
+      - alert: DiskIOSaturation
+        expr: |
+          rate(node_disk_io_time_seconds_total[5m]) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Disk I/O saturation detected"
+          description: "Disk {{ $labels.device }} I/O utilisation is {{ $value | printf \"%.0f\" }}%."
+
+      # ── Network Saturation ────────────────────────────────────────────────────
+      - alert: HighNetworkTraffic
+        expr: |
+          rate(node_network_receive_bytes_total{device!~"lo|docker.*|br-.*|veth.*"}[5m]) > 100e6
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High inbound network traffic (>100MB/s)"
+          description: "Interface {{ $labels.device }} receiving {{ $value | humanize }}B/s."
+
+  - name: infrastructure.containers
+    interval: 30s
+    rules:
+
+      # ── Container Restart Loop ────────────────────────────────────────────────
+      - alert: ContainerRestartLoop
+        expr: |
+          increase(kube_pod_container_status_restarts_total[15m]) > 3
+          or
+          delta(container_last_seen{name=~"pigeon-.*"}[5m]) < -60
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Container restarting repeatedly"
+          description: "Container {{ $labels.name }} has restarted multiple times in 15 minutes."
+
+      # ── Container High CPU ────────────────────────────────────────────────────
+      - alert: ContainerHighCPU
+        expr: |
+          (
+            rate(container_cpu_usage_seconds_total{name=~"pigeon-.*"}[5m])
+            / container_spec_cpu_quota{name=~"pigeon-.*"} * container_spec_cpu_period{name=~"pigeon-.*"}
+          ) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Container CPU above 80% of limit"
+          description: "Container {{ $labels.name }} CPU at {{ $value | printf \"%.1f\" }}% of its limit."
+
+      # ── Container High Memory ─────────────────────────────────────────────────
+      - alert: ContainerHighMemory
+        expr: |
+          (container_memory_working_set_bytes{name=~"pigeon-.*"}
+           / container_spec_memory_limit_bytes{name=~"pigeon-.*"}) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Container memory above 80% of limit"
+          description: "Container {{ $labels.name }} memory at {{ $value | printf \"%.1f\" }}% of its limit."
+
+      # ── Container OOM Killed ──────────────────────────────────────────────────
+      - alert: ContainerOOMKilled
+        expr: |
+          container_oom_events_total{name=~"pigeon-.*"} > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Container OOM killed"
+          description: "Container {{ $labels.name }} was killed due to out-of-memory."

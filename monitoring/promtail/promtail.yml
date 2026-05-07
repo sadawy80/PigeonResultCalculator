@@ -1,0 +1,151 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+# ── Loki destination ──────────────────────────────────────────────────────────
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    tenant_id: pigeon-racing
+    batchwait: 1s
+    batchsize: 1048576   # 1MB
+    timeout: 10s
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+
+# ── Scrape configurations ─────────────────────────────────────────────────────
+scrape_configs:
+
+  # ── Docker container logs ────────────────────────────────────────────────────
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["logging=promtail"]
+    relabel_configs:
+      # Use the container name as the job label
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?(.*)'
+        target_label: container
+      # Use the service label
+      - source_labels: ['__meta_docker_container_label_service']
+        target_label: service
+      # Drop containers without a service label
+      - source_labels: ['service']
+        regex: ''
+        action: drop
+      # Add environment label
+      - target_label: environment
+        replacement: production
+      # Stream label (stdout/stderr)
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: stream
+
+    pipeline_stages:
+      # ── Detect JSON logs (Serilog structured output) ──────────────────────────
+      - json:
+          expressions:
+            level: Level
+            message: RenderedMessage
+            timestamp: Timestamp
+            request_path: Properties.RequestPath
+            request_method: Properties.RequestMethod
+            status_code: Properties.StatusCode
+            elapsed_ms: Properties.Elapsed
+            exception: Exception
+            source_context: Properties.SourceContext
+            correlation_id: Properties.CorrelationId
+
+      # Map Serilog level to Loki level label
+      - template:
+          source: level
+          template: '{{ ToLower .Value }}'
+
+      - labels:
+          level:
+          request_path:
+          request_method:
+          status_code:
+          source_context:
+
+      # Drop DEBUG logs in production (keep Warning+ and Info for API requests)
+      - drop:
+          expression: '`"Level":"Debug"`'
+          drop_counter_reason: debug_suppressed
+
+      # Add request_path only if present (avoids empty label cardinality)
+      - labeldrop:
+          - request_path
+
+      # Re-add as structured metadata
+      - structured_metadata:
+          correlation_id:
+          elapsed_ms:
+          exception:
+
+      # Timestamp from log message (prefer log-emitted time over ingestion time)
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+          fallback_formats:
+            - "2006-01-02T15:04:05.9999999+00:00"
+
+  # ── Host system logs (/var/log/syslog, /var/log/messages) ───────────────────
+  - job_name: syslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          service: host
+          environment: production
+          __path__: /var/log/syslog
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w+\s+\d+\s+[\d:]+)\s+(?P<hostname>\S+)\s+(?P<service_name>[^\[]+)(\[(?P<pid>\d+)\])?: (?P<message>.*)$'
+      - labels:
+          service_name:
+          hostname:
+      - timestamp:
+          source: timestamp
+          format: "Jan  2 15:04:05"
+
+  # ── Docker daemon logs ────────────────────────────────────────────────────────
+  - job_name: docker-daemon
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker-daemon
+          service: docker
+          environment: production
+          __path__: /var/log/docker.log
+
+  # ── nginx access logs (if nginx is added) ────────────────────────────────────
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: nginx
+          environment: production
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<remote_addr>\S+) - (?P<remote_user>\S+) \[(?P<time_local>[^\]]+)\] "(?P<request>[^"]*)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"'
+      - labels:
+          status:
+          remote_addr:
+      - template:
+          source: status
+          template: '{{ if eq .Value "200" }}ok{{ else if ge (atoi .Value) 500 }}error{{ else if ge (atoi .Value) 400 }}warning{{ else }}info{{ end }}'
+      - labels:
+          level:
