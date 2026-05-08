@@ -3,39 +3,66 @@
   <p class="pr-page-header__subtitle">Immutable audit trail of all platform domain events</p>
 </div>
 
+@if (error()) {
+  <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
+}
+
 <div class="flex gap-4 mb-6">
-  <input class="pr-input" style="max-width:300px" placeholder="Search events..." [(ngModel)]="search">
-  <select class="pr-select" style="max-width:200px" [(ngModel)]="typeFilter">
-    <option value="">All Types</option>
+  <select class="pr-select" style="max-width:220px" [(ngModel)]="typeFilter" (change)="onFilter()">
+    <option value="">All Event Types</option>
     <option value="RaceCreated">Race Created</option>
+    <option value="RaceStarted">Race Started</option>
+    <option value="RaceCompleted">Race Completed</option>
+    <option value="ResultProcessed">Result Processed</option>
     <option value="ResultPublished">Result Published</option>
+    <option value="CountryResultPublished">Country Result Published</option>
     <option value="UserInvited">User Invited</option>
+    <option value="UserLinked">User Linked</option>
     <option value="SubscriptionChanged">Subscription Changed</option>
   </select>
+  <select class="pr-select" style="max-width:180px" [(ngModel)]="aggregateFilter" (change)="onFilter()">
+    <option value="">All Aggregates</option>
+    <option value="Race">Race</option>
+    <option value="Club">Club</option>
+    <option value="Country">Country</option>
+    <option value="User">User</option>
+  </select>
+  <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="load()">↻ Refresh</button>
 </div>
 
 <div class="pr-card">
-  <div class="pr-table-wrapper">
-    <table class="pr-table">
-      <thead>
-        <tr><th>Event</th><th>Aggregate</th><th>Entity ID</th><th>Triggered By</th><th>Timestamp</th><th>Status</th></tr>
-      </thead>
-      <tbody>
-        @for (ev of filteredEvents(); track ev.id) {
-          <tr>
-            <td><code class="event-type">{{ ev.eventType }}</code></td>
-            <td class="text-muted text-sm">{{ ev.aggregateType }}</td>
-            <td class="text-muted text-sm" style="font-family:monospace;font-size:0.75rem">{{ ev.aggregateId }}</td>
-            <td class="text-muted text-sm">{{ ev.triggeredBy ?? 'System' }}</td>
-            <td class="text-muted text-sm">{{ ev.createdAt | date:'dd MMM HH:mm:ss' }}</td>
-            <td>
-              <span [class]="ev.isProcessed ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--warning'">
-                {{ ev.isProcessed ? 'Processed' : 'Pending' }}
-              </span>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+  @if (loading()) {
+    <div class="text-center py-8 text-muted">Loading...</div>
+  } @else {
+    <div class="pr-table-wrapper">
+      <table class="pr-table">
+        <thead>
+          <tr><th>Event</th><th>Aggregate</th><th>Entity ID</th><th>Timestamp</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          @for (ev of events(); track ev.id) {
+            <tr>
+              <td><code class="event-type">{{ ev.eventType }}</code></td>
+              <td class="text-muted text-sm">{{ ev.aggregateType }}</td>
+              <td class="text-muted text-sm" style="font-family:monospace;font-size:0.75rem">{{ ev.aggregateId }}</td>
+              <td class="text-muted text-sm">{{ ev.createdAt | date:'dd MMM HH:mm:ss' }}</td>
+              <td>
+                <span [class]="ev.isProcessed ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--warning'">
+                  {{ ev.isProcessed ? 'Processed' : 'Pending' }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex justify-between items-center mt-4">
+      <span class="text-muted text-sm">Page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-2">
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+      </div>
+    </div>
+  }
 </div>

@@ -1,0 +1,84 @@
+<div class="pr-page-header flex justify-between items-center">
+  <div>
+    <h1 class="pr-page-header__title">Country Public Page</h1>
+    <p class="pr-page-header__subtitle">Manage your country's public-facing federation page</p>
+  </div>
+  @if (page()?.slug) {
+    <a [routerLink]="['/c', page().slug]" target="_blank" class="pr-btn pr-btn--ghost pr-btn--sm">
+      ↗ Preview Page
+    </a>
+  }
+</div>
+
+@if (error()) { <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div> }
+@if (success()) { <div class="pr-alert pr-alert--success mb-4">{{ success() }}</div> }
+
+@if (loading()) {
+  <div class="text-center py-12 text-muted">Loading...</div>
+} @else {
+  <div class="flex flex-col gap-6">
+
+    <!-- Publish toggle -->
+    <div class="pr-card flex justify-between items-center">
+      <div>
+        <div class="font-bold">Page Status</div>
+        <div class="text-muted text-sm">{{ isPublished ? 'Your page is live at /c/' + page()?.slug : 'Your page is not published yet' }}</div>
+      </div>
+      <label class="pr-toggle">
+        <input type="checkbox" [(ngModel)]="isPublished">
+        <span class="pr-toggle__track"></span>
+        <span class="pr-toggle__label">{{ isPublished ? 'Published' : 'Draft' }}</span>
+      </label>
+    </div>
+
+    <!-- Theme selector -->
+    <div class="pr-card">
+      <h3 class="mb-4">Theme</h3>
+      <div class="pr-grid-3" style="gap:12px">
+        @for (t of themes; track t.value) {
+          <label class="theme-option" [class.theme-option--selected]="selectedTheme === t.value">
+            <input type="radio" [value]="t.value" [(ngModel)]="selectedTheme" style="display:none">
+            <div class="theme-option__swatch theme-swatch--{{ t.value }}"></div>
+            <div class="theme-option__label">{{ t.label }}</div>
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- Announcements -->
+    <div class="pr-card">
+      <div class="flex justify-between items-center mb-4">
+        <h3>Announcements</h3>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="addAnnouncement()">+ Add</button>
+      </div>
+      @if (announcements().length === 0) {
+        <p class="text-muted text-sm">No announcements yet. Click "Add" to create one.</p>
+      }
+      @for (a of announcements(); track $index; let i = $index) {
+        <div class="announcement-row mb-4">
+          <div class="flex gap-3 items-start">
+            <div class="flex flex-col gap-2 flex-1">
+              <input class="pr-input" placeholder="Title *" [(ngModel)]="a.title">
+              <textarea class="pr-input" rows="2" placeholder="Body (optional)" [(ngModel)]="a.body"
+                style="resize:vertical;min-height:60px"></textarea>
+              <input type="date" class="pr-input" [(ngModel)]="a.date" style="max-width:200px">
+            </div>
+            <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error)"
+              (click)="removeAnnouncement(i)">✕</button>
+          </div>
+          @if (i < announcements().length - 1) {
+            <hr style="margin-top:16px;border:none;border-top:1px solid var(--pr-border)">
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Save button -->
+    <div class="flex gap-3">
+      <button class="pr-btn pr-btn--primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+
+  </div>
+}

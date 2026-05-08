@@ -1,32 +1,53 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-admin-clubs',
   standalone: true,
-  imports: [FormsModule],
+  imports: [DatePipe, FormsModule],
   templateUrl: './admin-clubs.component.html',
   styleUrls: ['./admin-clubs.component.scss']
 })
 export class AdminClubsComponent implements OnInit {
+  private api = inject(ApiService);
+
   search        = '';
   countryFilter = '';
+  page          = 1;
+  pageSize      = 20;
+  total         = signal(0);
   clubs         = signal<any[]>([]);
+  loading       = signal(false);
+  error         = signal<string | null>(null);
 
-  filteredClubs() {
-    return this.clubs().filter(c =>
-      (!this.search || c.name.toLowerCase().includes(this.search.toLowerCase())) &&
-      (!this.countryFilter || c.countryCode === this.countryFilter)
-    );
+  ngOnInit() { this.load(); }
+
+  load() {
+    this.loading.set(true);
+    this.error.set(null);
+    this.api.adminGetClubs({
+      search: this.search || undefined,
+      FederationId: this.countryFilter || undefined,
+      page: this.page,
+      pageSize: this.pageSize
+    }).subscribe({
+      next: r => { this.clubs.set(r.items); this.total.set(r.totalCount); this.loading.set(false); },
+      error: () => { this.error.set('Failed to load clubs.'); this.loading.set(false); }
+    });
   }
 
-  ngOnInit() {
-    this.clubs.set([
-      { id: '1', name: 'Brussels Racing Club', code: 'BRC', country: 'Belgium',        countryCode: 'BE', memberCount: 45, plan: 'Professional', isActive: true },
-      { id: '2', name: 'Antwerp Flyers',        code: 'ANT', country: 'Belgium',        countryCode: 'BE', memberCount: 32, plan: 'Standard',     isActive: true },
-      { id: '3', name: 'Amsterdam Wings',       code: 'AMW', country: 'Netherlands',    countryCode: 'NL', memberCount: 28, plan: 'Standard',     isActive: true },
-      { id: '4', name: 'London Racers',         code: 'LDN', country: 'United Kingdom', countryCode: 'GB', memberCount: 67, plan: 'Enterprise',   isActive: true },
-      { id: '5', name: 'Ghent Pigeons',         code: 'GHT', country: 'Belgium',        countryCode: 'BE', memberCount: 19, plan: 'Starter',      isActive: false },
-    ]);
+  onSearch() { this.page = 1; this.load(); }
+
+  toggleClub(id: string) {
+    this.api.adminToggleClub(id).subscribe({
+      next: r => this.clubs.update(arr => arr.map(c => c.id === id ? { ...c, isActive: r.isActive } : c)),
+      error: () => this.error.set('Failed to toggle club.')
+    });
   }
+
+  get totalPages() { return Math.ceil(this.total() / this.pageSize); }
+  prevPage() { if (this.page > 1) { this.page--; this.load(); } }
+  nextPage() { if (this.page < this.totalPages) { this.page++; this.load(); } }
 }

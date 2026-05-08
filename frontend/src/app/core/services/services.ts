@@ -8,28 +8,30 @@ import * as signalR from '@microsoft/signalr';
 import { environment } from '../../../environments/environment';
 import { User, UserRole, Theme, SiteTheme } from '../models';
 import { ApiService } from './api.service';
+import { LoggerService } from './logger.service';
 
 // ── Auth Service ──────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private api = inject(ApiService);
+  private api    = inject(ApiService);
   private router = inject(Router);
+  private logger = inject(LoggerService);
 
   readonly currentUser = signal<User | null>(this.loadUser());
   readonly isAuthenticated = computed(() => !!this.currentUser());
   readonly isAdmin = computed(() => this.currentUser()?.role === UserRole.SuperAdmin);
-  readonly isCountryManager = computed(() => this.currentUser()?.role === UserRole.CountryManager);
+  readonly isFederationManager = computed(() => this.currentUser()?.role === UserRole.FederationManager);
   readonly isClubManager = computed(() => this.currentUser()?.role === UserRole.ClubManager);
   readonly isFancier = computed(() => this.currentUser()?.role === UserRole.Fancier);
   readonly canManageRaces = computed(() => {
     const role = this.currentUser()?.role;
-    return role != null && [UserRole.SuperAdmin, UserRole.CountryManager, UserRole.ClubManager].includes(role);
+    return role != null && [UserRole.SuperAdmin, UserRole.FederationManager, UserRole.ClubManager].includes(role);
   });
   /** Primary club ID for ClubManagers and Fanciers — resolved by the backend on login */
   readonly clubId = computed(() => this.currentUser()?.clubId ?? null);
-  /** Country ID for CountryManagers */
-  readonly countryId = computed(() => this.currentUser()?.countryId ?? null);
+  /** Country ID for FederationManagers */
+  readonly FederationId = computed(() => this.currentUser()?.FederationId ?? null);
 
   login(email: string, password: string) {
     return this.api.login(email, password).pipe(
@@ -39,15 +41,20 @@ export class AuthService {
       localStorage.setItem('refresh_token', tokens.refreshToken);
       localStorage.setItem('user', JSON.stringify(tokens.user));
       this.currentUser.set(tokens.user);
+      this.logger.setUserId(tokens.user.id);
+      this.logger.info('User signed in', { userId: tokens.user.id, role: tokens.user.role }, 'Angular.Auth');
       this.navigateByRole(tokens.user.role);
     });
   }
 
   logout() {
+    const user = this.currentUser();
+    this.logger.info('User signed out', { userId: user?.id }, 'Angular.Auth');
     const rt = localStorage.getItem('refresh_token');
     if (rt) this.api.revokeToken(rt).subscribe({ error: () => {} });
     localStorage.clear();
     this.currentUser.set(null);
+    this.logger.setUserId(null);
     this.router.navigate(['/auth/login']);
   }
 
@@ -68,13 +75,17 @@ export class AuthService {
 
   private loadUser(): User | null {
     const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const user: User = JSON.parse(raw);
+    // Restore userId in logger on page reload
+    this.logger.setUserId(user.id);
+    return user;
   }
 
   private navigateByRole(role: UserRole) {
     const routes: Record<UserRole, string> = {
       [UserRole.SuperAdmin]: '/admin/dashboard',
-      [UserRole.CountryManager]: '/country/dashboard',
+      [UserRole.FederationManager]: '/country/dashboard',
       [UserRole.ClubManager]: '/club/dashboard',
       [UserRole.Fancier]: '/fancier/dashboard',
     };

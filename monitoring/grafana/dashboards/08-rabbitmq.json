@@ -1,0 +1,232 @@
+{
+  "uid": "prc-rabbitmq",
+  "title": "RabbitMQ",
+  "tags": ["rabbitmq", "messaging"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(rabbitmq_identity_info, instance)",
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total Queues",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "datasource": "Prometheus",
+      "options": { "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "rabbitmq_queues{instance=\"$instance\"}",
+          "legendFormat": "Queues"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Messages Ready",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "datasource": "Prometheus",
+      "options": { "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1000 },
+              { "color": "red", "value": 5000 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rabbitmq_queue_messages_ready{instance=\"$instance\"})",
+          "legendFormat": "Ready"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Messages Unacknowledged",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "datasource": "Prometheus",
+      "options": { "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 2000 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rabbitmq_queue_messages_unacked{instance=\"$instance\"})",
+          "legendFormat": "Unacked"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Connected Consumers",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rabbitmq_queue_consumers{instance=\"$instance\"})",
+          "legendFormat": "Consumers"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Message Publish Rate",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_published_total{instance=\"$instance\"}[1m]))",
+          "legendFormat": "Published/s"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Message Delivery Rate",
+      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_delivered_total{instance=\"$instance\"}[1m]))",
+          "legendFormat": "Delivered/s"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Message Rates",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_published_total{instance=\"$instance\"}[1m]))",
+          "legendFormat": "Published"
+        },
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_delivered_total{instance=\"$instance\"}[1m]))",
+          "legendFormat": "Delivered"
+        },
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_acked_total{instance=\"$instance\"}[1m]))",
+          "legendFormat": "Acknowledged"
+        },
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_requeued_total{instance=\"$instance\"}[1m]))",
+          "legendFormat": "Requeued"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Queue Depth",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "topk(10, rabbitmq_queue_messages_ready{instance=\"$instance\"})",
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Memory & File Descriptors",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "File Descriptors" },
+            "properties": [{ "id": "unit", "value": "short" }]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "rabbitmq_process_resident_memory_bytes{instance=\"$instance\"}",
+          "legendFormat": "Resident Memory"
+        },
+        {
+          "expr": "rabbitmq_resident_memory_limit_bytes{instance=\"$instance\"}",
+          "legendFormat": "Memory Limit"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Connections & Channels",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rabbitmq_connections{instance=\"$instance\"}",
+          "legendFormat": "Connections"
+        },
+        {
+          "expr": "rabbitmq_channels{instance=\"$instance\"}",
+          "legendFormat": "Channels"
+        }
+      ]
+    }
+  ]
+}

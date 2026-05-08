@@ -1,6 +1,7 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-admin-users',
@@ -10,21 +11,97 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./admin-users.component.scss']
 })
 export class AdminUsersComponent implements OnInit {
+  private api = inject(ApiService);
+
   search     = '';
   roleFilter = '';
+  page       = 1;
+  pageSize   = 20;
+  total      = signal(0);
   users      = signal<any[]>([]);
+  loading    = signal(false);
+  error      = signal<string | null>(null);
 
-  ngOnInit() {
-    this.users.set([
-      { id: '1', fullName: 'Alice Martin',   email: 'alice@brc.be',    role: 'ClubManager',    club: 'Brussels Racing Club', joinedAt: '2024-03-01', isActive: true },
-      { id: '2', fullName: 'Bob Janssen',    email: 'bob@ant.be',      role: 'Fancier',        club: 'Antwerp Flyers',       joinedAt: '2024-05-14', isActive: true },
-      { id: '3', fullName: 'Clara van Dijk', email: 'clara@amw.nl',    role: 'ClubManager',    club: 'Amsterdam Wings',      joinedAt: '2023-11-22', isActive: true },
-      { id: '4', fullName: 'David Hughes',   email: 'david@ldn.co.uk', role: 'CountryManager', country: 'United Kingdom',    joinedAt: '2023-08-10', isActive: true },
-      { id: '5', fullName: 'Emma Peeters',   email: 'emma@be.org',     role: 'CountryManager', country: 'Belgium',           joinedAt: '2024-01-15', isActive: false },
-    ]);
+  // Role assignment modal
+  showRoleModal  = signal(false);
+  selectedUser   = signal<any>(null);
+  assignRoleVal  = '';
+  assignCountry  = '';
+
+  // Limits modal
+  showLimitsModal = signal(false);
+  limitsUser      = signal<any>(null);
+  limitMaxResults: number | null = null;
+  limitMaxClubs: number | null = null;
+
+  readonly roles = ['SuperAdmin', 'FederationManager', 'ClubManager', 'Fancier'];
+
+  ngOnInit() { this.load(); }
+
+  load() {
+    this.loading.set(true);
+    this.error.set(null);
+    this.api.adminGetUsers({
+      search: this.search || undefined,
+      role: this.roleFilter || undefined,
+      page: this.page,
+      pageSize: this.pageSize
+    }).subscribe({
+      next: r => { this.users.set(r.items); this.total.set(r.totalCount); this.loading.set(false); },
+      error: () => { this.error.set('Failed to load users.'); this.loading.set(false); }
+    });
   }
+
+  onSearch() { this.page = 1; this.load(); }
 
   toggleUser(id: string) {
-    this.users.update(arr => arr.map(u => u.id === id ? { ...u, isActive: !u.isActive } : u));
+    this.api.adminToggleUser(id).subscribe({
+      next: r => this.users.update(arr => arr.map(u => u.id === id ? { ...u, isActive: r.isActive } : u)),
+      error: () => this.error.set('Failed to toggle user.')
+    });
   }
+
+  openRoleModal(user: any) {
+    this.selectedUser.set(user);
+    this.assignRoleVal = user.role ?? '';
+    this.assignCountry = user.FederationId ?? '';
+    this.showRoleModal.set(true);
+  }
+
+  saveRole() {
+    const user = this.selectedUser();
+    if (!user) return;
+    const roleMap: Record<string, number> = { SuperAdmin: 1, FederationManager: 2, ClubManager: 3, Fancier: 4 };
+    this.api.adminAssignRole(user.id, roleMap[this.assignRoleVal], this.assignCountry || undefined).subscribe({
+      next: r => {
+        this.users.update(arr => arr.map(u => u.id === user.id ? { ...u, role: this.assignRoleVal, isActive: r.isActive } : u));
+        this.showRoleModal.set(false);
+      },
+      error: () => this.error.set('Failed to assign role.')
+    });
+  }
+
+  openLimitsModal(user: any) {
+    this.limitsUser.set(user);
+    this.limitMaxResults = user.maxResultsOverride ?? null;
+    this.limitMaxClubs   = user.maxClubsOverride ?? null;
+    this.showLimitsModal.set(true);
+  }
+
+  saveLimits() {
+    const user = this.limitsUser();
+    if (!user) return;
+    this.api.adminSetUserLimits(user.id, this.limitMaxResults, this.limitMaxClubs).subscribe({
+      next: r => {
+        this.users.update(arr => arr.map(u => u.id === user.id
+          ? { ...u, maxResultsOverride: r.maxResults, maxClubsOverride: r.maxClubs } : u));
+        this.showLimitsModal.set(false);
+      },
+      error: () => this.error.set('Failed to save limits.')
+    });
+  }
+
+  get totalPages() { return Math.ceil(this.total() / this.pageSize); }
+  prevPage() { if (this.page > 1) { this.page--; this.load(); } }
+  nextPage() { if (this.page < this.totalPages) { this.page++; this.load(); } }
 }

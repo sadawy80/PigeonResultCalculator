@@ -5,32 +5,22 @@
     // ── Docker Compose ──────────────────────────────────────────────────────────
 
     {
-      "label": "docker: start infrastructure",
-      "detail": "Start SQL Server + Redis only (for local API / Angular dev)",
+      "label": "docker: start infra",
+      "detail": "Start infrastructure only: SQL Server, RabbitMQ, Redis, Seq",
       "type": "shell",
-      "command": "docker compose up sqlserver redis -d",
+      "command": "docker compose up sqlserver rabbitmq redis seq -d",
       "options": { "cwd": "${workspaceFolder}" },
       "presentation": { "reveal": "always", "panel": "shared", "group": "docker" },
       "problemMatcher": []
     },
 
     {
-      "label": "docker: start dev stack",
-      "detail": "Start full dev stack — API (watch), UI dev-server, DB, Redis, monitoring",
+      "label": "docker: start all",
+      "detail": "Start the full microservices stack",
       "type": "shell",
-      "command": "docker compose up",
+      "command": "docker compose up -d",
       "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "shared", "group": "docker" },
-      "problemMatcher": []
-    },
-
-    {
-      "label": "docker: start debug stack",
-      "detail": "Start full stack with vsdbg installed in the API container for debugger attach",
-      "type": "shell",
-      "command": "docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.debug.yml up -d",
-      "options": { "cwd": "${workspaceFolder}" },
       "presentation": { "reveal": "always", "panel": "shared", "group": "docker" },
       "problemMatcher": []
     },
@@ -46,10 +36,20 @@
     },
 
     {
-      "label": "docker: logs api",
-      "detail": "Follow API container logs",
+      "label": "docker: logs gateway",
+      "detail": "Follow API gateway logs",
       "type": "shell",
-      "command": "docker compose logs -f api",
+      "command": "docker compose logs -f api-gateway",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "new", "group": "docker" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "docker: logs all",
+      "detail": "Follow logs from all services",
+      "type": "shell",
+      "command": "docker compose logs -f",
       "options": { "cwd": "${workspaceFolder}" },
       "presentation": { "reveal": "always", "panel": "new", "group": "docker" },
       "problemMatcher": []
@@ -58,10 +58,10 @@
     // ── .NET ────────────────────────────────────────────────────────────────────
 
     {
-      "label": "api: build",
-      "detail": "Build .NET API in Debug configuration",
+      "label": "dotnet: build solution",
+      "detail": "Build the full PRC solution",
       "type": "shell",
-      "command": "dotnet build backend/API/PigeonRacing.API.csproj -c Debug",
+      "command": "dotnet build backend/PRC.sln -c Debug",
       "options": { "cwd": "${workspaceFolder}" },
       "group": { "kind": "build", "isDefault": true },
       "presentation": { "reveal": "silent", "panel": "shared" },
@@ -69,33 +69,12 @@
     },
 
     {
-      "label": "api: build (infra first)",
-      "detail": "Start infrastructure in Docker, then build the .NET API",
-      "dependsOn": ["docker: start infrastructure", "api: build"],
+      "label": "dotnet: build solution (infra first)",
+      "detail": "Start infrastructure in Docker, then build the .NET solution",
+      "dependsOn": ["docker: start infra", "dotnet: build solution"],
       "dependsOrder": "sequence",
       "presentation": { "reveal": "silent", "panel": "shared" },
       "problemMatcher": "$msCompile"
-    },
-
-    {
-      "label": "api: watch",
-      "detail": "Run API with hot-reload locally (infra must be running)",
-      "type": "shell",
-      "command": "dotnet watch run --project backend/API/PigeonRacing.API.csproj --no-launch-profile",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": { "ASPNETCORE_ENVIRONMENT": "Development" }
-      },
-      "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "new", "group": "local" },
-      "problemMatcher": {
-        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "Building...",
-          "endsPattern": "Application started|Now listening"
-        }
-      }
     },
 
     // ── Angular ─────────────────────────────────────────────────────────────────
@@ -112,7 +91,7 @@
 
     {
       "label": "angular: serve",
-      "detail": "Start Angular dev-server locally on https://localhost:4300",
+      "detail": "Start Angular dev-server on http://localhost:4300",
       "type": "shell",
       "command": "npm start",
       "options": { "cwd": "${workspaceFolder}/frontend" },

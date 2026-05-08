@@ -1,16 +1,22 @@
-<div class="pr-page-header">
-  <h1 class="pr-page-header__title">Subscriptions</h1>
-  <p class="pr-page-header__subtitle">Manage plans and billing across all countries</p>
+<div class="pr-page-header flex justify-between items-center">
+  <div>
+    <h1 class="pr-page-header__title">Subscriptions</h1>
+    <p class="pr-page-header__subtitle">Manage plans and billing across all countries</p>
+  </div>
+  <button class="pr-btn pr-btn--primary" (click)="showModal.set(true)">+ New Subscription</button>
 </div>
 
+@if (error()) {
+  <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
+}
+
 <div class="pr-grid-4 mb-8">
-  @for (p of plans; track p.name) {
+  @for (p of plans(); track p.id) {
     <div class="pr-card pr-card--flat plan-card">
       <div class="plan-card__name">{{ p.name }}</div>
       <div class="plan-card__price">&#36;{{ p.price }}<span class="plan-card__price-unit">/mo</span></div>
-      <div class="plan-card__detail text-muted text-sm">Up to {{ p.maxClubs }} clubs · {{ p.maxMembers }} members</div>
-      <div class="plan-card__count">
-        <span class="pr-badge pr-badge--info">{{ p.activeCount }} active</span>
+      <div class="plan-card__detail text-muted text-sm">
+        {{ p.maxClubs === 0 ? 'Unlimited' : 'Up to ' + p.maxClubs }} clubs
       </div>
     </div>
   }
@@ -18,24 +24,83 @@
 
 <div class="pr-card">
   <h3 style="margin-bottom:20px">Active Subscriptions</h3>
-  <div class="pr-table-wrapper">
-    <table class="pr-table">
-      <thead>
-        <tr><th>Country</th><th>Plan</th><th>Clubs</th><th>Billing</th><th>Renews</th><th>Status</th><th></th></tr>
-      </thead>
-      <tbody>
-        @for (s of subscriptions(); track s.id) {
-          <tr>
-            <td class="font-bold">{{ s.country }}</td>
-            <td>{{ s.plan }}</td>
-            <td>{{ s.clubCount }} / {{ s.maxClubs }}</td>
-            <td class="text-muted text-sm">{{ s.billing }}</td>
-            <td class="text-muted text-sm">{{ s.renewsAt | date:'dd MMM yyyy' }}</td>
-            <td><span [class]="s.status === 'Active' ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ s.status }}</span></td>
-            <td><button class="pr-btn pr-btn--ghost pr-btn--sm">Manage</button></td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+  @if (loading()) {
+    <div class="text-center py-8 text-muted">Loading...</div>
+  } @else {
+    <div class="pr-table-wrapper">
+      <table class="pr-table">
+        <thead>
+          <tr><th>Country</th><th>Plan</th><th>Billing</th><th>Started</th><th>Expires</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          @for (s of subscriptions(); track s.id) {
+            <tr>
+              <td class="font-bold">{{ s.FederationName }}</td>
+              <td>{{ s.planName }}</td>
+              <td class="text-muted text-sm">{{ s.billingCycle === 1 ? 'Monthly' : s.billingCycle === 2 ? 'Annual' : 'Seasonal' }}</td>
+              <td class="text-muted text-sm">{{ s.startedAt | date:'dd MMM yyyy' }}</td>
+              <td class="text-muted text-sm">{{ s.expiresAt | date:'dd MMM yyyy' }}</td>
+              <td>
+                <span [class]="s.status === 1 ? 'pr-badge pr-badge--success' :
+                               s.status === 4 ? 'pr-badge pr-badge--info' : 'pr-badge pr-badge--error'">
+                  {{ s.status === 1 ? 'Active' : s.status === 4 ? 'Trial' : s.status === 2 ? 'Expired' : 'Cancelled' }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex justify-between items-center mt-4">
+      <span class="text-muted text-sm">Page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-2">
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+      </div>
+    </div>
+  }
 </div>
+
+<!-- New Subscription Modal -->
+@if (showModal()) {
+  <div class="pr-modal-backdrop" (click)="showModal.set(false)">
+    <div class="pr-modal" (click)="$event.stopPropagation()">
+      <h3 class="pr-modal__title">New Subscription</h3>
+      <div class="flex flex-col gap-4 mt-4">
+        <div>
+          <label class="pr-label">Country</label>
+          <select class="pr-select w-full" [(ngModel)]="newSubCountry">
+            <option value="">— Select country —</option>
+            @for (c of countries(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="pr-label">Plan</label>
+          <select class="pr-select w-full" [(ngModel)]="newSubPlan">
+            <option value="">— Select plan —</option>
+            @for (p of plans(); track p.id) {
+              <option [value]="p.id">{{ p.name }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="pr-label">Billing Cycle</label>
+          <select class="pr-select w-full" [(ngModel)]="newSubCycle">
+            @for (bc of billingCycles; track bc.value) {
+              <option [value]="bc.value">{{ bc.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end mt-6">
+        <button class="pr-btn pr-btn--ghost" (click)="showModal.set(false)">Cancel</button>
+        <button class="pr-btn pr-btn--primary" [disabled]="saving()" (click)="createSubscription()">
+          {{ saving() ? 'Creating...' : 'Create' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

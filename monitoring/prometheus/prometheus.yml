@@ -31,21 +31,117 @@ scrape_configs:
       - target_label: service
         replacement: prometheus
 
-  # ── PigeonRacing .NET API ─────────────────────────────────────────────────────
-  - job_name: pigeon-api
+  # ── PRC Microservices ─────────────────────────────────────────────────────────
+  - job_name: prc-api-gateway
     metrics_path: /metrics
     static_configs:
-      - targets: ['api:8080']
+      - targets: ['api-gateway:9500']
     relabel_configs:
       - target_label: service
-        replacement: pigeon-api
+        replacement: api-gateway
       - target_label: environment
         replacement: production
-    metric_relabel_configs:
-      # Drop high-cardinality route labels, keep only route pattern
-      - source_labels: [__name__]
-        regex: "http_request_duration_seconds.*"
-        action: keep
+
+  - job_name: prc-identity
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['identity-service:9501']
+    relabel_configs:
+      - target_label: service
+        replacement: identity-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-clubs
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['club-service:9502']
+    relabel_configs:
+      - target_label: service
+        replacement: club-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-races
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['race-service:9503']
+    relabel_configs:
+      - target_label: service
+        replacement: race-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-federation
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['federation-service:9504']
+    relabel_configs:
+      - target_label: service
+        replacement: federation-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-rendering
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['rendering-service:9505']
+    relabel_configs:
+      - target_label: service
+        replacement: rendering-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-integration
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['integration-service:9506']
+    relabel_configs:
+      - target_label: service
+        replacement: integration-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-admin
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['admin-service:9507']
+    relabel_configs:
+      - target_label: service
+        replacement: admin-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-public
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['public-service:9508']
+    relabel_configs:
+      - target_label: service
+        replacement: public-service
+      - target_label: environment
+        replacement: production
+
+  - job_name: prc-subscriptions
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['subscription-service:9509']
+    relabel_configs:
+      - target_label: service
+        replacement: subscription-service
+      - target_label: environment
+        replacement: production
+
+  # ── RabbitMQ (prometheus plugin on port 15692) ────────────────────────────────
+  - job_name: rabbitmq
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['rabbitmq:15692']
+    relabel_configs:
+      - target_label: service
+        replacement: rabbitmq
+      - target_label: environment
+        replacement: production
 
   # ── Node Exporter — host metrics ─────────────────────────────────────────────
   - job_name: node-exporter

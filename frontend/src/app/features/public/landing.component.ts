@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, HostListener, HostBinding, inject, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, HostBinding, inject, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslationService, TranslatePipe, LanguageSwitcherComponent } from '../../core/i18n';
 import { AuthService } from '../../core/services/services';
+import { ApiService } from '../../core/services/api.service';
 import { UserRole } from '../../core/models';
 
 @Component({
@@ -12,8 +13,9 @@ import { UserRole } from '../../core/models';
   styleUrls: ['./landing.component.scss']
 })
 export class LandingComponent implements OnInit, OnDestroy {
-  i18n = inject(TranslationService);
-  auth = inject(AuthService);
+  i18n  = inject(TranslationService);
+  auth  = inject(AuthService);
+  api   = inject(ApiService);
 
   @HostBinding('attr.dir')  get dir()  { return this.i18n.dir(); }
   @HostBinding('attr.lang') get lang() { return this.i18n.locale(); }
@@ -75,6 +77,33 @@ export class LandingComponent implements OnInit, OnDestroy {
     { icon: '🌍', labelKey: 'landing.distExtreme', rangeKey: 'landing.distExtremeRange' },
   ];
 
+  pricingCycle = signal<'monthly' | 'seasonal' | 'annual'>('seasonal');
+  plans        = signal<any[]>([]);
+
+  activePlans = computed(() => {
+    const cycle = this.pricingCycle();
+    return this.plans().map(p => {
+      const cycleData = p[cycle] as { price: number; maxClubs: number; maxResults: number; features: string } | null;
+      const monthly   = p['monthly'] as { price: number } | null;
+      const price     = cycleData?.price ?? 0;
+      let features: string[] = [];
+      try { features = cycleData?.features ? JSON.parse(cycleData.features) : []; } catch { /* ignore */ }
+      const saving = cycle === 'seasonal' && monthly
+        ? Math.round(100 - (price / (monthly.price * 6)) * 100)
+        : cycle === 'annual' && monthly
+          ? Math.round(100 - (price / (monthly.price * 12)) * 100)
+          : 0;
+      return {
+        name:      p.name as string,
+        desc:      (p.description as string) ?? '',
+        highlight: p.isHighlighted as boolean,
+        price,
+        saving:    saving > 0 ? saving : 0,
+        features,
+      };
+    });
+  });
+
   isLoggedIn = computed(() => !!this.auth.currentUser());
 
   dashboardRoute = computed(() => {
@@ -82,7 +111,7 @@ export class LandingComponent implements OnInit, OnDestroy {
     if (!user) return '/auth/login';
     const routes: Record<number, string> = {
       [UserRole.SuperAdmin]:     '/admin/dashboard',
-      [UserRole.CountryManager]: '/country/dashboard',
+      [UserRole.FederationManager]: '/country/dashboard',
       [UserRole.ClubManager]:    '/club/dashboard',
       [UserRole.Fancier]:        '/fancier/dashboard',
     };
@@ -91,6 +120,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.setupIntersectionObserver();
+    this.api.getPublicPlans().subscribe({ next: data => this.plans.set(data), error: () => {} });
   }
 
   ngOnDestroy() {

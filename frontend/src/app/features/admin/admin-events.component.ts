@@ -1,6 +1,7 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-admin-events',
@@ -10,25 +11,36 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./admin-events.component.scss']
 })
 export class AdminEventsComponent implements OnInit {
-  search     = '';
-  typeFilter = '';
-  events     = signal<any[]>([]);
+  private api = inject(ApiService);
 
-  filteredEvents() {
-    return this.events().filter(e =>
-      (!this.search || e.eventType.includes(this.search) || e.aggregateId.includes(this.search)) &&
-      (!this.typeFilter || e.eventType === this.typeFilter)
-    );
+  typeFilter      = '';
+  aggregateFilter = '';
+  page            = 1;
+  pageSize        = 50;
+  total           = signal(0);
+  events          = signal<any[]>([]);
+  loading         = signal(false);
+  error           = signal<string | null>(null);
+
+  ngOnInit() { this.load(); }
+
+  load() {
+    this.loading.set(true);
+    this.error.set(null);
+    this.api.adminGetEvents({
+      eventType:     this.typeFilter || undefined,
+      aggregateType: this.aggregateFilter || undefined,
+      page:          this.page,
+      pageSize:      this.pageSize
+    }).subscribe({
+      next: r => { this.events.set(r.items); this.total.set(r.totalCount); this.loading.set(false); },
+      error: () => { this.error.set('Failed to load events.'); this.loading.set(false); }
+    });
   }
 
-  ngOnInit() {
-    const now = new Date();
-    this.events.set([
-      { id: '1', eventType: 'RaceCreated',           aggregateType: 'Race',    aggregateId: 'f3a2-1b4c-9d8e', triggeredBy: 'Alice Martin', createdAt: new Date(now.getTime() - 120000), isProcessed: true },
-      { id: '2', eventType: 'ResultPublished',        aggregateType: 'Race',    aggregateId: 'f3a2-1b4c-9d8e', triggeredBy: 'Alice Martin', createdAt: new Date(now.getTime() - 90000),  isProcessed: true },
-      { id: '3', eventType: 'UserInvited',            aggregateType: 'Club',    aggregateId: 'a8c3-2f1d-4e7b', triggeredBy: 'Alice Martin', createdAt: new Date(now.getTime() - 60000),  isProcessed: true },
-      { id: '4', eventType: 'CountryResultPublished', aggregateType: 'Country', aggregateId: 'b1e5-3a2c-7f9d', triggeredBy: 'David Hughes', createdAt: new Date(now.getTime() - 30000),  isProcessed: true },
-      { id: '5', eventType: 'SubscriptionChanged',    aggregateType: 'Country', aggregateId: 'c9d7-4b3e-2a1f', triggeredBy: 'System',       createdAt: now,                              isProcessed: false },
-    ]);
-  }
+  onFilter() { this.page = 1; this.load(); }
+
+  get totalPages() { return Math.ceil(this.total() / this.pageSize); }
+  prevPage() { if (this.page > 1) { this.page--; this.load(); } }
+  nextPage() { if (this.page < this.totalPages) { this.page++; this.load(); } }
 }

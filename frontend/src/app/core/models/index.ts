@@ -1,6 +1,6 @@
 // ── src/app/core/models/index.ts ──────────────────────────────────────────────
 
-export enum UserRole { SuperAdmin = 1, CountryManager = 2, ClubManager = 3, Fancier = 4 }
+export enum UserRole { SuperAdmin = 1, FederationManager = 2, ClubManager = 3, Fancier = 4 }
 export enum RaceStatus { Draft = 1, Scheduled = 2, InProgress = 3, Completed = 4, Published = 5, Cancelled = 6 }
 export enum ResultStatus { Pending = 1, Validated = 2, Published = 3, Rejected = 4 }
 export enum DataIngestionType { Manual = 1, ETSFile = 2, IoT = 3 }
@@ -37,7 +37,7 @@ export interface User {
   lastName: string;
   fullName: string;
   role: UserRole;
-  countryId?: string;
+  FederationId?: string;
   clubId?: string;
   profileImageUrl?: string;
   isActive: boolean;
@@ -52,8 +52,8 @@ export interface AuthTokens {
 
 export interface Club {
   id: string;
-  countryId: string;
-  countryName: string;
+  FederationId: string;
+  FederationName: string;
   name: string;
   code: string;
   description?: string;
@@ -127,10 +127,10 @@ export interface RaceResult {
   ingestionType: DataIngestionType;
 }
 
-export interface CountryResult {
+export interface FederationResult {
   id: string;
-  countryId: string;
-  countryName: string;
+  FederationId: string;
+  FederationName: string;
   name: string;
   description?: string;
   status: CountryResultStatus;

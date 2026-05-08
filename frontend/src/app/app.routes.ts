@@ -22,11 +22,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/club/club.routes').then(m => m.CLUB_ROUTES)
   },
 
-  // Country Manager
+  // Federation Manager
   {
-    path: 'country',
-    canActivate: [authGuard, roleGuard([UserRole.CountryManager, UserRole.SuperAdmin])],
-    loadChildren: () => import('./features/country/country.routes').then(m => m.COUNTRY_ROUTES)
+    path: 'federation',
+    canActivate: [authGuard, roleGuard([UserRole.FederationManager, UserRole.SuperAdmin])],
+    loadChildren: () => import('./features/federation/federation.routes').then(m => m.COUNTRY_ROUTES)
   },
 
   // Fancier
@@ -43,10 +43,14 @@ export const routes: Routes = [
     loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
   },
 
-  // Public race pages
+  // Public pages
   {
     path: 'p/:slug',
     loadComponent: () => import('./features/public/public-club-page.component').then(m => m.PublicClubPageComponent)
+  },
+  {
+    path: 'c/:slug',
+    loadComponent: () => import('./features/public/public-federation-page.component').then(m => m.PublicFederationPageComponent)
   },
 
   { path: 'unauthorized', loadComponent: () => import('./shared/components/unauthorized.component').then(m => m.UnauthorizedComponent) },

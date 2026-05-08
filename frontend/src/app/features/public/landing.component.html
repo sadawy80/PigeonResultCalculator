@@ -11,6 +11,7 @@
       <a href="#features">{{ 'landing.navFeatures' | translate }}</a>
       <a href="#integrations">{{ 'landing.navIntegrations' | translate }}</a>
       <a href="#season">{{ 'landing.navSeason' | translate }}</a>
+      <a href="#pricing">Pricing</a>
     </div>
     <app-language-switcher />
     <div class="nav__actions">
@@ -369,6 +370,79 @@
         }
       </div>
     </div>
+  </div>
+</section>
+
+<!-- PRICING ──────────────────────────────────────────────────────── -->
+<section class="pricing" id="pricing">
+  <div class="pricing__inner">
+    <div class="pricing__header reveal">
+      <div class="section-eyebrow">Simple, transparent pricing</div>
+      <h2 class="section-title">Plans for every <em>federation</em> and club</h2>
+      <p class="section-sub">Start free. Upgrade when you're ready. Cancel anytime.</p>
+
+      <!-- Billing cycle toggle -->
+      <div class="pricing__cycle-toggle">
+        <button class="cycle-btn" [class.cycle-btn--active]="pricingCycle() === 'monthly'" (click)="pricingCycle.set('monthly')">
+          Monthly
+        </button>
+        <button class="cycle-btn cycle-btn--seasonal" [class.cycle-btn--active]="pricingCycle() === 'seasonal'" (click)="pricingCycle.set('seasonal')">
+          Seasonal
+          <span class="cycle-badge">6 months</span>
+        </button>
+        <button class="cycle-btn" [class.cycle-btn--active]="pricingCycle() === 'annual'" (click)="pricingCycle.set('annual')">
+          Annual
+          <span class="cycle-badge cycle-badge--green">Save up to 22%</span>
+        </button>
+      </div>
+
+      <p class="pricing__cycle-note">
+        @if (pricingCycle() === 'seasonal') {
+          Six months of coverage. One payment for the whole season.
+        } @else if (pricingCycle() === 'annual') {
+          Billed once yearly. Best value overall.
+        } @else {
+          Billed monthly. Cancel anytime.
+        }
+      </p>
+    </div>
+
+    <div class="pricing__grid reveal">
+      @for (plan of activePlans(); track plan.name) {
+        <div class="plan-card" [class.plan-card--highlight]="plan.highlight">
+          @if (plan.highlight) { <div class="plan-card__badge">⭐ Most Popular</div> }
+          <div class="plan-card__header">
+            <div class="plan-card__name">{{ plan.name }}</div>
+            <div class="plan-card__desc">{{ plan.desc }}</div>
+          </div>
+          <div class="plan-card__price-row">
+            <span class="plan-card__currency">€</span>
+            <span class="plan-card__amount">{{ plan.price }}</span>
+            <span class="plan-card__period">
+              @if (pricingCycle() === 'monthly') { /mo }
+              @else if (pricingCycle() === 'seasonal') { /6mo }
+              @else { /yr }
+            </span>
+          </div>
+          @if (plan.saving > 0) {
+            <div class="plan-card__saving">Save {{ plan.saving }}% vs monthly</div>
+          }
+          <ul class="plan-card__features">
+            @for (f of plan.features; track f) {
+              <li><span class="plan-card__check">✓</span> {{ f }}</li>
+            }
+          </ul>
+          <a routerLink="/auth/register" class="btn plan-card__cta" [class.btn--primary]="plan.highlight" [class.btn--outline]="!plan.highlight">
+            Get started
+          </a>
+        </div>
+      }
+    </div>
+
+    <p class="pricing__footnote reveal">
+      All plans include a <strong>14-day free trial</strong>. No credit card required.
+      Need a custom plan? <a routerLink="/auth/register">Contact us</a>.
+    </p>
   </div>
 </section>
 

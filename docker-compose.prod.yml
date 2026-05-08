@@ -4,78 +4,133 @@
 #  Usage:
 #    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
-#  This file adds:
-#    - CPU / memory limits on every container
-#    - Stricter restart policies
-#    - No dev port exposures (SQL Server, Redis ports closed to host)
-#    - Log rotation enforcement
-#    - Read-only filesystems where possible
+#  Adds: resource limits, stricter restart policies, closed dev ports
 # ─────────────────────────────────────────────────────────────────────────────
 
-name: pigeon-racing
+name: prc
 
 services:
 
-  api:
+  rabbitmq:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.2", memory: 128M }
+
+  sqlserver:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits: { cpus: "4.0", memory: 4G }
+        reservations: { cpus: "1.0", memory: 2G }
+
+  redis:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
+
+  seq:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 512M }
+
+  api-gateway:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "2.0"
-          memory: 1G
-        reservations:
-          cpus: "0.5"
-          memory: 256M
-    logging:
-      driver: json-file
-      options:
-        max-size: "100m"
-        max-file: "5"
+        limits: { cpus: "1.0", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
+
+  identity-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.2", memory: 128M }
+
+  club-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.2", memory: 128M }
+
+  race-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 1G }
+        reservations: { cpus: "0.3", memory: 256M }
+
+  federation-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.2", memory: 128M }
+
+  rendering-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 1G }
+        reservations: { cpus: "0.3", memory: 256M }
+
+  integration-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
+
+  admin-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
+
+  subscription-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
+
+  notification-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
+
+  public-service:
+    restart: always
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
 
   ui:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "0.5"
-          memory: 128M
-        reservations:
-          cpus: "0.1"
-          memory: 64M
-
-  sqlserver:
-    restart: always
-    # Don't expose SQL Server port to the host in production
-    ports: !reset []
-    deploy:
-      resources:
-        limits:
-          cpus: "4.0"
-          memory: 4G
-        reservations:
-          cpus: "1.0"
-          memory: 2G
-
-  redis:
-    restart: always
-    # Don't expose Redis port to the host in production
-    ports: !reset []
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 768M
-        reservations:
-          cpus: "0.2"
-          memory: 256M
+        limits: { cpus: "0.5", memory: 128M }
+        reservations: { cpus: "0.1", memory: 64M }
 
   prometheus:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "1.0"
-          memory: 2G
+        limits: { cpus: "1.0", memory: 2G }
 
   grafana:
     restart: always
@@ -84,62 +139,46 @@ services:
       GF_SERVER_ENABLE_GZIP: "true"
     deploy:
       resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
+        limits: { cpus: "0.5", memory: 512M }
 
   loki:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "1.0"
-          memory: 1G
+        limits: { cpus: "1.0", memory: 1G }
 
   promtail:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "0.25"
-          memory: 128M
+        limits: { cpus: "0.25", memory: 128M }
 
   alertmanager:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "0.25"
-          memory: 128M
+        limits: { cpus: "0.25", memory: 128M }
 
   node-exporter:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "0.1"
-          memory: 64M
+        limits: { cpus: "0.1", memory: 64M }
 
   cadvisor:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
+        limits: { cpus: "0.25", memory: 256M }
 
   redis-exporter:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "0.1"
-          memory: 32M
+        limits: { cpus: "0.1", memory: 32M }
 
-  postgres-exporter:
+  sql-exporter:
     restart: always
     deploy:
       resources:
-        limits:
-          cpus: "0.1"
-          memory: 32M
+        limits: { cpus: "0.1", memory: 32M }

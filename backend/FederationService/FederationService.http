@@ -1,0 +1,6 @@
+@FederationService_HostAddress = http://localhost:5255
+
+GET {{FederationService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

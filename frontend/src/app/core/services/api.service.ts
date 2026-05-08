@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   ApiResponse, PagedResult, AuthTokens, User, Club, Race, RaceSummary,
-  RaceResult, CountryResult, Notification, Theme, ClubMember, Invitation,
+  RaceResult, FederationResult, Notification, Theme, ClubMember, Invitation,
   SiteTheme
 } from '../models';
 
@@ -45,7 +45,7 @@ export class ApiService {
 
   register(payload: {
     email: string; password: string; firstName: string; lastName: string;
-    role: number; countryId?: string; invitationToken?: string;
+    role: number; FederationId?: string; invitationToken?: string;
   }): Observable<AuthTokens> {
     return this.post<AuthTokens>('/auth/register', payload);
   }
@@ -66,13 +66,76 @@ export class ApiService {
     return this.post<void>('/auth/change-password', { userId, currentPassword, newPassword });
   }
 
+  forgotPassword(email: string): Observable<void> {
+    return this.post<void>('/auth/forgot-password', { email });
+  }
+
+  resetPassword(email: string, token: string, newPassword: string): Observable<void> {
+    return this.post<void>('/auth/reset-password', { email, token, newPassword });
+  }
+
+  verifyEmail(userId: string, token: string): Observable<void> {
+    return this.get<void>(`/auth/verify-email?userId=${encodeURIComponent(userId)}&token=${encodeURIComponent(token)}`);
+  }
+
+  resendVerification(email: string): Observable<void> {
+    return this.post<void>('/auth/resend-verification', { email });
+  }
+
+  // ── Role Upgrade Requests ─────────────────────────────────────────────────
+
+  submitUpgradeRequest(payload: {
+    requestedRole: number; federationId?: string; notes?: string;
+  }): Observable<any> {
+    return this.post<any>('/auth/upgrade-request', payload);
+  }
+
+  getMyUpgradeRequests(): Observable<any[]> {
+    return this.get<any[]>('/auth/upgrade-requests');
+  }
+
+  // Federation-scoped review (FederationManager + SuperAdmin via federation route)
+  getFederationUpgradeRequests(params: {
+    status?: number; page?: number; pageSize?: number;
+  } = {}): Observable<any> {
+    return this.get<any>('/federation/upgrade-requests', params);
+  }
+
+  approveFederationUpgradeRequest(requestId: string): Observable<any> {
+    return this.post<any>(`/federation/upgrade-requests/${requestId}/approve`);
+  }
+
+  rejectFederationUpgradeRequest(requestId: string, reason?: string): Observable<any> {
+    return this.post<any>(`/federation/upgrade-requests/${requestId}/reject`, { reason });
+  }
+
+  // Admin-scoped review (SuperAdmin via admin route)
+  getAdminUpgradeRequests(params: {
+    federationId?: string; status?: number; page?: number; pageSize?: number;
+  } = {}): Observable<any> {
+    return this.get<any>('/admin/upgrade-requests', params);
+  }
+
+  approveAdminUpgradeRequest(requestId: string): Observable<any> {
+    return this.post<any>(`/admin/upgrade-requests/${requestId}/approve`);
+  }
+
+  rejectAdminUpgradeRequest(requestId: string, reason?: string): Observable<any> {
+    return this.post<any>(`/admin/upgrade-requests/${requestId}/reject`, { reason });
+  }
+
+  // Public federation list (for upgrade request form dropdown)
+  getPublicFederations(): Observable<{ id: string; name: string; code: string }[]> {
+    return this.get<{ id: string; name: string; code: string }[]>('/federation');
+  }
+
   // ── Clubs ─────────────────────────────────────────────────────────────────
 
   getClub(id: string): Observable<Club> {
     return this.get<Club>(`/clubs/${id}`);
   }
 
-  createClub(payload: Partial<Club> & { countryId: string }): Observable<Club> {
+  createClub(payload: Partial<Club> & { FederationId: string }): Observable<Club> {
     return this.post<Club>('/clubs', payload);
   }
 
@@ -106,12 +169,20 @@ export class ApiService {
     return this.post<void>(`/clubs/memberships/${membershipId}/link-pigeon`, { ringNumber });
   }
 
-  getClubPageInfo(clubId: string): Observable<{ slug: string; isPublished: boolean }> {
-    return this.get<{ slug: string; isPublished: boolean }>(`/clubs/${clubId}/page-info`);
+  getClubPageInfo(clubId: string): Observable<{
+    slug: string; isPublished: boolean;
+    logoUrl?: string; primaryColor?: string; secondaryColor?: string;
+    announcementsJson?: string;
+  }> {
+    return this.get(`/clubs/${clubId}/page-info`);
   }
 
   updateClubSlug(clubId: string, newSlug: string): Observable<string> {
     return this.put<string>(`/clubs/${clubId}/slug`, { newSlug });
+  }
+
+  updateClubAnnouncements(clubId: string, announcementsJson: string): Observable<void> {
+    return this.put<void>(`/clubs/${clubId}/announcements`, { announcementsJson });
   }
 
   // ── Races ─────────────────────────────────────────────────────────────────
@@ -194,22 +265,22 @@ export class ApiService {
     return this.get<any[]>(`/results/race/${raceId}/ingestion-logs`);
   }
 
-  // ── Country Results ───────────────────────────────────────────────────────
+  // ── federation results ───────────────────────────────────────────────────────
 
-  createCountryResult(payload: { countryId: string; name: string; description?: string; raceIds: string[] }): Observable<CountryResult> {
-    return this.post<CountryResult>('/country-results', payload);
+  createFederationResult(payload: { FederationId: string; name: string; description?: string; raceIds: string[] }): Observable<FederationResult> {
+    return this.post<FederationResult>('/federation-results', payload);
   }
 
-  publishCountryResult(countryResultId: string): Observable<CountryResult> {
-    return this.post<CountryResult>(`/country-results/${countryResultId}/publish`);
+  publishFederationResult(countryResultId: string): Observable<FederationResult> {
+    return this.post<FederationResult>(`/federation-results/${countryResultId}/publish`);
   }
 
-  getCountryResult(id: string): Observable<CountryResult> {
-    return this.get<CountryResult>(`/country-results/${id}`);
+  getFederationResult(id: string): Observable<FederationResult> {
+    return this.get<FederationResult>(`/federation-results/${id}`);
   }
 
-  getCountryResults(countryId: string, page = 1, pageSize = 20): Observable<PagedResult<CountryResult>> {
-    return this.get<PagedResult<CountryResult>>(`/country-results/country/${countryId}`, { page, pageSize });
+  getFederationResults(FederationId: string, page = 1, pageSize = 20): Observable<PagedResult<FederationResult>> {
+    return this.get<PagedResult<FederationResult>>(`/federation-results/country/${FederationId}`, { page, pageSize });
   }
 
   // ── Themes ────────────────────────────────────────────────────────────────
@@ -226,5 +297,94 @@ export class ApiService {
 
   markNotificationRead(notificationId: string): Observable<void> {
     return this.post<void>(`/notifications/${notificationId}/read`);
+  }
+
+  // ── Public pages ──────────────────────────────────────────────────────────
+
+  getPublicPlans(): Observable<any[]> {
+    return this.http.get<ApiResponse<any[]>>(`${this.base}/public/plans`)
+      .pipe(map(r => r.data!));
+  }
+
+  getPublicClubPage(slug: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/public/clubs/${slug}`).pipe(map(r => r.data));
+  }
+
+  getPublicFederationPage(slug: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/public/countries/${slug}`).pipe(map(r => r.data));
+  }
+
+  listPublishedClubs(country?: string, page = 1, pageSize = 20): Observable<any> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (country) params = params.set('country', country);
+    return this.http.get<any>(`${this.base}/public/clubs`, { params }).pipe(map(r => r.data));
+  }
+
+  // ── federation page management (FederationManager) ───────────────────────────────
+
+  getMyCountryPage(): Observable<any> {
+    return this.get<any>('/country/page');
+  }
+
+  updateMyCountryPage(payload: { theme?: number; isPublished?: boolean; announcementsJson?: string; headerHtml?: string }): Observable<any> {
+    return this.put<any>('/country/page', payload);
+  }
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+
+  adminGetStats(): Observable<any> {
+    return this.get<any>('/admin/stats');
+  }
+
+  adminGetUsers(params: { search?: string; role?: string; page?: number; pageSize?: number }): Observable<PagedResult<any>> {
+    return this.get<PagedResult<any>>('/admin/users', params);
+  }
+
+  adminToggleUser(userId: string): Observable<{ id: string; isActive: boolean }> {
+    return this.put<{ id: string; isActive: boolean }>(`/admin/users/${userId}/toggle-active`);
+  }
+
+  adminAssignRole(userId: string, role: number, FederationId?: string): Observable<any> {
+    return this.put<any>(`/admin/users/${userId}/assign-role`, { role, FederationId });
+  }
+
+  adminSetUserLimits(userId: string, maxResults: number | null, maxClubs: number | null): Observable<any> {
+    return this.put<any>(`/admin/users/${userId}/limits`, { maxResults, maxClubs });
+  }
+
+  adminGetClubs(params: { search?: string; FederationId?: string; page?: number; pageSize?: number }): Observable<PagedResult<any>> {
+    return this.get<PagedResult<any>>('/admin/clubs', params);
+  }
+
+  adminToggleClub(clubId: string): Observable<{ id: string; isActive: boolean }> {
+    return this.put<{ id: string; isActive: boolean }>(`/admin/clubs/${clubId}/suspend`);
+  }
+
+  adminGetCountries(page = 1, pageSize = 50): Observable<PagedResult<any>> {
+    return this.get<PagedResult<any>>('/admin/countries', { page, pageSize });
+  }
+
+  adminCreateCountry(name: string, code: string, slug: string): Observable<any> {
+    return this.post<any>('/admin/countries', { name, code, slug });
+  }
+
+  adminToggleCountry(FederationId: string): Observable<any> {
+    return this.put<any>(`/admin/countries/${FederationId}/toggle-active`);
+  }
+
+  adminGetSubscriptionPlans(): Observable<any[]> {
+    return this.get<any[]>('/admin/subscription-plans');
+  }
+
+  adminGetSubscriptions(page = 1, pageSize = 20): Observable<PagedResult<any>> {
+    return this.get<PagedResult<any>>('/admin/subscriptions', { page, pageSize });
+  }
+
+  adminCreateSubscription(FederationId: string, planId: string, billingCycle: number): Observable<any> {
+    return this.post<any>('/admin/subscriptions', { FederationId, planId, billingCycle });
+  }
+
+  adminGetEvents(params: { eventType?: string; aggregateType?: string; page?: number; pageSize?: number }): Observable<PagedResult<any>> {
+    return this.get<PagedResult<any>>('/admin/events', params);
   }
 }

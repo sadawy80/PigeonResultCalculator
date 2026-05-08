@@ -262,7 +262,7 @@ export class ShellComponent {
 
   roleName = computed(() => {
     const roles: Record<number, string> = {
-      1: 'Super Admin', 2: 'Country Manager', 3: 'Club Manager', 4: 'Fancier'
+      1: 'Super Admin', 2: 'Federation Manager', 3: 'Club Manager', 4: 'Fancier'
     };
     return roles[this.auth.currentUser()?.role ?? 0] ?? '';
   });
@@ -271,19 +271,22 @@ export class ShellComponent {
     const role = this.auth.currentUser()?.role;
     const base: Record<number, { icon: string; label: string; path: string }[]> = {
       [UserRole.SuperAdmin]: [
-        { icon: '📊', label: 'nav.dashboard',     path: '/admin/dashboard' },
-        { icon: '🌍', label: 'nav.countries',     path: '/admin/countries' },
-        { icon: '🏟️', label: 'nav.clubs',         path: '/admin/clubs' },
-        { icon: '👥', label: 'nav.users',         path: '/admin/users' },
-        { icon: '💳', label: 'nav.subscriptions', path: '/admin/subscriptions' },
-        { icon: '📋', label: 'nav.results',       path: '/admin/events' },
+        { icon: '📊', label: 'nav.dashboard',        path: '/admin/dashboard' },
+        { icon: '🌍', label: 'nav.federations',      path: '/admin/federations' },
+        { icon: '🏟️', label: 'nav.clubs',            path: '/admin/clubs' },
+        { icon: '👥', label: 'nav.users',            path: '/admin/users' },
+        { icon: '💳', label: 'nav.subscriptions',    path: '/admin/subscriptions' },
+        { icon: '⬆️', label: 'nav.upgradeRequests',  path: '/admin/upgrade-requests' },
+        { icon: '📋', label: 'nav.results',          path: '/admin/events' },
       ],
-      [UserRole.CountryManager]: [
-        { icon: '📊', label: 'nav.dashboard',     path: '/country/dashboard' },
-        { icon: '🏟️', label: 'nav.clubs',         path: '/country/clubs' },
-        { icon: '🏁', label: 'nav.races',         path: '/country/races' },
-        { icon: '🥇', label: 'nav.results',       path: '/country/results' },
-        { icon: '👥', label: 'nav.members',       path: '/country/members' },
+      [UserRole.FederationManager]: [
+        { icon: '📊', label: 'nav.dashboard',        path: '/federation/dashboard' },
+        { icon: '🏟️', label: 'nav.clubs',            path: '/federation/clubs' },
+        { icon: '🏁', label: 'nav.races',            path: '/federation/races' },
+        { icon: '🥇', label: 'nav.results',          path: '/federation/results' },
+        { icon: '👥', label: 'nav.members',          path: '/federation/members' },
+        { icon: '⬆️', label: 'nav.upgradeRequests',  path: '/federation/upgrade-requests' },
+        { icon: '🎨', label: 'nav.clubPage',         path: '/federation/page' },
       ],
       [UserRole.ClubManager]: [
         { icon: '📊', label: 'nav.dashboard',    path: '/club/dashboard' },

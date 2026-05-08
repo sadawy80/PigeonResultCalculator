@@ -1,44 +1,57 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
     <h1 class="pr-page-header__title">All Clubs</h1>
-    <p class="pr-page-header__subtitle">{{ clubs().length }} clubs across all countries</p>
+    <p class="pr-page-header__subtitle">{{ total() }} clubs across all countries</p>
   </div>
 </div>
 
+@if (error()) {
+  <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
+}
+
 <div class="flex gap-4 mb-6">
-  <input class="pr-input" style="max-width:300px" placeholder="Search clubs..." [(ngModel)]="search">
-  <select class="pr-select" style="max-width:200px" [(ngModel)]="countryFilter">
-    <option value="">All Countries</option>
-    <option value="BE">Belgium</option>
-    <option value="NL">Netherlands</option>
-    <option value="GB">United Kingdom</option>
-  </select>
+  <input class="pr-input" style="max-width:300px" placeholder="Search clubs..."
+    [(ngModel)]="search" (keyup.enter)="onSearch()">
+  <input class="pr-input" style="max-width:200px" placeholder="Country ID (filter)"
+    [(ngModel)]="countryFilter" (keyup.enter)="onSearch()">
+  <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="onSearch()">Search</button>
 </div>
 
 <div class="pr-card">
-  <div class="pr-table-wrapper">
-    <table class="pr-table">
-      <thead>
-        <tr><th>Club</th><th>Code</th><th>Country</th><th>Members</th><th>Subscription</th><th>Status</th><th>Actions</th></tr>
-      </thead>
-      <tbody>
-        @for (c of filteredClubs(); track c.id) {
-          <tr>
-            <td class="font-bold">{{ c.name }}</td>
-            <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 8px;border-radius:4px">{{ c.code }}</code></td>
-            <td>{{ c.country }}</td>
-            <td>{{ c.memberCount }}</td>
-            <td><span class="pr-badge pr-badge--info">{{ c.plan }}</span></td>
-            <td><span [class]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ c.isActive ? 'Active' : 'Suspended' }}</span></td>
-            <td>
-              <div class="flex gap-2">
-                <button class="pr-btn pr-btn--ghost pr-btn--sm">Edit</button>
-                <button class="pr-btn pr-btn--danger pr-btn--sm">Suspend</button>
-              </div>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+  @if (loading()) {
+    <div class="text-center py-8 text-muted">Loading...</div>
+  } @else {
+    <div class="pr-table-wrapper">
+      <table class="pr-table">
+        <thead>
+          <tr><th>Club</th><th>Code</th><th>Country</th><th>City</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          @for (c of clubs(); track c.id) {
+            <tr>
+              <td class="font-bold">{{ c.name }}</td>
+              <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 8px;border-radius:4px">{{ c.code }}</code></td>
+              <td>{{ c.FederationName }} <span class="text-muted text-sm">({{ c.FederationCode }})</span></td>
+              <td class="text-muted text-sm">{{ c.city ?? '—' }}</td>
+              <td><span [class]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ c.isActive ? 'Active' : 'Suspended' }}</span></td>
+              <td class="text-muted text-sm">{{ c.createdAt | date:'dd MMM yyyy' }}</td>
+              <td>
+                <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleClub(c.id)">
+                  {{ c.isActive ? 'Suspend' : 'Activate' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex justify-between items-center mt-4">
+      <span class="text-muted text-sm">Page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-2">
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+      </div>
+    </div>
+  }
 </div>

@@ -2,67 +2,203 @@
   "version": "0.2.0",
 
   // ─────────────────────────────────────────────────────────────────────────────
-  //  Two workflows are supported:
+  //  Two workflows:
   //
-  //  A) Full Docker Debug  (recommended)
-  //     1. Terminal → Run Task → "docker: start debug stack"   (one-time setup)
-  //     2. Launch "Full Stack: Docker Debug"
-  //        ‣ Attaches C# debugger to pigeon-api container via vsdbg
-  //        ‣ Opens Chrome on https://localhost:4300 with Angular source maps
+  //  A) Full Docker Stack  (recommended for integration testing)
+  //     Run task "docker: start all", then launch "Angular: Chrome/Edge"
   //
-  //  B) Local API + Docker infra
-  //     1. Terminal → Run Task → "docker: start infrastructure"
-  //     2. Launch "Full Stack: Local API + Angular"
-  //        ‣ Builds & runs API natively on http://localhost:5000
-  //        ‣ Starts Angular dev-server then opens Chrome
+  //  B) Single Service Local  (for debugging a specific service)
+  //     1. Run task "docker: start infra" to bring up RabbitMQ + SQL Server + Redis + Seq
+  //     2. Launch the desired service config below
+  //     3. Optionally also launch "Angular: Chrome" to test end-to-end
   // ─────────────────────────────────────────────────────────────────────────────
 
   "configurations": [
 
-    // ── .NET: Attach to running Docker container ────────────────────────────────
-    {
-      "name": "API: Attach to Docker",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": "${command:pickRemoteProcess}",
-      "pipeTransport": {
-        "pipeProgram": "docker",
-        "pipeArgs": ["exec", "-i", "pigeon-api"],
-        "debuggerPath": "/vsdbg/vsdbg",
-        "pipeCwd": "${workspaceFolder}"
-      },
-      "sourceFileMap": {
-        "/src": "${workspaceFolder}"
-      },
-      "justMyCode": false
-    },
+    // ── .NET: Individual Services (local run) ─────────────────────────────────
 
-    // ── .NET: Run API natively (infra in Docker) ─────────────────────────────
     {
-      "name": "API: Launch Locally",
+      "name": "API Gateway",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "api: build (infra first)",
-      "program": "${workspaceFolder}/backend/API/bin/Debug/net9.0/PigeonRacing.API.dll",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/ApiGateway/bin/Debug/net9.0/PRC.ApiGateway.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/backend/API",
+      "cwd": "${workspaceFolder}/backend/ApiGateway",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://localhost:5000"
+        "ASPNETCORE_URLS": "http://localhost:9500"
       },
-      "console": "internalConsole",
-      "sourceFileMap": {
-        "/Views": "${workspaceFolder}/Views"
-      }
+      "console": "internalConsole"
     },
 
-    // ── Angular: Chrome ──────────────────────────────────────────────────────
+    {
+      "name": "Identity Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/IdentityService/bin/Debug/net9.0/PRC.IdentityService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/IdentityService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9501"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Club Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/ClubService/bin/Debug/net9.0/PRC.ClubService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/ClubService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9502"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Race Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/RaceService/bin/Debug/net9.0/PRC.RaceService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/RaceService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9503"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Federation Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/FederationService/bin/Debug/net9.0/PRC.FederationService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/FederationService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9504"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Rendering Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/RenderingService/bin/Debug/net9.0/PRC.RenderingService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/RenderingService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9505"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Integration Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/IntegrationService/bin/Debug/net9.0/PRC.IntegrationService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/IntegrationService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9506"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Admin Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/AdminService/bin/Debug/net9.0/PRC.AdminService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/AdminService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9507"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Public Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/PublicService/bin/Debug/net9.0/PRC.PublicService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/PublicService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9508"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Subscription Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/SubscriptionService/bin/Debug/net9.0/PRC.SubscriptionService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/SubscriptionService",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:9509"
+      },
+      "console": "internalConsole"
+    },
+
+    {
+      "name": "Notification Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet: build solution",
+      "program": "${workspaceFolder}/backend/NotificationService/bin/Debug/net9.0/PRC.NotificationService.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/NotificationService",
+      "stopAtEntry": false,
+      "env": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "console": "internalConsole"
+    },
+
+    // ── Angular ──────────────────────────────────────────────────────────────
+
     {
       "name": "Angular: Chrome",
       "type": "chrome",
       "request": "launch",
-      "url": "https://localhost:4300",
+      "url": "http://localhost:4300",
       "webRoot": "${workspaceFolder}/frontend/src",
       "sourceMapPathOverrides": {
         "webpack:///./src/*": "${webRoot}/*",
@@ -71,12 +207,11 @@
       }
     },
 
-    // ── Angular: Edge ────────────────────────────────────────────────────────
     {
       "name": "Angular: Edge",
       "type": "msedge",
       "request": "launch",
-      "url": "https://localhost:4300",
+      "url": "http://localhost:4300",
       "webRoot": "${workspaceFolder}/frontend/src",
       "sourceMapPathOverrides": {
         "webpack:///./src/*": "${webRoot}/*",
@@ -88,31 +223,30 @@
 
   "compounds": [
 
-    // ── A) Full Docker Debug ─────────────────────────────────────────────────
-    //   Run task "docker: start debug stack" first, then launch this.
+    // ── A) Full Docker Stack + Angular ────────────────────────────────────────
     {
-      "name": "Full Stack: Docker Debug (Chrome)",
-      "configurations": ["API: Attach to Docker", "Angular: Chrome"],
-      "preLaunchTask": "docker: start debug stack",
+      "name": "Full Stack: Docker + Chrome",
+      "configurations": ["Angular: Chrome"],
+      "preLaunchTask": "docker: start all",
       "stopAll": true
     },
     {
-      "name": "Full Stack: Docker Debug (Edge)",
-      "configurations": ["API: Attach to Docker", "Angular: Edge"],
-      "preLaunchTask": "docker: start debug stack",
+      "name": "Full Stack: Docker + Edge",
+      "configurations": ["Angular: Edge"],
+      "preLaunchTask": "docker: start all",
       "stopAll": true
     },
 
-    // ── B) Local API + Angular ───────────────────────────────────────────────
-    //   Infrastructure (SQL Server + Redis) starts in Docker automatically.
+    // ── B) Local Gateway + Angular ────────────────────────────────────────────
+    //   Run "docker: start infra" first, then start individual services manually.
     {
-      "name": "Full Stack: Local API + Chrome",
-      "configurations": ["API: Launch Locally", "Angular: Chrome"],
+      "name": "Local: Gateway + Chrome",
+      "configurations": ["API Gateway", "Angular: Chrome"],
       "stopAll": true
     },
     {
-      "name": "Full Stack: Local API + Edge",
-      "configurations": ["API: Launch Locally", "Angular: Edge"],
+      "name": "Local: Gateway + Edge",
+      "configurations": ["API Gateway", "Angular: Edge"],
       "stopAll": true
     }
   ]

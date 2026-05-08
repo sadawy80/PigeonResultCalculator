@@ -5,6 +5,12 @@ import { ApiService } from '../../core/services/api.service';
 import { ThemeService, AuthService } from '../../core/services/services';
 import { Theme, SiteTheme } from '../../core/models';
 
+interface ClubAnnouncement {
+  title: string;
+  body?: string;
+  date?: string;
+}
+
 // ── Theme Picker Component ────────────────────────────────────────────────────
 
 @Component({
@@ -211,11 +217,37 @@ export class ThemePickerComponent implements OnInit {
     <!-- Announcements tab -->
     @if (activeTab() === 'announcements') {
       <div class="pr-card" style="max-width:640px">
-        <h3 style="margin-bottom:24px">Announcements</h3>
-        <textarea class="pr-textarea" rows="8"
-                  [(ngModel)]="announcementsText"
-                  placeholder="Write announcements for your club members..."></textarea>
-        <button class="pr-btn pr-btn--primary mt-4">Save Announcements</button>
+        <div class="flex justify-between items-center mb-4">
+          <h3>Announcements</h3>
+          <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="addAnnouncement()">+ Add</button>
+        </div>
+        @if (announcements().length === 0) {
+          <p class="text-muted text-sm mb-4">No announcements yet. Click "Add" to create one.</p>
+        }
+        @for (a of announcements(); track $index; let i = $index) {
+          <div style="margin-bottom:16px">
+            <div class="flex gap-3 items-start">
+              <div class="flex flex-col gap-2 flex-1">
+                <input class="pr-input" placeholder="Title *" [(ngModel)]="a.title">
+                <textarea class="pr-input" rows="2" placeholder="Body (optional)" [(ngModel)]="a.body"
+                  style="resize:vertical;min-height:60px"></textarea>
+                <input type="date" class="pr-input" [(ngModel)]="a.date" style="max-width:200px">
+              </div>
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error)"
+                (click)="removeAnnouncement(i)">✕</button>
+            </div>
+            @if (i < announcements().length - 1) {
+              <hr style="margin-top:16px;border:none;border-top:1px solid var(--pr-border)">
+            }
+          </div>
+        }
+        <div class="flex gap-3 mt-4">
+          <button class="pr-btn pr-btn--primary" [disabled]="savingAnnouncements()" (click)="saveAnnouncements()">
+            @if (savingAnnouncements()) { <span class="pr-spinner" style="width:16px;height:16px"></span> }
+            Save Announcements
+          </button>
+        </div>
+        @if (announcementsSaved()) { <div class="pr-alert pr-alert--success mt-3">Saved!</div> }
       </div>
     }
 
@@ -302,20 +334,24 @@ export class ClubPageEditorComponent implements OnInit {
 
   get clubId() { return this.auth.clubId() ?? ''; }
   activeTab = signal('theme');
-  saving = signal(false);
+  saving    = signal(false);
   saveSuccess = signal(false);
-  announcementsText = '';
 
   branding = { logoUrl: '', primaryColor: '#1E90FF', secondaryColor: '#00D4FF' };
 
-  slug         = signal('');
-  slugEditing  = signal(false);
+  // Announcements
+  announcements        = signal<ClubAnnouncement[]>([]);
+  savingAnnouncements  = signal(false);
+  announcementsSaved   = signal(false);
+
+  slug          = signal('');
+  slugEditing   = signal(false);
   slugEditValue = '';
-  slugSaving   = signal(false);
-  slugError    = signal('');
-  slugSuccess  = signal(false);
-  slugConflict = signal(false);
-  slugCopied   = signal(false);
+  slugSaving    = signal(false);
+  slugError     = signal('');
+  slugSuccess   = signal(false);
+  slugConflict  = signal(false);
+  slugCopied    = signal(false);
 
   tabs = [
     { id: 'theme',         icon: '🎨', label: 'Theme' },
@@ -326,7 +362,15 @@ export class ClubPageEditorComponent implements OnInit {
 
   ngOnInit() {
     if (this.clubId) {
-      this.api.getClubPageInfo(this.clubId).subscribe(info => this.slug.set(info.slug));
+      this.api.getClubPageInfo(this.clubId).subscribe(info => {
+        this.slug.set(info.slug);
+        if (info.logoUrl)       this.branding.logoUrl       = info.logoUrl;
+        if (info.primaryColor)  this.branding.primaryColor  = info.primaryColor;
+        if (info.secondaryColor)this.branding.secondaryColor = info.secondaryColor;
+        try {
+          this.announcements.set(JSON.parse(info.announcementsJson ?? '[]') ?? []);
+        } catch { this.announcements.set([]); }
+      });
     }
   }
 
@@ -347,6 +391,26 @@ export class ClubPageEditorComponent implements OnInit {
         setTimeout(() => this.saveSuccess.set(false), 3000);
       },
       error: () => this.saving.set(false)
+    });
+  }
+
+  addAnnouncement() {
+    this.announcements.update(arr => [...arr, { title: '', body: '', date: '' }]);
+  }
+
+  removeAnnouncement(i: number) {
+    this.announcements.update(arr => arr.filter((_, idx) => idx !== i));
+  }
+
+  saveAnnouncements() {
+    this.savingAnnouncements.set(true);
+    this.api.updateClubAnnouncements(this.clubId, JSON.stringify(this.announcements())).subscribe({
+      next: () => {
+        this.savingAnnouncements.set(false);
+        this.announcementsSaved.set(true);
+        setTimeout(() => this.announcementsSaved.set(false), 3000);
+      },
+      error: () => this.savingAnnouncements.set(false)
     });
   }
 

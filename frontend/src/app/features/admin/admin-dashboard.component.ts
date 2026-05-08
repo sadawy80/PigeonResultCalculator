@@ -1,8 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { ApiService } from '../../core/services/api.service';
 
 interface PlatformStats {
   totalCountries: number;
@@ -112,7 +111,7 @@ interface PlatformStats {
   `]
 })
 export class AdminDashboardComponent implements OnInit {
-  private http = inject(HttpClient);
+  private api = inject(ApiService);
   today = new Date();
 
   stats = signal<Partial<Record<string, number>>>({});
@@ -137,7 +136,13 @@ export class AdminDashboardComponent implements OnInit {
   ];
 
   ngOnInit() {
-    // In prod these come from dedicated admin endpoints
-    this.stats.set({ totalCountries: 12, totalClubs: 84, totalUsers: 1320, totalRaces: 430, activeSubscriptions: 76, racesThisMonth: 18 });
+    this.api.adminGetStats().subscribe({
+      next: s => this.stats.set(s),
+      error: () => {}
+    });
+    this.api.adminGetEvents({ page: 1, pageSize: 10 }).subscribe({
+      next: p => this.recentEvents.set(p.items ?? []),
+      error: () => {}
+    });
   }
 }
