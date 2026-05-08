@@ -232,8 +232,8 @@ public class UpgradeRequestsController : ControllerBase
 
         return Ok(ApiResponse<object>.Ok(new
         {
-            req.Id, req.Status,
-            user.Id, user.Email, user.FullName, user.Role
+            RequestId = req.Id, req.Status,
+            UserId = user.Id, user.Email, user.FullName, user.Role
         }));
     }
 

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PRC.Common.Messages;
 using PRC.IdentityService.Data;
 using PRC.IdentityService.Events;
 using PRC.IdentityService.Models;
