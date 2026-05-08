@@ -9,6 +9,7 @@ using PRC.IdentityService.Data;
 using PRC.IdentityService.Events;
 using PRC.IdentityService.Models;
 using PRC.IdentityService.Services;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 

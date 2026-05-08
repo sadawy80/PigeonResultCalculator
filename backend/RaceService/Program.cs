@@ -9,6 +9,7 @@ using PRC.Common.Messages;
 using PRC.RaceService.Events;
 using PRC.RaceService.Hubs;
 using PRC.RaceService.Services;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 

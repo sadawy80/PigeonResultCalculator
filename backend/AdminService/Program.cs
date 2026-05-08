@@ -8,6 +8,7 @@ using PRC.AdminService.Data;
 using PRC.AdminService.Middleware;
 using PRC.AdminService.Services;
 using PRC.Common.Messages;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 

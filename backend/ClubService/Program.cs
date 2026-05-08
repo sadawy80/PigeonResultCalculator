@@ -8,6 +8,7 @@ using PRC.ClubService.Data;
 using PRC.ClubService.Events;
 using PRC.ClubService.Services;
 using PRC.Common.Messages;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 

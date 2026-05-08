@@ -8,6 +8,7 @@ using PRC.SubscriptionService.Data;
 using PRC.SubscriptionService.Events;
 using PRC.SubscriptionService.Middleware;
 using PRC.SubscriptionService.Services;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 

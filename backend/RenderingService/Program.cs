@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MassTransit;
+using Prometheus;
 using Serilog;
 using System.Text;
 using PRC.Common.Messages;

@@ -8,6 +8,7 @@ using PRC.FederationService.Data;
 using PRC.FederationService.Events;
 using PRC.FederationService.Hubs;
 using PRC.FederationService.Services;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 
