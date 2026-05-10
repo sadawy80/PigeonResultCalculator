@@ -64,16 +64,22 @@ public record SubscriptionCancelledEvent(
 // ─────────────────────────────────────────────────────────────────────────────
 
 public record GetIdentityStatsRequest;
-public record IdentityStatsResult(int TotalUsers, int PendingUsers, int ActiveUsers);
+public record IdentityStatsResult(int TotalUsers, int PendingUsers, int ActiveUsers,
+    int TotalFanciers = 0, int UsersThisYear = 0, int FanciersThisYear = 0);
 
 public record GetClubStatsRequest;
-public record ClubStatsResult(int TotalClubs, int TotalActiveClubs, int TotalMembers);
+public record ClubStatsResult(int TotalClubs, int TotalActiveClubs, int TotalMembers,
+    int TotalAceResults = 0, int TotalSuperAceResults = 0, int TotalBestLoftResults = 0,
+    int TotalProgrammes = 0, int ProgrammesThisYear = 0,
+    int ClubsThisYear = 0, int AceResultsThisYear = 0,
+    int SuperAceResultsThisYear = 0, int BestLoftResultsThisYear = 0);
 
 public record GetRaceStatsRequest;
-public record RaceStatsResult(int TotalRaces, int PublishedRaces, int RacesThisMonth, int TotalResults);
+public record RaceStatsResult(int TotalRaces, int PublishedRaces, int RacesThisMonth, int TotalResults,
+    int TotalPigeons = 0, int RacesThisYear = 0, int ResultsThisYear = 0, int PigeonsThisYear = 0);
 
 public record GetFederationStatsRequest;
-public record FederationStatsResult(int TotalFederations, int ActiveFederations);
+public record FederationStatsResult(int TotalFederations, int ActiveFederations, int FederationsThisYear = 0);
 
 public record GetSubscriptionStatsRequest;
 public record SubscriptionStatsResult(int ActiveFederationSubscriptions, int ActiveClubSubscriptions);
@@ -112,6 +118,9 @@ public record AssignRoleResult(Guid Id, UserRole Role, Guid? FederationId, strin
 public record SetUserLimitsRequest(Guid UserId, int? MaxResults, int? MaxClubs);
 public record SetUserLimitsResult(Guid Id, int? MaxResultsOverride, int? MaxClubsOverride, string? Error);
 
+public record DeleteUserRequest(Guid UserId, Guid RequestingUserId);
+public record DeleteUserResult(bool Success, string? Error);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin — Club management (ClubService consumers)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -132,6 +141,15 @@ public record AdminClubItem(
 public record ToggleClubActiveRequest(Guid ClubId);
 public record ToggleClubActiveResult(Guid Id, bool IsActive, string? Error);
 
+public record AdminCreateClubRequest(Guid? FederationId, string Name, string Code, string? City, Guid CreatedBy);
+public record AdminCreateClubResult(bool Success, Guid? ClubId, string? Error);
+
+public record AdminAssignClubManagerRequest(Guid ClubId, Guid UserId, string UserFullName, string UserEmail, bool Force);
+public record AdminAssignClubManagerResult(bool Success, bool HasConflict, Guid? ConflictClubId, string? ConflictClubName, Guid? FederationId, string? Error);
+
+public record AdminDeleteClubRequest(Guid ClubId, Guid AdminUserId, string AdminName);
+public record AdminDeleteClubResult(bool Success, string? Error, string? ClubName);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin — Federation management (FederationService consumers)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +163,8 @@ public record AdminFederationItem(
     string Code,
     string? Slug,
     string? FlagUrl,
-    bool IsActive);
+    bool IsActive,
+    string? ManagerEmail);
 
 public record CreateFederationRequest(
     string Name,
@@ -162,6 +181,9 @@ public record CreateFederationResult(bool Success, Guid? Id, string? Error);
 public record ToggleFederationActiveRequest(Guid FederationId);
 public record ToggleFederationActiveResult(Guid Id, bool IsActive, string? Error);
 
+public record AdminDeleteFederationRequest(Guid FederationId, Guid AdminUserId, string AdminName);
+public record AdminDeleteFederationResult(bool Success, string? Error, string? FederationName);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin — Subscription management (SubscriptionService consumers)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -172,17 +194,39 @@ public record SubscriptionPlansResult(IReadOnlyList<SubscriptionPlanItem> Plans)
 public record SubscriptionPlanItem(
     Guid Id,
     string Name,
+    string? Description,
     string Type,
     string BillingCycle,
     decimal Price,
     string Currency,
-    int? MaxClubs,
-    int? MaxResultsPerClub,
+    int MaxClubs,
+    int MaxResultsPerClub,
     bool IsActive,
     bool IsHighlighted,
-    int SortOrder);
+    int SortOrder,
+    string? Features);
 
-public record GetFederationSubscriptionsRequest(int Page, int PageSize);
+public record UpdateSubscriptionPlanBusRequest(
+    Guid PlanId,
+    string Name,
+    string? Description,
+    decimal Price,
+    int MaxClubs,
+    int MaxResultsPerClub,
+    bool IsActive,
+    bool IsHighlighted,
+    int SortOrder,
+    string? Features,
+    Guid UpdatedBy);
+
+public record UpdateSubscriptionPlanBusResult(bool Success, string? Error, SubscriptionPlanItem? Plan);
+
+public record GetFederationSubscriptionsRequest(
+    int Page, int PageSize,
+    string? Search = null,
+    string? BillingCycle = null,
+    DateTime? DateFrom = null,
+    DateTime? DateTo = null);
 public record FederationSubscriptionsResult(IReadOnlyList<FederationSubscriptionItem> Items, int TotalCount);
 
 public record FederationSubscriptionItem(
@@ -208,7 +252,144 @@ public record CreateFederationSubscriptionRequest(
 public record CreateFederationSubscriptionResult(bool Success, Guid? Id, string? Error);
 
 public record GetActiveSubscriptionCountRequest;
-public record ActiveSubscriptionCountResult(int FederationSubscriptions, int ClubSubscriptions);
+public record ActiveSubscriptionCountResult(int FederationSubscriptions, int ClubSubscriptions,
+    int FederationSubsThisYear = 0, int ClubSubsThisYear = 0);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Race & Result management (RaceService consumers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+public record GetAdminRacesRequest(
+    string? Search, Guid? ClubId, int? Status,
+    DateTime? DateFrom, DateTime? DateTo, int Page, int PageSize);
+
+public record AdminRacesResult(IReadOnlyList<AdminRaceItem> Items, int TotalCount);
+
+public record AdminRaceItem(
+    Guid Id, string Name, Guid ClubId, string ClubName, Guid? FederationId,
+    int Status, DateTime? ScheduledAt, DateTime? PublishedAt,
+    int ResultCount, DateTime CreatedAt);
+
+public record AdminDeleteRaceRequest(Guid RaceId, Guid AdminUserId, string AdminName);
+public record AdminDeleteRaceResult(bool Success, string? Error, string? RaceName, Guid? ClubId);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Programme & aggregate results (ClubService consumers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+public record GetAdminProgrammesRequest(string? Search, Guid? ClubId, int Page, int PageSize);
+public record AdminProgrammesResult(IReadOnlyList<AdminProgrammeItem> Items, int TotalCount);
+public record AdminProgrammeItem(
+    Guid Id, string Name, int Year, Guid ClubId, string ClubName,
+    int AceCount, int SuperAceCount, int BestLoftCount, int Status, DateTime CreatedAt);
+
+public record GetAdminAcePigeonResultsRequest(string? Search, Guid? ClubId, Guid? ProgrammeId, int Page, int PageSize);
+public record AdminAcePigeonResultsResult(IReadOnlyList<AdminAcePigeonItem> Items, int TotalCount);
+
+public record GetAdminSuperAceResultsRequest(string? Search, Guid? ClubId, Guid? ProgrammeId, int Page, int PageSize);
+public record AdminSuperAceResultsResult(IReadOnlyList<AdminAcePigeonItem> Items, int TotalCount);
+
+public record GetAdminBestLoftResultsRequest(string? Search, Guid? ClubId, Guid? ProgrammeId, int Page, int PageSize);
+public record AdminBestLoftResultsResult(IReadOnlyList<AdminBestLoftItem> Items, int TotalCount);
+
+public record AdminAcePigeonItem(
+    Guid Id, Guid ProgrammeId, string ProgrammeName, int ProgrammeYear,
+    Guid ClubId, string ClubName,
+    string FancierName, string RingNumber, string? PigeonName,
+    int Rank, double TotalScore, int RacesEntered);
+
+public record AdminBestLoftItem(
+    Guid Id, Guid ProgrammeId, string ProgrammeName, int ProgrammeYear,
+    Guid ClubId, string ClubName,
+    string FancierName, int Rank, double TotalScore, int RacesEntered);
+
+public record NotifyClubManagersRequest(
+    Guid ClubId, string Title, string Message,
+    string? EntityType = null, string? EntityId = null);
+public record NotifyClubManagersResult(bool Success, int NotifiedCount);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Pigeon management (RaceService consumers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+public record GetAdminPigeonsRequest(string? Search, Guid? FederationId, Guid? ClubId, int Page, int PageSize, string? FancierSearch = null);
+public record AdminPigeonsResult(IReadOnlyList<AdminPigeonItem> Items, int TotalCount);
+public record AdminPigeonItem(
+    Guid Id, string RingNumber, string? Name, string? Sex, int? YearOfBirth,
+    string? Color, Guid? FederationId, DateTime CreatedAt, string? FancierName);
+
+public record AdminUpdatePigeonRequest(Guid PigeonId, string? Name, string? Sex, int? YearOfBirth, string? Color, Guid UpdatedBy);
+public record AdminUpdatePigeonResult(bool Success, string? Error);
+
+public record AdminDeletePigeonRequest(Guid PigeonId, Guid AdminUserId);
+public record AdminDeletePigeonResult(bool Success, string? Error, string? RingNumber);
+
+// ── Admin — Fancier management (RaceService consumers) ───────────────────────
+public record GetAdminFanciersRequest(
+    string? Search, Guid? ClubId, Guid? FederationId, bool? IsLinked, int Page, int PageSize);
+public record GetAdminFanciersResult(IReadOnlyList<AdminFancierItem> Items, int TotalCount);
+public record AdminFancierItem(
+    Guid Id, string Name,
+    Guid ClubId, string ClubName,
+    Guid? FederationId, string? FederationName, string? Country,
+    bool IsLinked, Guid? LinkedUserId, string? LinkedUserName, string? LinkedUserEmail,
+    DateTime? LinkedAt, DateTime CreatedAt);
+public record LinkFancierToUserRequest(Guid FancierId, Guid UserId, string UserName, string UserEmail);
+public record LinkFancierToUserResult(bool Success, string? Error);
+public record UnlinkFancierRequest(Guid FancierId);
+public record UnlinkFancierResult(bool Success, string? Error);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Programme management (ClubService consumers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+public record AdminDeleteProgrammeRequest(Guid ProgrammeId, Guid AdminUserId);
+public record AdminDeleteProgrammeResult(bool Success, string? Error, string? ProgrammeName);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Notifications (ClubService consumers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+public record GetAdminNotificationsRequest(string? Search, int Page, int PageSize);
+public record GetAdminNotificationsResult(IReadOnlyList<AdminNotificationItem> Items, int TotalCount);
+public record AdminNotificationItem(
+    Guid Id, Guid UserId, string Title, string? Body,
+    string Type, string Status, string Channel, DateTime CreatedAt, DateTime? ReadAt);
+public record AdminSendNotificationBusRequest(Guid ClubId, string Title, string Message, Guid SentBy);
+public record AdminSendNotificationBusResult(bool Success, int SentCount, string? Error);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — External Link management (IntegrationService consumers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+public record GetAdminExternalLinksRequest(int? Status, int Page, int PageSize);
+public record GetAdminExternalLinksResult(IReadOnlyList<AdminExternalLinkItem> Items, int TotalCount);
+public record AdminExternalLinkItem(
+    Guid Id, string ExternalLoftName, string ExternalLoftId,
+    string ExternalPlatformName, Guid UserId, Guid ClubId,
+    int Status, string StatusLabel,
+    string? RejectionReason, string? RevokedReason,
+    DateTime RequestedAt, DateTime? LastDataAccessAt);
+public record AdminApproveLinkBusRequest(Guid LinkId, Guid AdminUserId);
+public record AdminApproveLinkBusResult(bool Success, string? Error);
+public record AdminRejectLinkBusRequest(Guid LinkId, string? Reason, Guid AdminUserId);
+public record AdminRejectLinkBusResult(bool Success, string? Error);
+public record AdminRevokeLinkBusRequest(Guid LinkId);
+public record AdminRevokeLinkBusResult(bool Success, string? Error);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Subscription plan create / delete (SubscriptionService consumers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+public record AdminCreateSubscriptionPlanBusRequest(
+    string Name, string? Description,
+    string Type, string BillingCycle,
+    decimal Price, string Currency,
+    int MaxClubs, int MaxResultsPerClub,
+    bool IsHighlighted, int SortOrder, string? Features, Guid CreatedBy);
+public record AdminCreateSubscriptionPlanBusResult(bool Success, SubscriptionPlanItem? Plan, string? Error);
+public record AdminDeleteSubscriptionPlanBusRequest(Guid PlanId, Guid DeletedBy);
+public record AdminDeleteSubscriptionPlanBusResult(bool Success, string? Error);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rendering — cross-service data requests
@@ -419,7 +600,7 @@ public record PublicRaceItem(
 public record PublicRaceCategoryItem(Guid Id, string Name, int SortOrder);
 public record PublicRaceResultItem(
     Guid Id, string RingNumber, string? PigeonName,
-    Guid? FancierId, double VelocityMperMin, double DistanceKm,
+    Guid? FancierId, double SpeedMperMin, double DistanceKm,
     int ClubRank, int? CategoryRank, string? CategoryName, DateTime? ArrivalTime);
 public record PublicLiveRaceItem(Guid Id, string Name, int TotalPigeonsEntered);
 
@@ -438,7 +619,7 @@ public record PublicFederationResultSummary(
     int TotalEntriesCount, int TotalClubsCount,
     IReadOnlyList<PublicFederationResultEntry> TopEntries);
 public record PublicFederationResultEntry(
-    int NationalRank, string RingNumber, double VelocityMperMin,
+    int NationalRank, string RingNumber, double SpeedMperMin,
     string? FancierName, string ClubName);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -528,9 +709,12 @@ public record UpgradeRequestItem(
     DateTime? ReviewedAt);
 
 public record ReviewUpgradeRequestRequest(
-    Guid RequestId, bool Approved, string? RejectionReason, Guid ReviewedByUserId);
+    Guid RequestId, bool Approved, string? RejectionReason, Guid ReviewedByUserId, bool IsAdmin = false);
 
 public record ReviewUpgradeRequestResult(bool Success, string? Error);
+
+public record RevokeUpgradeRequestRequest(Guid RequestId, Guid RevokedByUserId, bool IsAdmin);
+public record RevokeUpgradeRequestResult(bool Success, string? Error);
 
 // Published when a user submits a role upgrade request (for notifications)
 public record UpgradeRequestSubmitted(
@@ -541,3 +725,11 @@ public record UpgradeRequestSubmitted(
 public record GetActiveFederationsForPublicRequest;
 public record ActiveFederationsForPublicResult(IReadOnlyList<PublicFederationListItem> Federations);
 public record PublicFederationListItem(Guid Id, string Name, string Code);
+
+// Creates an in-app notification row for a specific user (consumed by ClubService)
+public record CreateInAppNotification(
+    Guid UserId,
+    NotificationType Type,
+    string Title,
+    string Body,
+    string? ActionUrl = null);

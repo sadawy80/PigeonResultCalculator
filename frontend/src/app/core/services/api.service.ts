@@ -4,8 +4,8 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
-  ApiResponse, PagedResult, AuthTokens, User, Club, Race, RaceSummary,
-  RaceResult, FederationResult, Notification, Theme, ClubMember, Invitation,
+  ApiResponse, PagedResult, AuthTokens, AdminAuthTokens, User, Club, Race, RaceSummary,
+  RaceResult, FederationResult, Theme, ClubMember, Invitation,
   SiteTheme
 } from '../models';
 
@@ -43,6 +43,10 @@ export class ApiService {
     return this.post<AuthTokens>('/auth/login', { email, password });
   }
 
+  adminLogin(email: string, password: string): Observable<AdminAuthTokens> {
+    return this.post<AdminAuthTokens>('/admin/auth/login', { email, password });
+  }
+
   register(payload: {
     email: string; password: string; firstName: string; lastName: string;
     role: number; FederationId?: string; invitationToken?: string;
@@ -60,6 +64,10 @@ export class ApiService {
 
   getMe(): Observable<User> {
     return this.get<User>('/auth/me');
+  }
+
+  updateProfile(firstName: string, lastName: string): Observable<User> {
+    return this.put<User>('/auth/profile', { firstName, lastName });
   }
 
   changePassword(userId: string, currentPassword: string, newPassword: string): Observable<void> {
@@ -85,13 +93,17 @@ export class ApiService {
   // ── Role Upgrade Requests ─────────────────────────────────────────────────
 
   submitUpgradeRequest(payload: {
-    requestedRole: number; federationId?: string; notes?: string;
+    requestedRole: number; federationId?: string; clubName?: string; notes?: string;
   }): Observable<any> {
     return this.post<any>('/auth/upgrade-request', payload);
   }
 
   getMyUpgradeRequests(): Observable<any[]> {
     return this.get<any[]>('/auth/upgrade-requests');
+  }
+
+  sendUpgradeReminder(requestId: string): Observable<any> {
+    return this.post<any>(`/auth/upgrade-request/${requestId}/remind`);
   }
 
   // Federation-scoped review (FederationManager + SuperAdmin via federation route)
@@ -109,6 +121,10 @@ export class ApiService {
     return this.post<any>(`/federation/upgrade-requests/${requestId}/reject`, { reason });
   }
 
+  revokeFederationUpgradeRequest(requestId: string): Observable<any> {
+    return this.post<any>(`/federation/upgrade-requests/${requestId}/revoke`);
+  }
+
   // Admin-scoped review (SuperAdmin via admin route)
   getAdminUpgradeRequests(params: {
     federationId?: string; status?: number; page?: number; pageSize?: number;
@@ -122,6 +138,10 @@ export class ApiService {
 
   rejectAdminUpgradeRequest(requestId: string, reason?: string): Observable<any> {
     return this.post<any>(`/admin/upgrade-requests/${requestId}/reject`, { reason });
+  }
+
+  revokeAdminUpgradeRequest(requestId: string): Observable<any> {
+    return this.post<any>(`/admin/upgrade-requests/${requestId}/revoke`);
   }
 
   // Public federation list (for upgrade request form dropdown)
@@ -199,8 +219,16 @@ export class ApiService {
     return this.get<Race>(`/races/${id}`);
   }
 
-  getClubRaces(clubId: string, page = 1, pageSize = 20, search?: string): Observable<PagedResult<RaceSummary>> {
-    return this.get<PagedResult<RaceSummary>>(`/races/club/${clubId}`, { page, pageSize, search });
+  getClubRaces(clubId: string, page = 1, pageSize = 20, search?: string, year?: number): Observable<PagedResult<RaceSummary>> {
+    return this.get<PagedResult<RaceSummary>>(`/races/club/${clubId}`, { page, pageSize, search, year });
+  }
+
+  getClubStats(clubId: string): Observable<{ totalProgrammes: number; programmesThisYear: number; totalMembers: number }> {
+    return this.get(`/clubs/${clubId}/stats`);
+  }
+
+  getFederationStats(): Observable<{ totalResults: number; resultsThisYear: number }> {
+    return this.get('/federation/stats');
   }
 
   getLiveRaces(clubId: string): Observable<RaceSummary[]> {
@@ -271,8 +299,8 @@ export class ApiService {
     return this.post<FederationResult>('/federation-results', payload);
   }
 
-  publishFederationResult(countryResultId: string): Observable<FederationResult> {
-    return this.post<FederationResult>(`/federation-results/${countryResultId}/publish`);
+  publishFederationResult(federationResultId: string): Observable<FederationResult> {
+    return this.post<FederationResult>(`/federation-results/${federationResultId}/publish`);
   }
 
   getFederationResult(id: string): Observable<FederationResult> {
@@ -280,7 +308,7 @@ export class ApiService {
   }
 
   getFederationResults(FederationId: string, page = 1, pageSize = 20): Observable<PagedResult<FederationResult>> {
-    return this.get<PagedResult<FederationResult>>(`/federation-results/country/${FederationId}`, { page, pageSize });
+    return this.get<PagedResult<FederationResult>>(`/federation-results/federation/${FederationId}`, { page, pageSize });
   }
 
   // ── Themes ────────────────────────────────────────────────────────────────
@@ -291,12 +319,26 @@ export class ApiService {
 
   // ── Notifications ─────────────────────────────────────────────────────────
 
-  getNotifications(page = 1, pageSize = 20): Observable<PagedResult<Notification>> {
-    return this.get<PagedResult<Notification>>('/notifications', { page, pageSize });
+  getNotifications(page = 1, pageSize = 20, unreadOnly = false): Observable<any> {
+    const params: Record<string, any> = { page, pageSize };
+    if (unreadOnly) params['unreadOnly'] = true;
+    return this.get<any>('/notifications', params);
   }
 
   markNotificationRead(notificationId: string): Observable<void> {
     return this.post<void>(`/notifications/${notificationId}/read`);
+  }
+
+  markAllNotificationsRead(): Observable<void> {
+    return this.post<void>('/notifications/read-all');
+  }
+
+  dismissNotification(notificationId: string): Observable<void> {
+    return this.delete<void>(`/notifications/${notificationId}`);
+  }
+
+  dismissAllNotifications(): Observable<void> {
+    return this.delete<void>('/notifications');
   }
 
   // ── Public pages ──────────────────────────────────────────────────────────
@@ -322,12 +364,12 @@ export class ApiService {
 
   // ── federation page management (FederationManager) ───────────────────────────────
 
-  getMyCountryPage(): Observable<any> {
-    return this.get<any>('/country/page');
+  getMyFederationPage(): Observable<any> {
+    return this.get<any>('/federation/page');
   }
 
-  updateMyCountryPage(payload: { theme?: number; isPublished?: boolean; announcementsJson?: string; headerHtml?: string }): Observable<any> {
-    return this.put<any>('/country/page', payload);
+  updateMyFederationPage(payload: { theme?: number; isPublished?: boolean; announcementsJson?: string; headerHtml?: string }): Observable<any> {
+    return this.put<any>('/federation/page', payload);
   }
 
   // ── Admin ─────────────────────────────────────────────────────────────────
@@ -352,6 +394,38 @@ export class ApiService {
     return this.put<any>(`/admin/users/${userId}/limits`, { maxResults, maxClubs });
   }
 
+  adminDeleteUser(userId: string): Observable<any> {
+    return this.delete<any>(`/admin/users/${userId}`);
+  }
+
+  adminGetFanciers(params: { search?: string; clubId?: string; federationId?: string; isLinked?: boolean; page?: number; pageSize?: number } = {}): Observable<any> {
+    return this.get<any>('/admin/fanciers', params);
+  }
+
+  adminLinkFancier(fancierId: string, userId: string, userName: string, userEmail: string): Observable<any> {
+    return this.post<any>(`/admin/fanciers/${fancierId}/link`, { userId, userName, userEmail });
+  }
+
+  adminUnlinkFancier(fancierId: string): Observable<any> {
+    return this.delete<any>(`/admin/fanciers/${fancierId}/link`);
+  }
+
+  adminGetLinkRequests(params: { status?: number; page?: number; pageSize?: number } = {}): Observable<any> {
+    return this.get<any>('/admin/link-requests', params);
+  }
+
+  adminApproveLinkRequest(linkId: string): Observable<any> {
+    return this.post<any>(`/admin/link-requests/${linkId}/approve`);
+  }
+
+  adminRejectLinkRequest(linkId: string, reason?: string): Observable<any> {
+    return this.post<any>(`/admin/link-requests/${linkId}/reject`, { reason });
+  }
+
+  adminRevokeLinkRequest(linkId: string): Observable<any> {
+    return this.delete<any>(`/admin/link-requests/${linkId}`);
+  }
+
   adminGetClubs(params: { search?: string; FederationId?: string; page?: number; pageSize?: number }): Observable<PagedResult<any>> {
     return this.get<PagedResult<any>>('/admin/clubs', params);
   }
@@ -360,31 +434,136 @@ export class ApiService {
     return this.put<{ id: string; isActive: boolean }>(`/admin/clubs/${clubId}/suspend`);
   }
 
-  adminGetCountries(page = 1, pageSize = 50): Observable<PagedResult<any>> {
-    return this.get<PagedResult<any>>('/admin/countries', { page, pageSize });
+  adminGetFederations(page = 1, pageSize = 50): Observable<PagedResult<any>> {
+    return this.get<PagedResult<any>>('/admin/federations', { page, pageSize });
   }
 
-  adminCreateCountry(name: string, code: string, slug: string): Observable<any> {
-    return this.post<any>('/admin/countries', { name, code, slug });
+  adminCreateFederation(name: string, code: string, slug: string): Observable<any> {
+    return this.post<any>('/admin/federations', { name, code, slug });
   }
 
-  adminToggleCountry(FederationId: string): Observable<any> {
-    return this.put<any>(`/admin/countries/${FederationId}/toggle-active`);
+  adminToggleFederation(FederationId: string): Observable<any> {
+    return this.put<any>(`/admin/federations/${FederationId}/toggle-active`);
+  }
+
+  adminAssignFederationManager(federationId: string, email: string): Observable<any> {
+    return this.put<any>(`/admin/federations/${federationId}/assign-manager`, { email });
+  }
+
+  adminDeleteFederation(federationId: string): Observable<any> {
+    return this.delete<any>(`/admin/federations/${federationId}`);
+  }
+
+  adminCreateClub(body: { federationId?: string; name: string; code: string; city?: string }): Observable<any> {
+    return this.post<any>('/admin/clubs', body);
+  }
+
+  adminAssignClubManager(clubId: string, email: string, force = false): Observable<any> {
+    return this.put<any>(`/admin/clubs/${clubId}/assign-manager`, { email, force });
+  }
+
+  adminDeleteClub(clubId: string): Observable<any> {
+    return this.delete<any>(`/admin/clubs/${clubId}`);
+  }
+
+  adminUpdateSubscriptionPlan(planId: string, body: {
+    name: string; description: string | null; price: number;
+    maxClubs: number; maxResultsPerClub: number;
+    isActive: boolean; isHighlighted: boolean; sortOrder: number; features: string | null;
+  }): Observable<any> {
+    return this.put<any>(`/admin/subscription-plans/${planId}`, body);
   }
 
   adminGetSubscriptionPlans(): Observable<any[]> {
-    return this.get<any[]>('/admin/subscription-plans');
+    return this.get<{ plans: any[] }>('/admin/subscription-plans')
+      .pipe(map(r => r?.plans ?? []));
   }
 
-  adminGetSubscriptions(page = 1, pageSize = 20): Observable<PagedResult<any>> {
-    return this.get<PagedResult<any>>('/admin/subscriptions', { page, pageSize });
+  adminGetSubscriptions(params: { page?: number; pageSize?: number; search?: string; billingCycle?: string; dateFrom?: string; dateTo?: string } = {}): Observable<PagedResult<any>> {
+    return this.get<PagedResult<any>>('/admin/subscriptions', params);
   }
 
-  adminCreateSubscription(FederationId: string, planId: string, billingCycle: number): Observable<any> {
-    return this.post<any>('/admin/subscriptions', { FederationId, planId, billingCycle });
+  adminCreateSubscription(payload: {
+    federationId: string; federationName: string;
+    planId: string; billingCycle: string;
+    amountPaid: number; paymentReference?: string | null; notes?: string | null;
+  }): Observable<any> {
+    return this.post<any>('/admin/subscriptions', payload);
   }
 
-  adminGetEvents(params: { eventType?: string; aggregateType?: string; page?: number; pageSize?: number }): Observable<PagedResult<any>> {
+  adminGetNotifications(params: { unreadOnly?: boolean; page?: number; pageSize?: number } = {}): Observable<any> {
+    return this.get<any>('/admin/notifications', params);
+  }
+
+  adminMarkNotificationRead(notificationId: string): Observable<any> {
+    return this.put<any>(`/admin/notifications/${notificationId}/read`);
+  }
+
+  adminMarkAllNotificationsRead(): Observable<any> {
+    return this.put<any>('/admin/notifications/read-all');
+  }
+
+  adminDismissNotification(notificationId: string): Observable<any> {
+    return this.delete<any>(`/admin/notifications/${notificationId}`);
+  }
+
+  adminDismissAllNotifications(): Observable<any> {
+    return this.delete<any>('/admin/notifications');
+  }
+
+  adminCreateSubscriptionPlan(body: {
+    name: string; description?: string | null; type: string; billingCycle: string;
+    price: number; currency?: string; maxClubs: number; maxResultsPerClub: number;
+    isHighlighted: boolean; sortOrder: number; features?: string | null;
+  }): Observable<any> {
+    return this.post<any>('/admin/subscription-plans', body);
+  }
+
+  adminDeleteSubscriptionPlan(planId: string): Observable<any> {
+    return this.delete<any>(`/admin/subscription-plans/${planId}`);
+  }
+
+  adminGetEvents(params: { action?: string; entityType?: string; page?: number; pageSize?: number }): Observable<PagedResult<any>> {
     return this.get<PagedResult<any>>('/admin/events', params);
+  }
+
+  adminGetRaces(params: { search?: string; clubId?: string; status?: number; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number }): Observable<any> {
+    return this.get<any>('/admin/races', params);
+  }
+
+  adminDeleteRace(raceId: string): Observable<any> {
+    return this.delete<any>(`/admin/races/${raceId}`);
+  }
+
+  adminGetProgrammes(params: { search?: string; clubId?: string; page?: number; pageSize?: number }): Observable<any> {
+    return this.get<any>('/admin/programmes', params);
+  }
+
+  adminGetAceResults(params: { search?: string; clubId?: string; programmeId?: string; page?: number; pageSize?: number }): Observable<any> {
+    return this.get<any>('/admin/results/ace', params);
+  }
+
+  adminGetSuperAceResults(params: { search?: string; clubId?: string; programmeId?: string; page?: number; pageSize?: number }): Observable<any> {
+    return this.get<any>('/admin/results/super-ace', params);
+  }
+
+  adminGetBestLoftResults(params: { search?: string; clubId?: string; programmeId?: string; page?: number; pageSize?: number }): Observable<any> {
+    return this.get<any>('/admin/results/best-loft', params);
+  }
+
+  adminDeleteProgramme(programmeId: string): Observable<any> {
+    return this.delete<any>(`/admin/programmes/${programmeId}`);
+  }
+
+  adminGetPigeons(params: { search?: string; federationId?: string; clubId?: string; fancierSearch?: string; page?: number; pageSize?: number }): Observable<any> {
+    return this.get<any>('/admin/pigeons', params);
+  }
+
+  adminUpdatePigeon(pigeonId: string, body: { name?: string; sex?: string; yearOfBirth?: number; color?: string }): Observable<any> {
+    return this.put<any>(`/admin/pigeons/${pigeonId}`, body);
+  }
+
+  adminDeletePigeon(pigeonId: string): Observable<any> {
+    return this.delete<any>(`/admin/pigeons/${pigeonId}`);
   }
 }

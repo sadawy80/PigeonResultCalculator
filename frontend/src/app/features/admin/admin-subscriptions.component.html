@@ -1,50 +1,78 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
     <h1 class="pr-page-header__title">Subscriptions</h1>
-    <p class="pr-page-header__subtitle">Manage plans and billing across all countries</p>
+    <p class="pr-page-header__subtitle">Active federation subscriptions</p>
   </div>
-  <button class="pr-btn pr-btn--primary" (click)="showModal.set(true)">+ New Subscription</button>
+  <button class="pr-btn pr-btn--primary" (click)="showNewSubModal.set(true)">+ New Subscription</button>
 </div>
 
 @if (error()) {
   <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
 }
 
-<div class="pr-grid-4 mb-8">
-  @for (p of plans(); track p.id) {
-    <div class="pr-card pr-card--flat plan-card">
-      <div class="plan-card__name">{{ p.name }}</div>
-      <div class="plan-card__price">&#36;{{ p.price }}<span class="plan-card__price-unit">/mo</span></div>
-      <div class="plan-card__detail text-muted text-sm">
-        {{ p.maxClubs === 0 ? 'Unlimited' : 'Up to ' + p.maxClubs }} clubs
+<div class="pr-card" style="padding:0;overflow:hidden">
+
+  <!-- Search & filter bar -->
+  <div class="sub-filters">
+    <div class="sub-filter-search">
+      <span class="search-icon">🔍</span>
+      <input class="pr-input" type="text" placeholder="Search by name or plan…"
+             [(ngModel)]="searchValue" (ngModelChange)="onSearchInput()">
+    </div>
+
+    <div class="sub-filter-group">
+      <label>Billing Cycle</label>
+      <select class="pr-select" [(ngModel)]="filterCycle" (ngModelChange)="onFilterChange()">
+        <option value="">All cycles</option>
+        <option value="Monthly">Monthly</option>
+        <option value="Seasonal">Seasonal</option>
+        <option value="Annual">Annual</option>
+      </select>
+    </div>
+
+    <div class="sub-filter-group">
+      <label>Start Date Range</label>
+      <div class="date-range-picker">
+        <input type="date" [(ngModel)]="filterDateFrom" (ngModelChange)="onFilterChange()" placeholder="From">
+        <span class="date-range-sep">→</span>
+        <input type="date" [(ngModel)]="filterDateTo" (ngModelChange)="onFilterChange()" placeholder="To">
       </div>
     </div>
-  }
-</div>
 
-<div class="pr-card">
-  <h3 style="margin-bottom:20px">Active Subscriptions</h3>
+    @if (hasFilters) {
+      <button class="pr-btn pr-btn--ghost pr-btn--sm" style="align-self:flex-end" (click)="clearFilters()">✕ Clear</button>
+    }
+  </div>
+
   @if (loading()) {
-    <div class="text-center py-8 text-muted">Loading...</div>
+    <div class="text-center py-8 text-muted">Loading…</div>
   } @else {
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
-          <tr><th>Country</th><th>Plan</th><th>Billing</th><th>Started</th><th>Expires</th><th>Status</th></tr>
+          <tr>
+            <th>Federation</th><th>Plan</th><th>Billing</th>
+            <th>Started</th><th>Expires</th><th>Status</th>
+          </tr>
         </thead>
         <tbody>
           @for (s of subscriptions(); track s.id) {
             <tr>
-              <td class="font-bold">{{ s.FederationName }}</td>
+              <td class="font-bold">{{ s.federationName }}</td>
               <td>{{ s.planName }}</td>
-              <td class="text-muted text-sm">{{ s.billingCycle === 1 ? 'Monthly' : s.billingCycle === 2 ? 'Annual' : 'Seasonal' }}</td>
+              <td class="text-muted text-sm">{{ s.billingCycle }}</td>
               <td class="text-muted text-sm">{{ s.startedAt | date:'dd MMM yyyy' }}</td>
               <td class="text-muted text-sm">{{ s.expiresAt | date:'dd MMM yyyy' }}</td>
               <td>
-                <span [class]="s.status === 1 ? 'pr-badge pr-badge--success' :
-                               s.status === 4 ? 'pr-badge pr-badge--info' : 'pr-badge pr-badge--error'">
+                <span [ngClass]="s.status === 1 ? 'pr-badge pr-badge--success' : s.status === 4 ? 'pr-badge pr-badge--info' : 'pr-badge pr-badge--error'">
                   {{ s.status === 1 ? 'Active' : s.status === 4 ? 'Trial' : s.status === 2 ? 'Expired' : 'Cancelled' }}
                 </span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="text-center text-muted py-6">
+                {{ hasFilters ? 'No subscriptions match your filters' : 'No subscriptions yet' }}
               </td>
             </tr>
           }
@@ -52,9 +80,15 @@
       </table>
     </div>
 
-    <div class="flex justify-between items-center mt-4">
-      <span class="text-muted text-sm">Page {{ page }} of {{ totalPages }}</span>
-      <div class="flex gap-2">
+    <div class="flex justify-between items-center" style="padding:12px 16px">
+      <span class="text-muted text-sm">{{ total() }} subscriptions · page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-2 items-center">
+        <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="10">10 / page</option>
+          <option [ngValue]="25">25 / page</option>
+          <option [ngValue]="50">50 / page</option>
+          <option [ngValue]="100">100 / page</option>
+        </select>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
       </div>
@@ -62,43 +96,43 @@
   }
 </div>
 
-<!-- New Subscription Modal -->
-@if (showModal()) {
-  <div class="pr-modal-backdrop" (click)="showModal.set(false)">
+<!-- ── New Subscription Modal ── -->
+@if (showNewSubModal()) {
+  <div class="pr-modal-backdrop" (click)="showNewSubModal.set(false)">
     <div class="pr-modal" (click)="$event.stopPropagation()">
-      <h3 class="pr-modal__title">New Subscription</h3>
+      <h3 class="pr-modal__title">New Federation Subscription</h3>
       <div class="flex flex-col gap-4 mt-4">
-        <div>
-          <label class="pr-label">Country</label>
-          <select class="pr-select w-full" [(ngModel)]="newSubCountry">
-            <option value="">— Select country —</option>
-            @for (c of countries(); track c.id) {
-              <option [value]="c.id">{{ c.name }}</option>
+        <div class="pr-form-group">
+          <label class="pr-label">Billing Cycle</label>
+          <div class="cycle-toggle">
+            @for (c of cycles; track c) {
+              <button class="cycle-btn" [class.cycle-btn--active]="newSubCycle === c" (click)="newSubCycle = c">{{ c }}</button>
+            }
+          </div>
+        </div>
+        <div class="pr-form-group">
+          <label class="pr-label">Federation</label>
+          <select class="pr-select w-full" [(ngModel)]="newSubFederation">
+            <option value="">— Select federation —</option>
+            @for (f of federations(); track f.id) {
+              <option [value]="f.id">{{ f.name }}</option>
             }
           </select>
         </div>
-        <div>
+        <div class="pr-form-group">
           <label class="pr-label">Plan</label>
           <select class="pr-select w-full" [(ngModel)]="newSubPlan">
             <option value="">— Select plan —</option>
-            @for (p of plans(); track p.id) {
-              <option [value]="p.id">{{ p.name }}</option>
-            }
-          </select>
-        </div>
-        <div>
-          <label class="pr-label">Billing Cycle</label>
-          <select class="pr-select w-full" [(ngModel)]="newSubCycle">
-            @for (bc of billingCycles; track bc.value) {
-              <option [value]="bc.value">{{ bc.label }}</option>
+            @for (p of allPlansForNewSub(); track p.id) {
+              <option [value]="p.id">{{ p.name }} — €{{ p.price }}{{ cycleLabels[newSubCycle] }}</option>
             }
           </select>
         </div>
       </div>
       <div class="flex gap-3 justify-end mt-6">
-        <button class="pr-btn pr-btn--ghost" (click)="showModal.set(false)">Cancel</button>
-        <button class="pr-btn pr-btn--primary" [disabled]="saving()" (click)="createSubscription()">
-          {{ saving() ? 'Creating...' : 'Create' }}
+        <button class="pr-btn pr-btn--ghost" (click)="showNewSubModal.set(false)">Cancel</button>
+        <button class="pr-btn pr-btn--primary" [disabled]="newSubSaving() || !newSubFederation || !newSubPlan" (click)="createSubscription()">
+          {{ newSubSaving() ? 'Creating…' : 'Create Subscription' }}
         </button>
       </div>
     </div>

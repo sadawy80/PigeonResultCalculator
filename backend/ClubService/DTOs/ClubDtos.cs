@@ -3,7 +3,7 @@ using PRC.Common;
 namespace PRC.ClubService.DTOs;
 
 public record ClubDto(
-    Guid Id, Guid FederationId, string FederationName, string Name, string Code,
+    Guid Id, Guid? FederationId, string? FederationName, string Name, string Code,
     string? Description, string? City, string? LogoUrl,
     string? PrimaryColor, string? SecondaryColor,
     bool IsActive, int MemberCount, DateTime CreatedAt);
@@ -20,6 +20,14 @@ public record NotificationDto(
     Guid Id, NotificationType Type, NotificationChannel Channel,
     NotificationStatus Status, string Title, string Body,
     string? ActionUrl, DateTime CreatedAt, DateTime? ReadAt);
+
+public record NotificationsPageDto(
+    List<NotificationDto> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages,
+    int UnreadCount);
 
 public record ThemeDto(
     int Id, string Name, string Description,
@@ -63,7 +71,7 @@ public static class BuiltInThemes
 
 // Requests
 public record CreateClubRequest(
-    Guid FederationId, string Name, string Code,
+    Guid? FederationId, string Name, string Code,
     string? Description, string? City, string? Address, string? PostalCode,
     double? Latitude, double? Longitude,
     string? ContactEmail, string? ContactPhone);

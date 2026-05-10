@@ -26,8 +26,11 @@ public interface IClubService
     Task<Result> UpdateAnnouncementsAsync(Guid clubId, string announcementsJson, CancellationToken ct);
     Task<Result<string>> UpdateSlugAsync(Guid clubId, string newSlug, CancellationToken ct);
     Task<Result<List<InvitationDto>>> GetInvitationsAsync(Guid clubId, CancellationToken ct);
-    Task<Result<PagedResult<NotificationDto>>> GetMyNotificationsAsync(Guid userId, PagedQuery paged, CancellationToken ct);
+    Task<Result<NotificationsPageDto>> GetMyNotificationsAsync(Guid userId, PagedQuery paged, bool unreadOnly, CancellationToken ct);
     Task<Result> MarkNotificationReadAsync(Guid notificationId, CancellationToken ct);
+    Task<Result> MarkAllNotificationsReadAsync(Guid userId, CancellationToken ct);
+    Task<Result> DismissNotificationAsync(Guid notificationId, CancellationToken ct);
+    Task<Result> DismissAllNotificationsAsync(Guid userId, CancellationToken ct);
 }
 
 public class ClubService : IClubService
@@ -269,9 +272,11 @@ public class ClubService : IClubService
         return Result.Success(invitations);
     }
 
-    public async Task<Result<PagedResult<NotificationDto>>> GetMyNotificationsAsync(Guid userId, PagedQuery paged, CancellationToken ct)
+    public async Task<Result<NotificationsPageDto>> GetMyNotificationsAsync(Guid userId, PagedQuery paged, bool unreadOnly, CancellationToken ct)
     {
-        var q = _db.Notifications.Where(n => n.UserId == userId && !n.IsDeleted);
+        var baseQ = _db.Notifications.Where(n => n.UserId == userId && !n.IsDeleted);
+        var unreadCount = await baseQ.CountAsync(n => n.Status != NotificationStatus.Read, ct);
+        var q = unreadOnly ? baseQ.Where(n => n.Status != NotificationStatus.Read) : baseQ;
         var total = await q.CountAsync(ct);
         var items = await q
             .OrderByDescending(n => n.CreatedAt)
@@ -281,10 +286,8 @@ public class ClubService : IClubService
                 n.Title, n.Body, n.ActionUrl, n.CreatedAt, n.ReadAt))
             .ToListAsync(ct);
 
-        return Result.Success(new PagedResult<NotificationDto>
-        {
-            Items = items, TotalCount = total, Page = paged.Page, PageSize = paged.PageSize
-        });
+        var totalPages = paged.PageSize > 0 ? (int)Math.Ceiling((double)total / paged.PageSize) : 1;
+        return Result.Success(new NotificationsPageDto(items, total, paged.Page, paged.PageSize, totalPages, unreadCount));
     }
 
     public async Task<Result> MarkNotificationReadAsync(Guid notificationId, CancellationToken ct)
@@ -294,6 +297,34 @@ public class ClubService : IClubService
         notification.Status = NotificationStatus.Read;
         notification.ReadAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+        return Result.Success();
+    }
+
+    public async Task<Result> MarkAllNotificationsReadAsync(Guid userId, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        await _db.Notifications
+            .Where(n => n.UserId == userId && !n.IsDeleted && n.Status != NotificationStatus.Read)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(n => n.Status, NotificationStatus.Read)
+                .SetProperty(n => n.ReadAt, now), ct);
+        return Result.Success();
+    }
+
+    public async Task<Result> DismissNotificationAsync(Guid notificationId, CancellationToken ct)
+    {
+        var notification = await _db.Notifications.FindAsync(new object[] { notificationId }, ct);
+        if (notification == null) return Result.NotFound("Notification");
+        notification.IsDeleted = true;
+        await _db.SaveChangesAsync(ct);
+        return Result.Success();
+    }
+
+    public async Task<Result> DismissAllNotificationsAsync(Guid userId, CancellationToken ct)
+    {
+        await _db.Notifications
+            .Where(n => n.UserId == userId && !n.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsDeleted, true), ct);
         return Result.Success();
     }
 
@@ -336,7 +367,7 @@ public class ClubService : IClubService
 public static class ClubMappingExtensions
 {
     public static ClubDto ToDto(this Club c) => new(
-        c.Id, c.FederationId, c.FederationName ?? string.Empty,
+        c.Id, c.FederationId, c.FederationName,
         c.Name, c.Code, c.Description, c.City, c.LogoUrl,
         c.PrimaryColor, c.SecondaryColor, c.IsActive,
         c.Memberships.Count(m => m.IsActive), c.CreatedAt);

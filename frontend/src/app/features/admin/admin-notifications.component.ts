@@ -1,32 +1,28 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
-import { AuthService } from '../../core/services/services';
-import { Notification, NotificationStatus, NotificationType, UserRole } from '../../core/models';
 
 type Severity = 'success' | 'info' | 'warning' | 'alert';
 
-function notifSeverity(type: NotificationType): Severity {
-  switch (type) {
-    case NotificationType.RaceResult: return 'success';
-    case NotificationType.ErrorAlert: return 'warning';
-    default:                          return 'info';
-  }
+function adminSeverity(type: string): Severity {
+  if (type === 'System') return 'warning';
+  return 'info';
 }
 
 const SEV_ICON:  Record<Severity, string> = { success: '✓', info: 'ℹ', warning: '⚠', alert: '🔔' };
 const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', warning: 'Warning', alert: 'Alert' };
 
 @Component({
-  selector: 'app-notifications',
+  selector: 'app-admin-notifications',
   standalone: true,
   imports: [DatePipe, FormsModule],
   template: `
     <div class="pr-page-header notif-page-header">
       <div>
         <h1 class="pr-page-header__title">Notifications</h1>
-        <p class="pr-page-header__subtitle">{{ unreadCount() }} unread · {{ totalCount() }} total</p>
+        <p class="pr-page-header__subtitle">{{ unreadCount() }} unread · {{ total() }} total</p>
       </div>
       <div class="notif-header-actions">
         <label class="notif-filter-check">
@@ -39,25 +35,28 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
       </div>
     </div>
 
+    @if (error()) {
+      <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
+    }
+
     <div class="notif-list">
       @if (loading()) {
         <div class="pr-empty"><div class="pr-spinner" style="margin:0 auto"></div></div>
-      } @else if (notifications().length === 0) {
+      } @else if (items().length === 0) {
         <div class="pr-empty">
           <div class="pr-empty__icon">🔔</div>
-          <div class="pr-empty__title">{{ unreadOnlyValue ? 'No unread notifications' : 'No notifications yet' }}</div>
+          <div class="pr-empty__title">{{ unreadOnlyValue ? 'No unread notifications' : 'No notifications' }}</div>
           @if (!unreadOnlyValue) {
-            <p class="pr-empty__desc">Race result publications and club updates will appear here.</p>
+            <p class="pr-empty__desc">You'll be notified here when users submit upgrade requests, link requests, and other platform events.</p>
           }
         </div>
       } @else {
-        @for (n of notifications(); track n.id) {
+        @for (n of items(); track n.id) {
           @let sev = severity(n);
-          @let isUnread = n.status !== NotificationStatus.Read;
-          <div class="notif-item" [class.notif-item--unread]="isUnread" (click)="markRead(n)">
+          <div class="notif-item" [class.notif-item--unread]="!n.isRead" (click)="open(n)">
 
             <div class="notif-icon-wrap">
-              @if (isUnread) { <div class="notif-unread-dot"></div> }
+              @if (!n.isRead) { <div class="notif-unread-dot"></div> }
               <div class="notif-icon notif-icon--{{ sev }}">{{ SEV_ICON[sev] }}</div>
             </div>
 
@@ -196,43 +195,43 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
     .notif-load-more { display: flex; justify-content: center; margin-top: 24px; }
   `]
 })
-export class NotificationsComponent implements OnInit {
-  private api = inject(ApiService);
-  auth = inject(AuthService);
+export class AdminNotificationsComponent implements OnInit {
+  private api    = inject(ApiService);
+  private router = inject(Router);
 
-  NotificationStatus = NotificationStatus;
   SEV_ICON  = SEV_ICON;
   SEV_LABEL = SEV_LABEL;
 
-  notifications  = signal<Notification[]>([]);
-  loading        = signal(true);
-  loadingMore    = signal(false);
-  busy           = signal(false);
-  page           = signal(1);
-  hasMore        = signal(false);
-  totalCount     = signal(0);
-  serverUnread   = signal(0);
+  items       = signal<any[]>([]);
+  total       = signal(0);
+  unreadCount = signal(0);
+  loading     = signal(false);
+  loadingMore = signal(false);
+  busy        = signal(false);
+  error       = signal<string | null>(null);
+  hasMore     = signal(false);
   unreadOnlyValue = false;
+  page        = 1;
+  readonly pageSize = 20;
 
-  unreadCount = computed(() =>
-    this.unreadOnlyValue ? this.serverUnread() : this.serverUnread()
-  );
+  severity(n: any): Severity { return adminSeverity(n.type ?? ''); }
 
-  severity(n: Notification): Severity { return notifSeverity(n.type); }
-
-  ngOnInit() {
-    if (this.auth.currentUser()?.role !== UserRole.SuperAdmin) this.load();
-  }
+  ngOnInit() { this.load(); }
 
   load() {
     this.loading.set(true);
-    this.api.getNotifications(1, 20, this.unreadOnlyValue).subscribe(p => {
-      this.notifications.set(p.items ?? []);
-      this.totalCount.set(p.totalCount ?? 0);
-      this.serverUnread.set(p.unreadCount ?? 0);
-      this.hasMore.set((p.totalPages ?? 1) > 1);
-      this.page.set(1);
-      this.loading.set(false);
+    this.error.set(null);
+    this.api.adminGetNotifications({ page: 1, pageSize: this.pageSize, unreadOnly: this.unreadOnlyValue || undefined }).subscribe({
+      next: r => {
+        const data = r?.data ?? r;
+        this.items.set(data?.items ?? []);
+        this.total.set(data?.totalCount ?? 0);
+        this.unreadCount.set(data?.unreadCount ?? 0);
+        this.hasMore.set((data?.totalCount ?? 0) > this.pageSize);
+        this.page = 1;
+        this.loading.set(false);
+      },
+      error: () => { this.error.set('Failed to load notifications.'); this.loading.set(false); }
     });
   }
 
@@ -240,62 +239,62 @@ export class NotificationsComponent implements OnInit {
 
   loadMore() {
     this.loadingMore.set(true);
-    const next = this.page() + 1;
-    this.api.getNotifications(next, 20, this.unreadOnlyValue).subscribe(p => {
-      this.notifications.update(arr => [...arr, ...(p.items ?? [])]);
-      this.serverUnread.set(p.unreadCount ?? 0);
-      this.page.set(next);
-      this.hasMore.set(next < (p.totalPages ?? 1));
-      this.loadingMore.set(false);
+    const next = this.page + 1;
+    this.api.adminGetNotifications({ page: next, pageSize: this.pageSize, unreadOnly: this.unreadOnlyValue || undefined }).subscribe({
+      next: r => {
+        const data = r?.data ?? r;
+        this.items.update(arr => [...arr, ...(data?.items ?? [])]);
+        this.page = next;
+        this.hasMore.set(this.items().length < (data?.totalCount ?? 0));
+        this.loadingMore.set(false);
+      },
+      error: () => this.loadingMore.set(false)
     });
   }
 
-  markRead(n: Notification) {
-    if (n.status === NotificationStatus.Read) return;
-    this.api.markNotificationRead(n.id).subscribe({
+  open(n: any) {
+    if (!n.isRead) {
+      this.api.adminMarkNotificationRead(n.id).subscribe({
+        next: () => {
+          this.items.update(arr => arr.map(x => x.id === n.id ? { ...x, isRead: true } : x));
+          this.unreadCount.update(c => Math.max(0, c - 1));
+        }
+      });
+    }
+    if (n.actionUrl) this.router.navigateByUrl(n.actionUrl);
+  }
+
+  dismiss(n: any, e: Event) {
+    e.stopPropagation();
+    this.api.adminDismissNotification(n.id).subscribe({
       next: () => {
-        this.notifications.update(arr =>
-          arr.map(x => x.id === n.id ? { ...x, status: NotificationStatus.Read } : x)
-        );
-        this.serverUnread.update(c => Math.max(0, c - 1));
+        const wasUnread = !n.isRead;
+        this.items.update(arr => arr.filter(x => x.id !== n.id));
+        this.total.update(c => Math.max(0, c - 1));
+        if (wasUnread) this.unreadCount.update(c => Math.max(0, c - 1));
       }
     });
-    if (n.actionUrl) window.open(n.actionUrl, '_blank');
   }
 
   markAllRead() {
     this.busy.set(true);
-    this.api.markAllNotificationsRead().subscribe({
+    this.api.adminMarkAllNotificationsRead().subscribe({
       next: () => {
-        this.notifications.update(arr =>
-          arr.map(n => ({ ...n, status: NotificationStatus.Read }))
-        );
-        this.serverUnread.set(0);
+        this.items.update(arr => arr.map(n => ({ ...n, isRead: true })));
+        this.unreadCount.set(0);
         this.busy.set(false);
       },
       error: () => this.busy.set(false)
     });
   }
 
-  dismiss(n: Notification, e: Event) {
-    e.stopPropagation();
-    this.api.dismissNotification(n.id).subscribe({
-      next: () => {
-        const wasUnread = n.status !== NotificationStatus.Read;
-        this.notifications.update(arr => arr.filter(x => x.id !== n.id));
-        this.totalCount.update(c => Math.max(0, c - 1));
-        if (wasUnread) this.serverUnread.update(c => Math.max(0, c - 1));
-      }
-    });
-  }
-
   dismissAll() {
     this.busy.set(true);
-    this.api.dismissAllNotifications().subscribe({
+    this.api.adminDismissAllNotifications().subscribe({
       next: () => {
-        this.notifications.set([]);
-        this.totalCount.set(0);
-        this.serverUnread.set(0);
+        this.items.set([]);
+        this.total.set(0);
+        this.unreadCount.set(0);
         this.hasMore.set(false);
         this.busy.set(false);
       },

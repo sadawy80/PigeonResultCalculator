@@ -1,9 +1,99 @@
-.plan-card {
-  text-align: center;
+.sub-filters {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: 16px;
+  border-bottom: 1px solid var(--pr-border);
+  background: var(--pr-surface-2);
+  border-radius: var(--pr-radius) var(--pr-radius) 0 0;
+}
 
-  &__name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--pr-text-muted); margin-bottom: 8px; }
-  &__price { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--pr-primary); }
-  &__price-unit { font-size: 0.8rem; font-weight: 400; }
-  &__detail { margin: 8px 0; }
-  &__count { margin-top: 8px; }
+.sub-filter-search {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--pr-text-muted);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+
+  .pr-input { padding-left: 32px; width: 100%; }
+}
+
+.sub-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+
+  label { font-size: 0.7rem; font-weight: 600; color: var(--pr-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+}
+
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius);
+  background: var(--pr-surface);
+  overflow: hidden;
+  transition: border-color var(--t-fast);
+
+  &:focus-within { border-color: var(--pr-primary); }
+
+  input[type="date"] {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    color: var(--pr-text);
+    min-width: 130px;
+    cursor: pointer;
+
+    &::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+  }
+
+  .date-range-sep {
+    font-size: 0.75rem;
+    color: var(--pr-text-muted);
+    padding: 0 4px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--pr-border);
+    border-right: 1px solid var(--pr-border);
+    padding: 8px 6px;
+    background: var(--pr-surface-2);
+  }
+}
+
+.cycle-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.cycle-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius);
+  background: transparent;
+  color: var(--pr-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast);
+
+  &:hover { border-color: var(--pr-primary); color: var(--pr-primary); }
+
+  &--active {
+    background: var(--pr-primary);
+    border-color: var(--pr-primary);
+    color: #fff;
+  }
 }

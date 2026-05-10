@@ -77,7 +77,21 @@ public class SubscriptionService : ISubscriptionService
         return Result.Success(plan.ToDto());
     }
 
-    // ── Country Subscriptions ─────────────────────────────────────────────────
+    public async Task<Result> DeletePlanAsync(Guid planId, Guid deletedBy, CancellationToken ct = default)
+    {
+        var plan = await _db.SubscriptionPlans.FindAsync([planId], ct);
+        if (plan is null) return Result.NotFound("SubscriptionPlan");
+        var inUse = await _db.FederationSubscriptions.AnyAsync(s => s.PlanId == planId && !s.IsDeleted, ct)
+                 || await _db.ClubSubscriptions.AnyAsync(s => s.PlanId == planId && !s.IsDeleted, ct);
+        if (inUse) return Result.Failure("Cannot delete a plan that has active subscriptions.");
+        plan.IsDeleted = true;
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = deletedBy;
+        await _db.SaveChangesAsync(ct);
+        return Result.Success();
+    }
+
+    // ── Federation Subscriptions ──────────────────────────────────────────────
 
     public async Task<Result<FederationSubscriptionDto>> GetActiveFederationSubscriptionAsync(Guid FederationId, CancellationToken ct = default)
     {
@@ -91,9 +105,16 @@ public class SubscriptionService : ISubscriptionService
         return Result.Success(sub.ToDto());
     }
 
-    public async Task<Result<PagedResult<FederationSubscriptionDto>>> GetFederationSubscriptionsAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<Result<PagedResult<FederationSubscriptionDto>>> GetFederationSubscriptionsAsync(int page, int pageSize, string? search = null, string? billingCycle = null, DateTime? dateFrom = null, DateTime? dateTo = null, CancellationToken ct = default)
     {
-        var q = _db.FederationSubscriptions.Include(s => s.Plan);
+        var q = _db.FederationSubscriptions.Include(s => s.Plan).AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+            q = q.Where(s => s.FederationName.Contains(search) || s.Plan.Name.Contains(search));
+        if (!string.IsNullOrWhiteSpace(billingCycle) && Enum.TryParse<BillingCycle>(billingCycle, true, out var bc))
+            q = q.Where(s => s.BillingCycle == bc);
+        if (dateFrom.HasValue) q = q.Where(s => s.StartedAt >= dateFrom.Value);
+        if (dateTo.HasValue)   q = q.Where(s => s.StartedAt <= dateTo.Value.AddDays(1));
+
         var total = await q.CountAsync(ct);
         var items = await q.OrderByDescending(s => s.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize)
@@ -110,7 +131,7 @@ public class SubscriptionService : ISubscriptionService
         var plan = await _db.SubscriptionPlans.FindAsync([req.PlanId], ct);
         if (plan is null) return Result.NotFound<FederationSubscriptionDto>("SubscriptionPlan");
 
-        // Cancel any existing active subscription for this country
+        // Cancel any existing active subscription for this federation
         var existing = await _db.FederationSubscriptions
             .Where(s => s.FederationId == req.FederationId && s.Status == SubscriptionStatus.Active)
             .ToListAsync(ct);
@@ -200,7 +221,7 @@ public class SubscriptionService : ISubscriptionService
 
     // ── Internal Validation ───────────────────────────────────────────────────
 
-    public async Task<SubscriptionValidationResult?> ValidateCountryAsync(Guid FederationId, CancellationToken ct = default)
+    public async Task<SubscriptionValidationResult?> ValidateFederationAsync(Guid FederationId, CancellationToken ct = default)
     {
         var sub = await _db.FederationSubscriptions
             .Include(s => s.Plan)

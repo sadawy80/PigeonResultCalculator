@@ -17,12 +17,12 @@ public class GetSubscriptionStatsConsumer : IConsumer<GetSubscriptionStatsReques
 
     public async Task Consume(ConsumeContext<GetSubscriptionStatsRequest> ctx)
     {
-        var countrySubs = await _db.FederationSubscriptions
+        var federationSubs = await _db.FederationSubscriptions
             .CountAsync(s => s.Status == SubscriptionStatus.Active && !s.IsDeleted);
         var clubSubs    = await _db.ClubSubscriptions
             .CountAsync(s => s.Status == SubscriptionStatus.Active && !s.IsDeleted);
 
-        await ctx.RespondAsync(new SubscriptionStatsResult(countrySubs, clubSubs));
+        await ctx.RespondAsync(new SubscriptionStatsResult(federationSubs, clubSubs));
     }
 }
 
@@ -36,12 +36,41 @@ public class GetSubscriptionPlansConsumer : IConsumer<GetSubscriptionPlansReques
         var result = await _svc.GetPlansAsync(includeInactive: true);
         var plans  = result.IsSuccess
             ? result.Value!.Select(p => new SubscriptionPlanItem(
-                p.Id, p.Name, p.Type.ToString(), p.BillingCycle.ToString(),
+                p.Id, p.Name, p.Description, p.Type.ToString(), p.BillingCycle.ToString(),
                 p.Price, p.Currency, p.MaxClubs, p.MaxResultsPerClub,
-                p.IsActive, p.IsHighlighted, p.SortOrder)).ToList()
+                p.IsActive, p.IsHighlighted, p.SortOrder, p.Features)).ToList()
             : new List<SubscriptionPlanItem>();
 
         await ctx.RespondAsync(new SubscriptionPlansResult(plans));
+    }
+}
+
+public class UpdateSubscriptionPlanConsumer : IConsumer<UpdateSubscriptionPlanBusRequest>
+{
+    private readonly ISubscriptionService _svc;
+    public UpdateSubscriptionPlanConsumer(ISubscriptionService svc) => _svc = svc;
+
+    public async Task Consume(ConsumeContext<UpdateSubscriptionPlanBusRequest> ctx)
+    {
+        var m = ctx.Message;
+        var req = new SubDtos.UpdateSubscriptionPlanRequest(
+            m.Name, m.Description, m.Price, m.MaxClubs, m.MaxResultsPerClub,
+            m.IsActive, m.IsHighlighted, m.SortOrder, m.Features);
+
+        var result = await _svc.UpdatePlanAsync(m.PlanId, req, m.UpdatedBy, ctx.CancellationToken);
+        if (result.IsFailure)
+        {
+            await ctx.RespondAsync(new UpdateSubscriptionPlanBusResult(false, result.Error, null));
+            return;
+        }
+
+        var p = result.Value!;
+        var item = new SubscriptionPlanItem(
+            p.Id, p.Name, p.Description, p.Type.ToString(), p.BillingCycle.ToString(),
+            p.Price, p.Currency, p.MaxClubs, p.MaxResultsPerClub,
+            p.IsActive, p.IsHighlighted, p.SortOrder, p.Features);
+
+        await ctx.RespondAsync(new UpdateSubscriptionPlanBusResult(true, null, item));
     }
 }
 
@@ -52,7 +81,7 @@ public class GetFederationSubscriptionsConsumer : IConsumer<GetFederationSubscri
 
     public async Task Consume(ConsumeContext<GetFederationSubscriptionsRequest> ctx)
     {
-        var result = await _svc.GetFederationSubscriptionsAsync(ctx.Message.Page, ctx.Message.PageSize);
+        var result = await _svc.GetFederationSubscriptionsAsync(ctx.Message.Page, ctx.Message.PageSize, ctx.Message.Search, ctx.Message.BillingCycle, ctx.Message.DateFrom, ctx.Message.DateTo);
         if (!result.IsSuccess)
         {
             await ctx.RespondAsync(new FederationSubscriptionsResult(new List<FederationSubscriptionItem>(), 0));
@@ -105,12 +134,17 @@ public class GetActiveSubscriptionCountConsumer : IConsumer<GetActiveSubscriptio
 
     public async Task Consume(ConsumeContext<GetActiveSubscriptionCountRequest> ctx)
     {
-        var country = await _db.FederationSubscriptions
+        var yearStart      = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var federation        = await _db.FederationSubscriptions
             .CountAsync(s => s.Status == SubscriptionStatus.Active && !s.IsDeleted);
-        var club    = await _db.ClubSubscriptions
+        var club           = await _db.ClubSubscriptions
             .CountAsync(s => s.Status == SubscriptionStatus.Active && !s.IsDeleted);
+        var federationThisYear = await _db.FederationSubscriptions
+            .CountAsync(s => !s.IsDeleted && s.StartedAt >= yearStart);
+        var clubThisYear    = await _db.ClubSubscriptions
+            .CountAsync(s => !s.IsDeleted && s.StartedAt >= yearStart);
 
-        await ctx.RespondAsync(new ActiveSubscriptionCountResult(country, club));
+        await ctx.RespondAsync(new ActiveSubscriptionCountResult(federation, club, federationThisYear, clubThisYear));
     }
 }
 
@@ -249,5 +283,56 @@ public class GetPublicSubscriptionPlansConsumer : IConsumer<GetPublicSubscriptio
             .ToList();
 
         await ctx.RespondAsync(new PublicSubscriptionPlansResult(grouped));
+    }
+}
+
+public class AdminCreateSubscriptionPlanConsumer : IConsumer<AdminCreateSubscriptionPlanBusRequest>
+{
+    private readonly ISubscriptionService _svc;
+    public AdminCreateSubscriptionPlanConsumer(ISubscriptionService svc) => _svc = svc;
+
+    public async Task Consume(ConsumeContext<AdminCreateSubscriptionPlanBusRequest> ctx)
+    {
+        var m = ctx.Message;
+        if (!Enum.TryParse<SubscriptionType>(m.Type, true, out var type))
+        {
+            await ctx.RespondAsync(new AdminCreateSubscriptionPlanBusResult(false, null, "Invalid plan type."));
+            return;
+        }
+        if (!Enum.TryParse<BillingCycle>(m.BillingCycle, true, out var cycle))
+        {
+            await ctx.RespondAsync(new AdminCreateSubscriptionPlanBusResult(false, null, "Invalid billing cycle."));
+            return;
+        }
+        var req = new SubDtos.CreateSubscriptionPlanRequest(
+            m.Name, m.Description, type, cycle,
+            m.Price, m.Currency, m.MaxClubs, m.MaxResultsPerClub,
+            m.IsHighlighted, m.SortOrder, m.Features);
+        var result = await _svc.CreatePlanAsync(req, m.CreatedBy, ctx.CancellationToken);
+        if (result.IsFailure)
+        {
+            await ctx.RespondAsync(new AdminCreateSubscriptionPlanBusResult(false, null, result.Error));
+            return;
+        }
+        var p = result.Value!;
+        var item = new SubscriptionPlanItem(
+            p.Id, p.Name, p.Description, p.Type.ToString(), p.BillingCycle.ToString(),
+            p.Price, p.Currency, p.MaxClubs, p.MaxResultsPerClub,
+            p.IsActive, p.IsHighlighted, p.SortOrder, p.Features);
+        await ctx.RespondAsync(new AdminCreateSubscriptionPlanBusResult(true, item, null));
+    }
+}
+
+public class AdminDeleteSubscriptionPlanConsumer : IConsumer<AdminDeleteSubscriptionPlanBusRequest>
+{
+    private readonly ISubscriptionService _svc;
+    public AdminDeleteSubscriptionPlanConsumer(ISubscriptionService svc) => _svc = svc;
+
+    public async Task Consume(ConsumeContext<AdminDeleteSubscriptionPlanBusRequest> ctx)
+    {
+        var result = await _svc.DeletePlanAsync(ctx.Message.PlanId, ctx.Message.DeletedBy, ctx.CancellationToken);
+        await ctx.RespondAsync(result.IsSuccess
+            ? new AdminDeleteSubscriptionPlanBusResult(true, null)
+            : new AdminDeleteSubscriptionPlanBusResult(false, result.Error));
     }
 }
