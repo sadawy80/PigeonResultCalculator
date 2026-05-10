@@ -86,6 +86,7 @@ builder.Services.AddScoped<IIntegrationDataService, IntegrationDataService>();
 builder.Services.AddSingleton<IExternalPlatformCallbackService, ExternalPlatformCallbackService>();
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -113,6 +114,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpMetrics();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

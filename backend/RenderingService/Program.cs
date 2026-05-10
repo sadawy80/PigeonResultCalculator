@@ -72,6 +72,7 @@ builder.Services.AddSingleton<IPdfGeneratorService, PdfGeneratorService>();
 builder.Services.AddHostedService<PrintJobProcessorService>();
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -108,6 +109,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpMetrics();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

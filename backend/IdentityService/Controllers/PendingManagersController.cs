@@ -39,7 +39,7 @@ public class UpgradeRequestSubmitController : ControllerBase
     public async Task<IActionResult> Submit([FromBody] SubmitUpgradeRequestBody req, CancellationToken ct)
     {
         if (req.RequestedRole != UserRole.ClubManager && req.RequestedRole != UserRole.FederationManager)
-            return BadRequest(ApiResponse<object?>.Fail("Only ClubManager or FederationManager roles can be requested."));
+            return Problem(detail: "Only ClubManager or FederationManager roles can be requested.", statusCode: 400);
 
         // FederationId is optional for ClubManager — routes to admin if no federation exists for the country
 
@@ -48,7 +48,7 @@ public class UpgradeRequestSubmitController : ControllerBase
         var existing = await _db.UpgradeRequests
             .AnyAsync(r => r.UserId == userId && r.Status == UpgradeRequestStatus.Pending, ct);
         if (existing)
-            return Conflict(ApiResponse<object?>.Fail("You already have a pending upgrade request."));
+            return Problem(detail: "You already have a pending upgrade request.", statusCode: 409);
 
         var user = await _users.FindByIdAsync(userId.ToString());
         if (user is null) return NotFound();
@@ -107,10 +107,10 @@ public class UpgradeRequestSubmitController : ControllerBase
             .FirstOrDefaultAsync(r => r.Id == requestId && r.UserId == userId, ct);
 
         if (request is null)
-            return NotFound(ApiResponse<object?>.Fail("Request not found."));
+            return Problem(detail: "Request not found.", statusCode: 404);
 
         if (request.Status != UpgradeRequestStatus.Pending)
-            return BadRequest(ApiResponse<object?>.Fail("Only pending requests can send a reminder."));
+            return Problem(detail: "Only pending requests can send a reminder.", statusCode: 400);
 
         var user = await _users.FindByIdAsync(userId.ToString());
         if (user is null) return NotFound();
@@ -250,16 +250,16 @@ public class UpgradeRequestsController : ControllerBase
             .FirstOrDefaultAsync(r => r.Id == requestId, ct);
 
         if (req is null)
-            return NotFound(ApiResponse<object?>.Fail("Request not found."));
+            return Problem(detail: "Request not found.", statusCode: 404);
 
         var isRevoked = req.Status == UpgradeRequestStatus.Revoked ||
                         req.Status == UpgradeRequestStatus.AdminRevoked;
 
         if (!isRevoked && req.Status != UpgradeRequestStatus.Pending)
-            return BadRequest(ApiResponse<object?>.Fail("Request cannot be approved in its current state."));
+            return Problem(detail: "Request cannot be approved in its current state.", statusCode: 400);
 
         if (req.Status == UpgradeRequestStatus.AdminRevoked && !User.IsInRole("SuperAdmin"))
-            return BadRequest(ApiResponse<object?>.Fail("This request was revoked by an admin — only an admin can re-approve it."));
+            return Problem(detail: "This request was revoked by an admin — only an admin can re-approve it.", statusCode: 400);
 
         var federationId = CurrentFederationId;
         if (federationId.HasValue && !User.IsInRole("SuperAdmin") && req.FederationId != federationId)
@@ -280,9 +280,9 @@ public class UpgradeRequestsController : ControllerBase
                         new GetActiveClubCountForFederationRequest(req.FederationId.Value), ct);
 
                     if (clubCountResp.Message.ActiveClubCount >= limits.MaxClubs)
-                        return BadRequest(ApiResponse<object?>.Fail(
-                            $"Subscription limit reached: {limits.MaxClubs} clubs allowed, " +
-                            $"{clubCountResp.Message.ActiveClubCount} currently active."));
+                        return Problem(
+                            detail: $"Subscription limit reached: {limits.MaxClubs} clubs allowed, {clubCountResp.Message.ActiveClubCount} currently active.",
+                            statusCode: 400);
                 }
             }
             catch (RequestTimeoutException) { }
@@ -327,10 +327,10 @@ public class UpgradeRequestsController : ControllerBase
             .FirstOrDefaultAsync(r => r.Id == requestId, ct);
 
         if (req is null)
-            return NotFound(ApiResponse<object?>.Fail("Request not found."));
+            return Problem(detail: "Request not found.", statusCode: 404);
 
         if (req.Status != UpgradeRequestStatus.Pending)
-            return BadRequest(ApiResponse<object?>.Fail("Request is not pending."));
+            return Problem(detail: "Request is not pending.", statusCode: 400);
 
         var federationId = CurrentFederationId;
         if (federationId.HasValue && !User.IsInRole("SuperAdmin") && req.FederationId != federationId)
@@ -363,10 +363,10 @@ public class UpgradeRequestsController : ControllerBase
             .FirstOrDefaultAsync(r => r.Id == requestId, ct);
 
         if (req is null)
-            return NotFound(ApiResponse<object?>.Fail("Request not found."));
+            return Problem(detail: "Request not found.", statusCode: 404);
 
         if (req.Status != UpgradeRequestStatus.Approved)
-            return BadRequest(ApiResponse<object?>.Fail("Only approved requests can be revoked."));
+            return Problem(detail: "Only approved requests can be revoked.", statusCode: 400);
 
         var federationId = CurrentFederationId;
         if (federationId.HasValue && !User.IsInRole("SuperAdmin") && req.FederationId != federationId)

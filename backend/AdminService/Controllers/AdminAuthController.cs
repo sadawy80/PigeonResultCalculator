@@ -33,7 +33,7 @@ public class AdminAuthController : AdminControllerBase
             await _audit.LogAsync("LOGIN_FAILED", "User", null, AuditSeverity.Warning,
                 $"Failed admin login attempt for {req.Email}",
                 null, null, CorrelationId, ClientIp, ct);
-            return Unauthorized(ApiResponse<object?>.Fail("Invalid credentials or insufficient permissions."));
+            return Problem(detail: "Invalid credentials or insufficient permissions.", statusCode: 401);
         }
 
         var token = _tokens.GenerateAdminToken(user.UserId, user.FullName);
@@ -56,7 +56,7 @@ public class AdminAuthController : AdminControllerBase
     public async Task<IActionResult> Impersonate([FromBody] ImpersonateRequest req, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(req.Reason))
-            return BadRequest(ApiResponse<object?>.Fail("Impersonation reason is required."));
+            return Problem(detail: "Impersonation reason is required.", statusCode: 400);
 
         var adminId   = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var adminName = User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";

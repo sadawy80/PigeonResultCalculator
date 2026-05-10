@@ -89,25 +89,27 @@ public class AuthController : ControllerBase
     private IActionResult FromResult<T>(Result<T> result)
     {
         if (result.IsSuccess) return Ok(ApiResponse<T>.Ok(result.Value!));
+        var ext = new Dictionary<string, object?> { ["errorCode"] = result.ErrorCode };
         return result.ErrorCode switch
         {
-            "NOT_FOUND"        => NotFound(ApiResponse<T>.Fail(result.Error, result.ErrorCode)),
+            "NOT_FOUND"        => Problem(detail: result.Error, statusCode: 404, extensions: ext),
             "FORBIDDEN"        => Forbid(),
-            "CONFLICT"         => Conflict(ApiResponse<T>.Fail(result.Error, result.ErrorCode)),
-            "VALIDATION_ERROR" => BadRequest(ApiResponse<T>.Fail(result.Error, result.ErrorCode)),
-            _                  => BadRequest(ApiResponse<T>.Fail(result.Error, result.ErrorCode))
+            "CONFLICT"         => Problem(detail: result.Error, statusCode: 409, extensions: ext),
+            "VALIDATION_ERROR" => Problem(detail: result.Error, statusCode: 400, extensions: ext),
+            _                  => Problem(detail: result.Error, statusCode: 400, extensions: ext)
         };
     }
 
     private IActionResult FromResult(Result result)
     {
-        if (result.IsSuccess) return Ok(ApiResponse<object?>.Ok(null, "Success"));
+        if (result.IsSuccess) return Ok(ApiResponse<object?>.Ok(null));
+        var ext = new Dictionary<string, object?> { ["errorCode"] = result.ErrorCode };
         return result.ErrorCode switch
         {
-            "NOT_FOUND" => NotFound(ApiResponse<object>.Fail(result.Error, result.ErrorCode)),
+            "NOT_FOUND" => Problem(detail: result.Error, statusCode: 404, extensions: ext),
             "FORBIDDEN" => Forbid(),
-            "CONFLICT"  => Conflict(ApiResponse<object>.Fail(result.Error, result.ErrorCode)),
-            _           => BadRequest(ApiResponse<object>.Fail(result.Error, result.ErrorCode))
+            "CONFLICT"  => Problem(detail: result.Error, statusCode: 409, extensions: ext),
+            _           => Problem(detail: result.Error, statusCode: 400, extensions: ext)
         };
     }
 }

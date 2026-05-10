@@ -18,23 +18,25 @@ public abstract class AdminControllerBase : ControllerBase
         if (result.IsSuccess) return Ok(ApiResponse<T>.Ok(result.Value!));
         return result.ErrorCode switch
         {
-            "NOT_FOUND"        => NotFound(ApiResponse<T>.Fail(result.Error, result.ErrorCode)),
+            "NOT_FOUND"        => Problem(detail: result.Error, statusCode: 404, extensions: Ext(result.ErrorCode)),
             "FORBIDDEN"        => Forbid(),
-            "CONFLICT"         => Conflict(ApiResponse<T>.Fail(result.Error, result.ErrorCode)),
-            "VALIDATION_ERROR" => BadRequest(ApiResponse<T>.Fail(result.Error, result.ErrorCode)),
-            _                  => BadRequest(ApiResponse<T>.Fail(result.Error, result.ErrorCode))
+            "CONFLICT"         => Problem(detail: result.Error, statusCode: 409, extensions: Ext(result.ErrorCode)),
+            "VALIDATION_ERROR" => Problem(detail: result.Error, statusCode: 400, extensions: Ext(result.ErrorCode)),
+            _                  => Problem(detail: result.Error, statusCode: 400, extensions: Ext(result.ErrorCode))
         };
     }
 
     protected IActionResult FromResult(Result result)
     {
-        if (result.IsSuccess) return Ok(ApiResponse<object?>.Ok(null, "Success"));
+        if (result.IsSuccess) return Ok(ApiResponse<object?>.Ok(null));
         return result.ErrorCode switch
         {
-            "NOT_FOUND" => NotFound(ApiResponse<object?>.Fail(result.Error, result.ErrorCode)),
+            "NOT_FOUND" => Problem(detail: result.Error, statusCode: 404, extensions: Ext(result.ErrorCode)),
             "FORBIDDEN" => Forbid(),
-            "CONFLICT"  => Conflict(ApiResponse<object?>.Fail(result.Error, result.ErrorCode)),
-            _           => BadRequest(ApiResponse<object?>.Fail(result.Error, result.ErrorCode))
+            "CONFLICT"  => Problem(detail: result.Error, statusCode: 409, extensions: Ext(result.ErrorCode)),
+            _           => Problem(detail: result.Error, statusCode: 400, extensions: Ext(result.ErrorCode))
         };
     }
+
+    private static Dictionary<string, object?> Ext(string code) => new() { ["errorCode"] = code };
 }

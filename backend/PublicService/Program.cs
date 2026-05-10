@@ -63,6 +63,7 @@ builder.Services.AddScoped<IPublicQueryService, PublicQueryService>();
 
 // ── Controllers / OpenAPI ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -83,6 +84,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("FrontendCors");
 app.UseHttpMetrics();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

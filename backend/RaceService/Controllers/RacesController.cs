@@ -77,7 +77,7 @@ public class RacesController : RaceControllerBase
     {
         var snapshot = await _races.GetSnapshotAsync(raceId, ct);
         return snapshot == null
-            ? NotFound(ApiResponse<object?>.Fail("Race not found."))
+            ? NotFound()
             : Ok(ApiResponse<RaceSnapshotDto>.Ok(snapshot));
     }
 

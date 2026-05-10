@@ -90,7 +90,7 @@ public class AdminController : AdminControllerBase
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         var result = await _bus.GetFederationsAsync(page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("FederationService unavailable."));
+        if (result is null) return Problem(detail: "FederationService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -99,8 +99,8 @@ public class AdminController : AdminControllerBase
     {
         var msg    = new Messages.CreateFederationRequest(req.Name, req.Code, req.Slug, req.FlagUrl, req.DefaultLanguage, req.DefaultTimezone, req.DefaultDistanceUnit, CurrentUserId);
         var result = await _bus.CreateFederationAsync(msg, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("FederationService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to create federation."));
+        if (result is null) return Problem(detail: "FederationService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to create federation.", statusCode: 400);
 
         await _audit.LogAsync("FEDERATION_CREATED", "Federation", result.Id, AuditSeverity.Info,
             $"Federation '{req.Name}' ({req.Code}) created",
@@ -113,14 +113,14 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> AssignFederationManager(Guid federationId, [FromBody] AssignManagerBody req, CancellationToken ct)
     {
         var users = await _bus.GetUsersAsync(req.Email, null, 1, 5, ct);
-        if (users is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
+        if (users is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
 
         var user = users.Users.FirstOrDefault(u => string.Equals(u.Email, req.Email, StringComparison.OrdinalIgnoreCase));
-        if (user is null) return NotFound(ApiResponse<object?>.Fail($"No user found with email '{req.Email}'."));
+        if (user is null) return Problem(detail: $"No user found with email '{req.Email}'.", statusCode: 404);
 
         var result = await _bus.AssignRoleAsync(user.Id, UserRole.FederationManager, federationId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (result.Error is not null) return BadRequest(ApiResponse<object?>.Fail(result.Error));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (result.Error is not null) return Problem(detail: result.Error, statusCode: 400);
 
         await _audit.LogAsync("FEDERATION_MANAGER_ASSIGNED", "Federation", federationId, AuditSeverity.Warning,
             $"User {user.Email} assigned as FederationManager for {federationId} by {CurrentUserName}",
@@ -133,8 +133,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> ToggleFederationActive(Guid federationId, CancellationToken ct)
     {
         var result = await _bus.ToggleFederationActiveAsync(federationId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("FederationService unavailable."));
-        if (result.Error is not null) return BadRequest(ApiResponse<object?>.Fail(result.Error));
+        if (result is null) return Problem(detail: "FederationService unavailable.", statusCode: 503);
+        if (result.Error is not null) return Problem(detail: result.Error, statusCode: 400);
 
         await _audit.LogAsync("FEDERATION_TOGGLED", "Federation", federationId,
             result.IsActive ? AuditSeverity.Info : AuditSeverity.Warning,
@@ -148,8 +148,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DeleteFederation(Guid federationId, CancellationToken ct)
     {
         var result = await _bus.DeleteFederationAsync(federationId, CurrentUserId, CurrentUserName, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("FederationService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to delete federation."));
+        if (result is null) return Problem(detail: "FederationService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to delete federation.", statusCode: 400);
 
         await _audit.LogAsync("FEDERATION_DELETED", "Federation", federationId, AuditSeverity.Critical,
             $"Federation '{result.FederationName}' ({federationId}) permanently deleted by {CurrentUserName}",
@@ -169,7 +169,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetUsersAsync(search, role, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -177,11 +177,11 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> ToggleUserActive(Guid userId, CancellationToken ct)
     {
         if (userId == CurrentUserId)
-            return BadRequest(ApiResponse<object?>.Fail("Cannot deactivate your own account."));
+            return Problem(detail: "Cannot deactivate your own account.", statusCode: 400);
 
         var result = await _bus.ToggleUserActiveAsync(userId, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (result.Error is not null) return BadRequest(ApiResponse<object?>.Fail(result.Error));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (result.Error is not null) return Problem(detail: result.Error, statusCode: 400);
 
         await _audit.LogAsync("USER_TOGGLED", "User", userId, AuditSeverity.Warning,
             $"User {userId} active state toggled by {CurrentUserName}",
@@ -194,11 +194,11 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> AssignRole(Guid userId, [FromBody] AssignRoleBody req, CancellationToken ct)
     {
         if (req.Role == UserRole.Pending)
-            return BadRequest(ApiResponse<object?>.Fail("Cannot assign Pending as a role."));
+            return Problem(detail: "Cannot assign Pending as a role.", statusCode: 400);
 
         var result = await _bus.AssignRoleAsync(userId, req.Role, req.FederationId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (result.Error is not null) return BadRequest(ApiResponse<object?>.Fail(result.Error));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (result.Error is not null) return Problem(detail: result.Error, statusCode: 400);
 
         await _audit.LogAsync("ROLE_ASSIGNED", "User", userId, AuditSeverity.Warning,
             $"Role '{req.Role}' assigned to user {userId} by {CurrentUserName}",
@@ -211,8 +211,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> SetUserLimits(Guid userId, [FromBody] SetUserLimitsBody req, CancellationToken ct)
     {
         var result = await _bus.SetUserLimitsAsync(userId, req.MaxResults, req.MaxClubs, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (result.Error is not null) return BadRequest(ApiResponse<object?>.Fail(result.Error));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (result.Error is not null) return Problem(detail: result.Error, statusCode: 400);
 
         await _audit.LogAsync("LIMITS_CHANGED", "User", userId, AuditSeverity.Info,
             $"Limits set for user {userId}: MaxResults={req.MaxResults}, MaxClubs={req.MaxClubs}",
@@ -225,11 +225,11 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken ct)
     {
         if (userId == CurrentUserId)
-            return BadRequest(ApiResponse<object?>.Fail("Cannot delete your own account."));
+            return Problem(detail: "Cannot delete your own account.", statusCode: 400);
 
         var result = await _bus.DeleteUserAsync(userId, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to delete user."));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to delete user.", statusCode: 400);
 
         await _audit.LogAsync("USER_DELETED", "User", userId, AuditSeverity.Warning,
             $"User {userId} permanently deleted by {CurrentUserName}",
@@ -249,7 +249,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAllClubsAsync(search, federationId, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -257,8 +257,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> CreateClub([FromBody] CreateClubAdminBody req, CancellationToken ct)
     {
         var result = await _bus.AdminCreateClubAsync(req.FederationId, req.Name, req.Code, req.City, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to create club."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to create club.", statusCode: 400);
 
         await _audit.LogAsync("CLUB_CREATED", "Club", result.ClubId, AuditSeverity.Info,
             $"Club '{req.Name}' ({req.Code}) created by admin {CurrentUserName}",
@@ -271,21 +271,27 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> AssignClubManager(Guid clubId, [FromBody] AssignClubManagerBody req, CancellationToken ct)
     {
         var users = await _bus.GetUsersAsync(req.Email, null, 1, 5, ct);
-        if (users is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
+        if (users is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
 
         var user = users.Users.FirstOrDefault(u => string.Equals(u.Email, req.Email, StringComparison.OrdinalIgnoreCase));
-        if (user is null) return NotFound(ApiResponse<object?>.Fail($"No user found with email '{req.Email}'."));
+        if (user is null) return Problem(detail: $"No user found with email '{req.Email}'.", statusCode: 404);
 
         var result = await _bus.AdminAssignClubManagerAsync(
             clubId, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Email, req.Force ?? false, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
         if (!result.Success && result.HasConflict)
-            return Conflict(ApiResponse<object>.Ok(new
-            {
-                conflict = true, conflictClubId = result.ConflictClubId, conflictClubName = result.ConflictClubName,
-                userId = user.Id, email = user.Email, fullName = $"{user.FirstName} {user.LastName}".Trim()
-            }));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to assign manager."));
+            return Problem(
+                detail: result.Error ?? "User already manages another club.",
+                statusCode: 409,
+                extensions: new Dictionary<string, object?> {
+                    ["errorCode"]         = "CONFLICT",
+                    ["conflictClubId"]    = result.ConflictClubId,
+                    ["conflictClubName"]  = result.ConflictClubName,
+                    ["userId"]            = user.Id,
+                    ["email"]             = user.Email,
+                    ["fullName"]          = $"{user.FirstName} {user.LastName}".Trim()
+                });
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to assign manager.", statusCode: 400);
 
         await _bus.AssignRoleAsync(user.Id, UserRole.ClubManager, result.FederationId, ct);
 
@@ -300,8 +306,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> SuspendClub(Guid clubId, CancellationToken ct)
     {
         var result = await _bus.ToggleClubActiveAsync(clubId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
-        if (result.Error is not null) return NotFound(ApiResponse<object?>.Fail(result.Error));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
+        if (result.Error is not null) return Problem(detail: result.Error, statusCode: 404);
 
         await _audit.LogAsync("CLUB_SUSPENDED", "Club", clubId, AuditSeverity.Critical,
             $"Club {clubId} active state → {result.IsActive} by {CurrentUserName}",
@@ -314,8 +320,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> SetClubSubscriptionExpiry(Guid clubId, [FromBody] SetClubExpiryBody req, CancellationToken ct)
     {
         var result = await _bus.SetClubSubscriptionExpiryAsync(clubId, req.ExpiresAt, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed.", statusCode: 400);
 
         await _audit.LogAsync("CLUB_EXPIRY_SET", "Club", clubId, AuditSeverity.Info,
             $"Club {clubId} subscription expiry set to {req.ExpiresAt:yyyy-MM-dd} by {CurrentUserName}",
@@ -328,8 +334,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DeleteClub(Guid clubId, CancellationToken ct)
     {
         var result = await _bus.DeleteClubAsync(clubId, CurrentUserId, CurrentUserName, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to delete club."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to delete club.", statusCode: 400);
 
         await _audit.LogAsync("CLUB_DELETED", "Club", clubId, AuditSeverity.Critical,
             $"Club '{result.ClubName}' ({clubId}) permanently deleted by {CurrentUserName}",
@@ -344,7 +350,7 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
     {
         var result = await _bus.GetSubscriptionPlansAsync(ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("SubscriptionService unavailable."));
+        if (result is null) return Problem(detail: "SubscriptionService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -358,8 +364,8 @@ public class AdminController : AdminControllerBase
             CurrentUserId);
 
         var result = await _bus.UpdateSubscriptionPlanAsync(busReq, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("SubscriptionService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to update plan."));
+        if (result is null) return Problem(detail: "SubscriptionService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to update plan.", statusCode: 400);
 
         await _audit.LogAsync("SUBSCRIPTION_PLAN_UPDATED", "SubscriptionPlan", planId, AuditSeverity.Info,
             $"Plan '{req.Name}' updated by {CurrentUserName}",
@@ -378,7 +384,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetFederationSubscriptionsAsync(page, pageSize, search, billingCycle, dateFrom, dateTo, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("SubscriptionService unavailable."));
+        if (result is null) return Problem(detail: "SubscriptionService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -387,8 +393,8 @@ public class AdminController : AdminControllerBase
         [FromBody] CreateFederationSubscriptionRequest req, CancellationToken ct)
     {
         var result = await _bus.CreateFederationSubscriptionAsync(req with { CreatedBy = CurrentUserId }, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("SubscriptionService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed."));
+        if (result is null) return Problem(detail: "SubscriptionService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed.", statusCode: 400);
 
         await _audit.LogAsync("SUBSCRIPTION_CREATED", "Subscription", result.Id, AuditSeverity.Info,
             $"Federation subscription created for {req.FederationName}",
@@ -408,7 +414,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetUpgradeRequestsAsync(federationId, status, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -416,8 +422,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> ApproveUpgradeRequest(Guid requestId, CancellationToken ct)
     {
         var result = await _bus.ReviewUpgradeRequestAsync(requestId, true, null, CurrentUserId, isAdmin: true, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed."));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed.", statusCode: 400);
 
         await _audit.LogAsync("UPGRADE_REQUEST_APPROVED", "UpgradeRequest", requestId, AuditSeverity.Info,
             $"Role upgrade request {requestId} approved by {CurrentUserName}",
@@ -431,8 +437,8 @@ public class AdminController : AdminControllerBase
         Guid requestId, [FromBody] RejectUpgradeBody body, CancellationToken ct)
     {
         var result = await _bus.ReviewUpgradeRequestAsync(requestId, false, body.Reason, CurrentUserId, isAdmin: true, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed."));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed.", statusCode: 400);
 
         await _audit.LogAsync("UPGRADE_REQUEST_REJECTED", "UpgradeRequest", requestId, AuditSeverity.Info,
             $"Role upgrade request {requestId} rejected by {CurrentUserName}",
@@ -445,8 +451,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> RevokeUpgradeRequest(Guid requestId, CancellationToken ct)
     {
         var result = await _bus.RevokeUpgradeRequestAsync(requestId, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IdentityService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed."));
+        if (result is null) return Problem(detail: "IdentityService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed.", statusCode: 400);
 
         await _audit.LogAsync("UPGRADE_REQUEST_REVOKED", "UpgradeRequest", requestId, AuditSeverity.Warning,
             $"Role upgrade request {requestId} revoked by admin {CurrentUserName}",
@@ -469,7 +475,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAdminRacesAsync(search, clubId, status, dateFrom, dateTo, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -477,8 +483,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DeleteRace(Guid raceId, CancellationToken ct)
     {
         var result = await _bus.DeleteRaceAsync(raceId, CurrentUserId, CurrentUserName, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
-        if (!result.Success) return NotFound(ApiResponse<object?>.Fail(result.Error ?? "Race not found."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Race not found.", statusCode: 404);
 
         await _audit.LogAsync("RACE_DELETED", "Race", raceId, AuditSeverity.Warning,
             $"Race '{result.RaceName}' deleted by {CurrentUserName}",
@@ -509,7 +515,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAdminPigeonsAsync(search, federationId, clubId, page, pageSize, fancierSearch, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -517,8 +523,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> UpdatePigeon(Guid pigeonId, [FromBody] UpdatePigeonBody req, CancellationToken ct)
     {
         var result = await _bus.UpdatePigeonAsync(pigeonId, req.Name, req.Sex, req.YearOfBirth, req.Color, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
-        if (!result.Success) return NotFound(ApiResponse<object?>.Fail(result.Error ?? "Pigeon not found."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Pigeon not found.", statusCode: 404);
 
         await _audit.LogAsync("PIGEON_UPDATED", "Pigeon", pigeonId, AuditSeverity.Info,
             $"Pigeon {pigeonId} updated by {CurrentUserName}",
@@ -531,8 +537,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DeletePigeon(Guid pigeonId, CancellationToken ct)
     {
         var result = await _bus.DeletePigeonAsync(pigeonId, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
-        if (!result.Success) return NotFound(ApiResponse<object?>.Fail(result.Error ?? "Pigeon not found."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Pigeon not found.", statusCode: 404);
 
         await _audit.LogAsync("PIGEON_DELETED", "Pigeon", pigeonId, AuditSeverity.Warning,
             $"Pigeon '{result.RingNumber}' deleted by {CurrentUserName}",
@@ -554,7 +560,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetFanciersAsync(search, clubId, federationId, isLinked, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -562,8 +568,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> LinkFancier(Guid fancierId, [FromBody] LinkFancierBody req, CancellationToken ct)
     {
         var result = await _bus.LinkFancierAsync(fancierId, req.UserId, req.UserName, req.UserEmail, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to link fancier."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to link fancier.", statusCode: 400);
 
         await _audit.LogAsync("FANCIER_LINKED", "Fancier", fancierId, AuditSeverity.Info,
             $"Fancier {fancierId} linked to user {req.UserId} by {CurrentUserName}",
@@ -576,8 +582,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> UnlinkFancier(Guid fancierId, CancellationToken ct)
     {
         var result = await _bus.UnlinkFancierAsync(fancierId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("RaceService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to unlink fancier."));
+        if (result is null) return Problem(detail: "RaceService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to unlink fancier.", statusCode: 400);
         return Ok(ApiResponse<object>.Ok(new { unlinked = true }));
     }
 
@@ -592,7 +598,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAdminProgrammesAsync(search, clubId, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -600,8 +606,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DeleteProgramme(Guid programmeId, CancellationToken ct)
     {
         var result = await _bus.DeleteProgrammeAsync(programmeId, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
-        if (!result.Success) return NotFound(ApiResponse<object?>.Fail(result.Error ?? "Programme not found."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Programme not found.", statusCode: 404);
 
         await _audit.LogAsync("PROGRAMME_DELETED", "Programme", programmeId, AuditSeverity.Warning,
             $"Programme '{result.ProgrammeName}' deleted by {CurrentUserName}",
@@ -622,7 +628,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAdminAcePigeonResultsAsync(search, clubId, programmeId, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -636,7 +642,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAdminSuperAceResultsAsync(search, clubId, programmeId, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -650,7 +656,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAdminBestLoftResultsAsync(search, clubId, programmeId, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
+        if (result is null) return Problem(detail: "ClubService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -665,8 +671,8 @@ public class AdminController : AdminControllerBase
             req.IsHighlighted, req.SortOrder, req.Features, CurrentUserId);
 
         var result = await _bus.AdminCreateSubscriptionPlanAsync(busReq, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("SubscriptionService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to create plan."));
+        if (result is null) return Problem(detail: "SubscriptionService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to create plan.", statusCode: 400);
 
         await _audit.LogAsync("SUBSCRIPTION_PLAN_CREATED", "SubscriptionPlan", result.Plan?.Id, AuditSeverity.Info,
             $"Plan '{req.Name}' created by {CurrentUserName}",
@@ -679,8 +685,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DeleteSubscriptionPlan(Guid planId, CancellationToken ct)
     {
         var result = await _bus.AdminDeleteSubscriptionPlanAsync(planId, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("SubscriptionService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to delete plan."));
+        if (result is null) return Problem(detail: "SubscriptionService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to delete plan.", statusCode: 400);
 
         await _audit.LogAsync("SUBSCRIPTION_PLAN_DELETED", "SubscriptionPlan", planId, AuditSeverity.Warning,
             $"Subscription plan {planId} deleted by {CurrentUserName}",
@@ -719,7 +725,7 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> MarkNotificationRead(Guid notificationId, CancellationToken ct)
     {
         var n = await _db.AdminNotifications.FindAsync([notificationId], ct);
-        if (n is null) return NotFound(ApiResponse<object?>.Fail("Notification not found."));
+        if (n is null) return Problem(detail: "Notification not found.", statusCode: 404);
         if (!n.IsRead) { n.IsRead = true; n.ReadAt = DateTime.UtcNow; await _db.SaveChangesAsync(ct); }
         return Ok(ApiResponse<object>.Ok(new { read = true }));
     }
@@ -740,7 +746,7 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> DismissNotification(Guid notificationId, CancellationToken ct)
     {
         var n = await _db.AdminNotifications.FindAsync([notificationId], ct);
-        if (n is null) return NotFound(ApiResponse<object?>.Fail("Notification not found."));
+        if (n is null) return Problem(detail: "Notification not found.", statusCode: 404);
         n.IsDeleted = true;
         n.DeletedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
@@ -768,7 +774,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAdminExternalLinksAsync(status, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IntegrationService unavailable."));
+        if (result is null) return Problem(detail: "IntegrationService unavailable.", statusCode: 503);
         return Ok(ApiResponse<object>.Ok(result));
     }
 
@@ -776,8 +782,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> ApproveLinkRequest(Guid linkId, CancellationToken ct)
     {
         var result = await _bus.AdminApproveLinkAsync(linkId, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IntegrationService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to approve link."));
+        if (result is null) return Problem(detail: "IntegrationService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to approve link.", statusCode: 400);
 
         await _audit.LogAsync("LINK_APPROVED", "ExternalLink", linkId, AuditSeverity.Info,
             $"External link {linkId} approved by {CurrentUserName}",
@@ -790,8 +796,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> RejectLinkRequest(Guid linkId, [FromBody] RejectLinkBody req, CancellationToken ct)
     {
         var result = await _bus.AdminRejectLinkAsync(linkId, req.Reason, CurrentUserId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IntegrationService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to reject link."));
+        if (result is null) return Problem(detail: "IntegrationService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to reject link.", statusCode: 400);
 
         await _audit.LogAsync("LINK_REJECTED", "ExternalLink", linkId, AuditSeverity.Info,
             $"External link {linkId} rejected by {CurrentUserName}",
@@ -804,8 +810,8 @@ public class AdminController : AdminControllerBase
     public async Task<IActionResult> RevokeLinkRequest(Guid linkId, CancellationToken ct)
     {
         var result = await _bus.AdminRevokeLinkAsync(linkId, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("IntegrationService unavailable."));
-        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed to revoke link."));
+        if (result is null) return Problem(detail: "IntegrationService unavailable.", statusCode: 503);
+        if (!result.Success) return Problem(detail: result.Error ?? "Failed to revoke link.", statusCode: 400);
 
         await _audit.LogAsync("LINK_REVOKED", "ExternalLink", linkId, AuditSeverity.Warning,
             $"External link {linkId} revoked by {CurrentUserName}",
@@ -826,7 +832,7 @@ public class AdminController : AdminControllerBase
         CancellationToken ct = default)
     {
         var result = await _bus.GetAuditLogsAsync(action, entityType, severity, page, pageSize, ct);
-        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("AuditService unavailable."));
+        if (result is null) return Problem(detail: "AuditService unavailable.", statusCode: 503);
 
         return Ok(ApiResponse<object>.Ok(new
         {

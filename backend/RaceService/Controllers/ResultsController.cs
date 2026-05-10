@@ -32,7 +32,7 @@ public class ResultsController : RaceControllerBase
         IFormFile file, CancellationToken ct)
     {
         if (file == null || file.Length == 0)
-            return BadRequest(ApiResponse<object?>.Fail("No file provided."));
+            return Problem(detail: "No file provided.", statusCode: 400);
 
         return FromResult(await _results.IngestETSFileAsync(
             raceId, categoryId, file.OpenReadStream(), file.FileName,

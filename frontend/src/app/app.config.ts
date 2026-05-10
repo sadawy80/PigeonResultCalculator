@@ -6,6 +6,7 @@ import { jwtInterceptor } from './core/services/services';
 import { TranslationService } from './core/i18n/translation.service';
 import { AppErrorHandler } from './core/services/app-error-handler';
 import { loggingInterceptor } from './core/services/logging.interceptor';
+import { problemDetailsInterceptor } from './core/services/problem-details.interceptor';
 
 // ── i18n initialiser — loads the saved/default locale before the app renders ──
 function initI18n(i18n: TranslationService) {
@@ -16,7 +17,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withViewTransitions()),
-    provideHttpClient(withInterceptors([jwtInterceptor, loggingInterceptor])),
+    provideHttpClient(withInterceptors([jwtInterceptor, loggingInterceptor, problemDetailsInterceptor])),
 
     // Global error handler
     { provide: ErrorHandler, useClass: AppErrorHandler },

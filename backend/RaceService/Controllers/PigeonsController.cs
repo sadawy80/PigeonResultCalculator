@@ -38,7 +38,7 @@ public class PigeonsController : RaceControllerBase
     public async Task<IActionResult> Get(Guid pigeonId, CancellationToken ct)
     {
         var p = await _db.Pigeons.FirstOrDefaultAsync(x => x.Id == pigeonId, ct);
-        if (p == null) return NotFound(ApiResponse<object?>.Fail("Pigeon not found."));
+        if (p == null) return NotFound();
         return Ok(ApiResponse<PigeonDto>.Ok(new PigeonDto(p.Id, p.RingNumber, p.Name, p.Sex, p.YearOfBirth, p.Color, p.Strain, p.PhotoUrl)));
     }
 }
