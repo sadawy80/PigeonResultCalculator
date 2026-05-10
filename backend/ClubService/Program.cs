@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PRC.Common.Consul;
+using PRC.Common.Tenancy;
 using PRC.ClubService.Data;
 using PRC.ClubService.Events;
 using PRC.ClubService.Services;
@@ -124,6 +125,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IRaceServiceClient, BusRaceServiceClient>();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantContext, HttpTenantContext>();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();

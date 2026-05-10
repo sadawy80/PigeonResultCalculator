@@ -1,12 +1,18 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.FederationService.Models;
+using PRC.Common.Tenancy;
 
 namespace PRC.FederationService.Data;
 
 public class FederationDbContext : DbContext
 {
-    public FederationDbContext(DbContextOptions<FederationDbContext> options) : base(options) { }
+    private readonly Guid? _tenantId;
+
+    public FederationDbContext(DbContextOptions<FederationDbContext> opts, ITenantContext tenant) : base(opts)
+        => _tenantId = tenant.TenantId;
+
+    public FederationDbContext(DbContextOptions<FederationDbContext> opts) : base(opts) { }
 
     public DbSet<Federation> Federations => Set<Federation>();
     public DbSet<FederationPage> FederationPages => Set<FederationPage>();
@@ -23,7 +29,7 @@ public class FederationDbContext : DbContext
         builder.Entity<Federation>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasQueryFilter(x => !x.IsDeleted);
+            e.HasQueryFilter(x => !x.IsDeleted && (_tenantId == null || x.Id == _tenantId));
             e.HasIndex(x => x.Code).IsUnique();
             e.HasIndex(x => x.Slug).IsUnique();
             e.Property(x => x.Name).HasMaxLength(100).IsRequired();
@@ -43,7 +49,7 @@ public class FederationDbContext : DbContext
         builder.Entity<FederationResult>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasQueryFilter(x => !x.IsDeleted);
+            e.HasQueryFilter(x => !x.IsDeleted && (_tenantId == null || x.FederationId == _tenantId));
             e.HasOne(x => x.Federation)
              .WithMany(x => x.FederationResults)
              .HasForeignKey(x => x.FederationId)

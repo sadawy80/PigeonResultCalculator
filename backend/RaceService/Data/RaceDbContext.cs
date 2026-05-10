@@ -1,12 +1,18 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.RaceService.Models;
+using PRC.Common.Tenancy;
 
 namespace PRC.RaceService.Data;
 
 public class RaceDbContext : DbContext
 {
-    public RaceDbContext(DbContextOptions<RaceDbContext> options) : base(options) { }
+    private readonly Guid? _tenantId;
+
+    public RaceDbContext(DbContextOptions<RaceDbContext> opts, ITenantContext tenant) : base(opts)
+        => _tenantId = tenant.TenantId;
+
+    public RaceDbContext(DbContextOptions<RaceDbContext> opts) : base(opts) { }
 
     public DbSet<Race> Races => Set<Race>();
     public DbSet<RaceCategory> RaceCategories => Set<RaceCategory>();
@@ -21,9 +27,10 @@ public class RaceDbContext : DbContext
         base.OnModelCreating(b);
 
         // Soft-delete global filters
-        b.Entity<Race>().HasQueryFilter(e => !e.IsDeleted);
+        b.Entity<Race>().HasQueryFilter(e => !e.IsDeleted && (_tenantId == null || e.FederationId == _tenantId));
         b.Entity<RaceResult>().HasQueryFilter(e => !e.IsDeleted);
-        b.Entity<Pigeon>().HasQueryFilter(e => !e.IsDeleted);
+        b.Entity<Pigeon>().HasQueryFilter(e => !e.IsDeleted && (_tenantId == null || e.FederationId == _tenantId));
+        b.Entity<Fancier>().HasQueryFilter(e => !e.IsDeleted && (_tenantId == null || e.FederationId == _tenantId));
 
         b.Entity<Race>().HasIndex(r => r.ClubId);
         b.Entity<Race>().HasIndex(r => r.Status);

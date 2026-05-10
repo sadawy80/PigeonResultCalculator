@@ -1,12 +1,18 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.ClubService.Models;
+using PRC.Common.Tenancy;
 
 namespace PRC.ClubService.Data;
 
 public class ClubDbContext : DbContext
 {
-    public ClubDbContext(DbContextOptions<ClubDbContext> options) : base(options) { }
+    private readonly Guid? _tenantId;
+
+    public ClubDbContext(DbContextOptions<ClubDbContext> opts, ITenantContext tenant) : base(opts)
+        => _tenantId = tenant.TenantId;
+
+    public ClubDbContext(DbContextOptions<ClubDbContext> opts) : base(opts) { }
 
     public DbSet<Club> Clubs => Set<Club>();
     public DbSet<ClubMembership> ClubMemberships => Set<ClubMembership>();
@@ -27,7 +33,7 @@ public class ClubDbContext : DbContext
         builder.Entity<Club>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasQueryFilter(x => !x.IsDeleted);
+            e.HasQueryFilter(x => !x.IsDeleted && (_tenantId == null || x.FederationId == _tenantId));
             e.HasIndex(x => new { x.FederationId, x.Code });
             e.Property(x => x.Name).HasMaxLength(200).IsRequired();
             e.Property(x => x.Code).HasMaxLength(20).IsRequired();
@@ -86,7 +92,7 @@ public class ClubDbContext : DbContext
         builder.Entity<ClubProgramme>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasQueryFilter(x => !x.IsDeleted);
+            e.HasQueryFilter(x => !x.IsDeleted && (_tenantId == null || x.FederationId == _tenantId));
             e.HasOne(x => x.Club)
              .WithMany(x => x.Programmes)
              .HasForeignKey(x => x.ClubId)

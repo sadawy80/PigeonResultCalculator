@@ -1,12 +1,18 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.SubscriptionService.Models;
+using PRC.Common.Tenancy;
 
 namespace PRC.SubscriptionService.Data;
 
 public class SubscriptionDbContext : DbContext
 {
-    public SubscriptionDbContext(DbContextOptions<SubscriptionDbContext> options) : base(options) { }
+    private readonly Guid? _tenantId;
+
+    public SubscriptionDbContext(DbContextOptions<SubscriptionDbContext> opts, ITenantContext tenant) : base(opts)
+        => _tenantId = tenant.TenantId;
+
+    public SubscriptionDbContext(DbContextOptions<SubscriptionDbContext> opts) : base(opts) { }
 
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<FederationSubscription> FederationSubscriptions => Set<FederationSubscription>();
@@ -28,7 +34,7 @@ public class SubscriptionDbContext : DbContext
         mb.Entity<FederationSubscription>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasQueryFilter(x => !x.IsDeleted);
+            e.HasQueryFilter(x => !x.IsDeleted && (_tenantId == null || x.FederationId == _tenantId));
             e.HasIndex(x => x.FederationId);
             e.HasIndex(x => x.Status);
             e.Property(x => x.AmountPaid).HasPrecision(18, 2);
