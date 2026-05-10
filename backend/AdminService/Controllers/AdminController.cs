@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRC.AdminService.Data;
 using PRC.AdminService.DTOs;
-using PRC.AdminService.Models;
 using PRC.AdminService.Services;
 using PRC.Common;
 using PRC.Common.Messages;
@@ -826,24 +825,15 @@ public class AdminController : AdminControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var q = _db.AuditEvents.AsQueryable();
+        var result = await _bus.GetAuditLogsAsync(action, entityType, severity, page, pageSize, ct);
+        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("AuditService unavailable."));
 
-        if (!string.IsNullOrEmpty(action))     q = q.Where(e => e.Action == action);
-        if (!string.IsNullOrEmpty(entityType)) q = q.Where(e => e.EntityType == entityType);
-        if (severity.HasValue)                 q = q.Where(e => e.Severity == severity.Value);
-
-        var total = await q.CountAsync(ct);
-        var items = await q
-            .OrderByDescending(e => e.CreatedAt)
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(e => new AuditEventDto(
-                e.Id, e.Action, e.EntityType, e.EntityId,
-                e.Severity.ToString(), e.Details,
-                e.TriggeredByUserId, e.TriggeredByName,
-                e.CorrelationId, e.ServiceName,
-                e.IpAddress, e.Country, e.CreatedAt))
-            .ToListAsync(ct);
-
-        return Ok(ApiResponse<object>.Ok(new { items, totalCount = total, page, pageSize }));
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            items      = result.Items,
+            totalCount = result.TotalCount,
+            page,
+            pageSize
+        }));
     }
 }

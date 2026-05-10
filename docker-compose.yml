@@ -442,6 +442,34 @@ services:
       start_period: 30s
     logging: *default-logging
 
+  audit-service:
+    build:
+      context: backend
+      dockerfile: AuditService/Dockerfile
+    container_name: prc-audit
+    restart: unless-stopped
+    ports:
+      - "9511:9511"
+    environment:
+      <<: *svc-env
+      ASPNETCORE_URLS: http://+:9511
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Audit;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
+    depends_on:
+      sqlserver: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    networks:
+      - internal
+    labels:
+      logging: promtail
+      service: audit-service
+    healthcheck:
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9511'" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
   notification-service:
     build:
       context: backend

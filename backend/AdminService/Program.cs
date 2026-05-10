@@ -122,6 +122,7 @@ builder.Services.AddMassTransit(x =>
     x.AddRequestClient<AdminSendNotificationBusRequest>();
     x.AddRequestClient<AdminCreateSubscriptionPlanBusRequest>();
     x.AddRequestClient<AdminDeleteSubscriptionPlanBusRequest>();
+    x.AddRequestClient<GetAuditLogsRequest>();
 
     x.AddConsumer<UpgradeRequestSubmittedConsumer>();
     x.AddConsumer<ExternalLinkRequestedConsumer>();

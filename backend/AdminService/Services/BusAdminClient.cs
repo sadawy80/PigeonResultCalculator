@@ -82,6 +82,9 @@ public interface IBusAdminClient
     // Subscription plan CRUD
     Task<AdminCreateSubscriptionPlanBusResult?> AdminCreateSubscriptionPlanAsync(AdminCreateSubscriptionPlanBusRequest req, CancellationToken ct = default);
     Task<AdminDeleteSubscriptionPlanBusResult?> AdminDeleteSubscriptionPlanAsync(Guid planId, Guid deletedBy, CancellationToken ct = default);
+
+    // Audit logs
+    Task<GetAuditLogsResponse?> GetAuditLogsAsync(string? action, string? entityType, AuditSeverity? severity, int page, int pageSize, CancellationToken ct = default);
 }
 
 public class BusAdminClient : IBusAdminClient
@@ -137,6 +140,7 @@ public class BusAdminClient : IBusAdminClient
     private readonly IRequestClient<AdminSendNotificationBusRequest>    _sendNotification;
     private readonly IRequestClient<AdminCreateSubscriptionPlanBusRequest> _createPlan;
     private readonly IRequestClient<AdminDeleteSubscriptionPlanBusRequest> _deletePlan;
+    private readonly IRequestClient<GetAuditLogsRequest>                  _getAuditLogs;
     private readonly ILogger<BusAdminClient> _log;
 
     public BusAdminClient(
@@ -191,6 +195,7 @@ public class BusAdminClient : IBusAdminClient
         IRequestClient<AdminSendNotificationBusRequest> sendNotification,
         IRequestClient<AdminCreateSubscriptionPlanBusRequest> createPlan,
         IRequestClient<AdminDeleteSubscriptionPlanBusRequest> deletePlan,
+        IRequestClient<GetAuditLogsRequest> getAuditLogs,
         ILogger<BusAdminClient> log)
     {
         _idStats        = idStats;
@@ -244,6 +249,7 @@ public class BusAdminClient : IBusAdminClient
         _sendNotification      = sendNotification;
         _createPlan            = createPlan;
         _deletePlan            = deletePlan;
+        _getAuditLogs          = getAuditLogs;
         _log                   = log;
     }
 
@@ -426,4 +432,7 @@ public class BusAdminClient : IBusAdminClient
 
     public Task<AdminDeleteClubResult?> DeleteClubAsync(Guid clubId, Guid adminUserId, string adminName, CancellationToken ct = default)
         => Ask<AdminDeleteClubRequest, AdminDeleteClubResult>(_deleteClub, new(clubId, adminUserId, adminName), ct);
+
+    public Task<GetAuditLogsResponse?> GetAuditLogsAsync(string? action, string? entityType, AuditSeverity? severity, int page, int pageSize, CancellationToken ct = default)
+        => Ask<GetAuditLogsRequest, GetAuditLogsResponse>(_getAuditLogs, new(action, entityType, severity, page, pageSize), ct);
 }

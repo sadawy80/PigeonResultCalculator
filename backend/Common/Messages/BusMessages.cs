@@ -59,6 +59,50 @@ public record SubscriptionCancelledEvent(
     string Reason,
     DateTime OccurredAt);
 
+/// Published by AdminService when an admin performs a sensitive action.
+/// AuditService subscribes to persist to PRC_Audit.
+public record AuditEntryEvent(
+    string Action,
+    string EntityType,
+    Guid? EntityId,
+    AuditSeverity Severity,
+    string? Details,
+    Guid? TriggeredByUserId,
+    string? TriggeredByName,
+    string? CorrelationId,
+    string ServiceName,
+    string? IpAddress,
+    string? Country,
+    DateTime OccurredAt);
+
+public record GetAuditLogsRequest(
+    string? Action,
+    string? EntityType,
+    AuditSeverity? Severity,
+    int Page,
+    int PageSize);
+
+public record GetAuditLogsResponse(
+    IReadOnlyList<AuditLogItem> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public record AuditLogItem(
+    Guid Id,
+    string Action,
+    string EntityType,
+    Guid? EntityId,
+    string Severity,
+    string? Details,
+    Guid? TriggeredByUserId,
+    string? TriggeredByName,
+    string? CorrelationId,
+    string ServiceName,
+    string? IpAddress,
+    string? Country,
+    DateTime CreatedAt);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin — Stats (Request / Response per service)
 // ─────────────────────────────────────────────────────────────────────────────

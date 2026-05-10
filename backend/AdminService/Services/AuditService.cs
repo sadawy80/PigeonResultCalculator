@@ -1,6 +1,6 @@
-using PRC.AdminService.Data;
-using PRC.AdminService.Models;
+using MassTransit;
 using PRC.Common;
+using PRC.Common.Messages;
 
 namespace PRC.AdminService.Services;
 
@@ -15,13 +15,13 @@ public interface IAuditService
 
 public class AuditService : IAuditService
 {
-    private readonly AdminDbContext _db;
-    private readonly IGeoIpService  _geoIp;
+    private readonly IPublishEndpoint _publish;
+    private readonly IGeoIpService    _geoIp;
 
-    public AuditService(AdminDbContext db, IGeoIpService geoIp)
+    public AuditService(IPublishEndpoint publish, IGeoIpService geoIp)
     {
-        _db    = db;
-        _geoIp = geoIp;
+        _publish = publish;
+        _geoIp   = geoIp;
     }
 
     public async Task LogAsync(string action, string entityType, Guid? entityId,
@@ -32,20 +32,9 @@ public class AuditService : IAuditService
     {
         var country = await _geoIp.GetCountryAsync(ipAddress, ct);
 
-        _db.AuditEvents.Add(new AuditEvent
-        {
-            Action              = action,
-            EntityType          = entityType,
-            EntityId            = entityId,
-            Severity            = severity,
-            Details             = details,
-            TriggeredByUserId   = triggeredByUserId,
-            TriggeredByName     = triggeredByName,
-            CorrelationId       = correlationId,
-            ServiceName         = "AdminService",
-            IpAddress           = ipAddress,
-            Country             = country
-        });
-        await _db.SaveChangesAsync(ct);
+        await _publish.Publish(new AuditEntryEvent(
+            action, entityType, entityId, severity, details,
+            triggeredByUserId, triggeredByName, correlationId,
+            "AdminService", ipAddress, country, DateTime.UtcNow), ct);
     }
 }
