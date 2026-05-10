@@ -65,7 +65,7 @@ builder.Services.AddCors(opts =>
         .WithOrigins(
             builder.Configuration["App:GatewayUrl"] ?? "http://localhost:9500",
             builder.Configuration["App:FrontendUrl"] ?? "http://localhost:4300")
-        .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+        .AllowAnyHeader().WithMethods("GET","POST","PUT","DELETE","PATCH","OPTIONS").AllowCredentials()));
 
 // ── MassTransit ───────────────────────────────────────────────────────────────
 builder.Services.AddMassTransit(x =>

@@ -36,7 +36,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience         = true,
             ValidAudience            = builder.Configuration["Jwt:Audience"],
             ValidateLifetime         = true,
-            ClockSkew                = TimeSpan.Zero
+            ClockSkew                = TimeSpan.FromSeconds(30)
         };
     });
 
@@ -72,9 +72,13 @@ builder.Services.AddMassTransit(x =>
 });
 
 builder.Services.AddHttpClient("PlatformCallback")
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    .ConfigurePrimaryHttpMessageHandler(() =>
     {
-        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
     });
 
 builder.Services.AddScoped<IIntegrationService, PRC.IntegrationService.Services.IntegrationService>();

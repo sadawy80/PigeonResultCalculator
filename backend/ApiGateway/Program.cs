@@ -41,7 +41,7 @@ var allowedOrigins = new[]
 };
 builder.Services.AddCors(opts => opts.AddPolicy("FrontendCors",
     p => p.WithOrigins(allowedOrigins)
-        .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+        .AllowAnyHeader().WithMethods("GET","POST","PUT","DELETE","PATCH","OPTIONS").AllowCredentials()));
 
 // ── Consul client ─────────────────────────────────────────────────────────────
 builder.Services.AddSingleton<IConsulClient>(_ =>

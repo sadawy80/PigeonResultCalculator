@@ -3,8 +3,9 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace PRC.IdentityService.Migrations;
+namespace PRC.ClubService.Data.Migrations;
 
+[Migration("20260510010000_AddOutbox")]
 public partial class AddOutbox : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

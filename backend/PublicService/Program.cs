@@ -69,7 +69,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(opts => opts.AddPolicy("FrontendCors",
     p => p.WithOrigins(
             builder.Configuration["App:FrontendUrl"] ?? "http://localhost:4300")
-        .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+        .AllowAnyHeader().WithMethods("GET","POST","PUT","DELETE","PATCH","OPTIONS").AllowCredentials()));
 
 builder.Services.AddConsulServiceRegistration(builder.Configuration, "public-service", 9508);
 
