@@ -434,6 +434,10 @@ export class ApiService {
     return this.put<{ id: string; isActive: boolean }>(`/admin/clubs/${clubId}/suspend`);
   }
 
+  adminSetClubSubscriptionExpiry(clubId: string, expiresAt: string | null): Observable<any> {
+    return this.put<any>(`/admin/clubs/${clubId}/subscription-expiry`, { expiresAt });
+  }
+
   adminGetFederations(page = 1, pageSize = 50): Observable<PagedResult<any>> {
     return this.get<PagedResult<any>>('/admin/federations', { page, pageSize });
   }

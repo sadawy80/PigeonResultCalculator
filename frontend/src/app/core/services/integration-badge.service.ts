@@ -27,7 +27,7 @@ export class IntegrationBadgeService {
       } else {
         this.stopPolling();
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   private startPolling(clubId: string) {

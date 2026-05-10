@@ -14,5 +14,5 @@ public class FederationPage : BaseEntity
     public string? LayoutConfig { get; set; }
     public SiteTheme Theme { get; set; } = SiteTheme.Skyline;
 
-    public Federation Federation { get; set; } = null!;
+    public Federation? Federation { get; set; }
 }

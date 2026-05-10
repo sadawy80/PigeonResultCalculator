@@ -5,6 +5,7 @@ using MassTransit;
 using Prometheus;
 using Serilog;
 using System.Text;
+using PRC.Common.Consul;
 using PRC.Common.Messages;
 using PRC.IntegrationService.Data;
 using PRC.IntegrationService.Services;
@@ -45,8 +46,19 @@ builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
 
+    x.AddConsumer<PRC.IntegrationService.Events.GetAdminExternalLinksConsumer>();
+    x.AddConsumer<PRC.IntegrationService.Events.AdminApproveLinkConsumer>();
+    x.AddConsumer<PRC.IntegrationService.Events.AdminRejectLinkConsumer>();
+    x.AddConsumer<PRC.IntegrationService.Events.AdminRevokeLinkConsumer>();
+
     x.AddRequestClient<GetFancierRaceResultsRequest>();
     x.AddRequestClient<GetFancierProgrammeResultsRequest>();
+
+    x.AddEntityFrameworkOutbox<IntegrationDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
@@ -73,12 +85,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "integration-service", 9506);
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IntegrationDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try { await db.Database.MigrateAsync(); break; }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("IntegrationService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
 }
 
 app.UseSerilogRequestLogging();

@@ -9,17 +9,25 @@
   <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
 }
 
-<div class="flex gap-4 mb-6">
-  <input class="pr-input" style="max-width:300px" placeholder="Search by name or email..."
-    [(ngModel)]="search" (keyup.enter)="onSearch()">
-  <select class="pr-select" style="max-width:180px" [(ngModel)]="roleFilter" (change)="onSearch()">
-    <option value="">All Roles</option>
-    <option value="SuperAdmin">Super Admin</option>
-    <option value="FederationManager">Federation Manager</option>
-    <option value="ClubManager">Club Manager</option>
-    <option value="Fancier">Fancier</option>
-  </select>
-  <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="onSearch()">Search</button>
+<div class="pr-card mb-4">
+  <div class="flex flex-wrap gap-4 items-end">
+    <div class="pr-form-group" style="flex:2;min-width:200px">
+      <label class="pr-label">Search</label>
+      <input class="pr-input" [(ngModel)]="search" placeholder="Name or email…" (keyup.enter)="onSearch()">
+    </div>
+    <div class="pr-form-group" style="flex:1;min-width:160px">
+      <label class="pr-label">Role</label>
+      <select class="pr-select" [(ngModel)]="roleFilter" (change)="onSearch()">
+        <option value="">All Roles</option>
+        <option value="SuperAdmin">Super Admin</option>
+        <option value="FederationManager">Federation Manager</option>
+        <option value="ClubManager">Club Manager</option>
+        <option value="Fancier">Fancier</option>
+      </select>
+    </div>
+    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="onSearch()">Search</button>
+    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="search=''; roleFilter=''; onSearch()">Reset</button>
+  </div>
 </div>
 
 <div class="pr-card">
@@ -43,9 +51,14 @@
                 <div class="flex gap-2">
                   <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openRoleModal(u)">Role</button>
                   <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openLimitsModal(u)">Limits</button>
-                  <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleUser(u.id)">
-                    {{ u.isActive ? 'Suspend' : 'Activate' }}
-                  </button>
+                  @if (u.isActive) {
+                    <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleUser(u.id)">Suspend</button>
+                  } @else {
+                    <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="toggleUser(u.id)">Activate</button>
+                  }
+                  @if (!u.isActive) {
+                    <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-danger)" (click)="openDeleteModal(u)" title="Delete user">✕</button>
+                  }
                 </div>
               </td>
             </tr>
@@ -55,8 +68,14 @@
     </div>
 
     <div class="flex justify-between items-center mt-4">
-      <span class="text-muted text-sm">Page {{ page }} of {{ totalPages }}</span>
-      <div class="flex gap-2">
+      <span class="text-muted text-sm">{{ total() }} users · page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-2 items-center">
+        <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="10">10 / page</option>
+          <option [ngValue]="25">25 / page</option>
+          <option [ngValue]="50">50 / page</option>
+          <option [ngValue]="100">100 / page</option>
+        </select>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
       </div>
@@ -77,13 +96,34 @@
           </select>
         </div>
         <div>
-          <label class="pr-label">Country ID (for FederationManager)</label>
-          <input class="pr-input w-full" placeholder="Leave blank if not applicable" [(ngModel)]="assignCountry">
+          <label class="pr-label">Federation ID (for FederationManager)</label>
+          <input class="pr-input w-full" placeholder="Leave blank if not applicable" [(ngModel)]="assignFederation">
         </div>
       </div>
       <div class="flex gap-3 justify-end mt-6">
         <button class="pr-btn pr-btn--ghost" (click)="showRoleModal.set(false)">Cancel</button>
         <button class="pr-btn pr-btn--primary" (click)="saveRole()">Save</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal()) {
+  <div class="pr-modal-backdrop" (click)="showDeleteModal.set(false)">
+    <div class="pr-modal" (click)="$event.stopPropagation()">
+      <h3 class="pr-modal__title" style="color:var(--pr-danger)">Delete User</h3>
+      <p class="text-muted text-sm mt-2">
+        You are about to permanently delete <strong>{{ deleteUser()?.firstName }} {{ deleteUser()?.lastName }}</strong> ({{ deleteUser()?.email }}).
+      </p>
+      <div class="pr-alert pr-alert--error mt-3" style="font-size:0.875rem">
+        This will delete the user account and all associated upgrade requests. Race results and pigeon records may still reference this user. This action cannot be undone.
+      </div>
+      <div class="flex gap-3 justify-end mt-6">
+        <button class="pr-btn pr-btn--ghost" (click)="showDeleteModal.set(false)" [disabled]="deleting()">Cancel</button>
+        <button class="pr-btn pr-btn--danger" (click)="confirmDelete()" [disabled]="deleting()">
+          {{ deleting() ? 'Deleting…' : 'Delete Permanently' }}
+        </button>
       </div>
     </div>
   </div>

@@ -154,7 +154,7 @@ import { Race, RaceResult, RaceStatus } from '../../core/models';
                 <thead>
                   <tr>
                     <th>Rank</th><th>Ring #</th><th>Pigeon</th><th>Fancier</th>
-                    <th>Velocity</th><th>Distance</th><th>Arrival</th><th>Status</th>
+                    <th>Speed</th><th>Distance</th><th>Arrival</th><th>Status</th>
                     @if (canEdit()) { <th></th> }
                   </tr>
                 </thead>
@@ -165,7 +165,7 @@ import { Race, RaceResult, RaceStatus } from '../../core/models';
                       <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 6px;border-radius:4px">{{ r.ringNumber }}</code></td>
                       <td>{{ r.pigeonName ?? '—' }} <span class="text-muted text-sm">{{ r.pigeonSex }}</span></td>
                       <td class="text-muted">{{ r.fancierName ?? '—' }}</td>
-                      <td class="font-bold">{{ r.velocityMperMin | number:'1.0-1' }} <span class="text-muted text-sm">m/min</span></td>
+                      <td class="font-bold">{{ r.speedMperMin | number:'1.0-1' }} <span class="text-muted text-sm">m/min</span></td>
                       <td>{{ r.distanceKm | number:'1.3-3' }} km</td>
                       <td class="text-muted text-sm">{{ r.arrivalTime | date:'HH:mm:ss' }}</td>
                       <td>

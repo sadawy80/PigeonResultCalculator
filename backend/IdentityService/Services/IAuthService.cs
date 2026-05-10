@@ -15,4 +15,5 @@ public interface IAuthService
     Task<Result> ResetPasswordAsync(ResetPasswordRequest req, CancellationToken ct);
     Task<Result> VerifyEmailAsync(VerifyEmailRequest req, CancellationToken ct);
     Task<Result> ResendVerificationAsync(ResendVerificationRequest req, CancellationToken ct);
+    Task<Result<UserDto>> UpdateProfileAsync(Guid userId, UpdateProfileRequest req, CancellationToken ct);
 }

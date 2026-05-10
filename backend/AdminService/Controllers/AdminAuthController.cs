@@ -39,7 +39,7 @@ public class AdminAuthController : AdminControllerBase
         var token = _tokens.GenerateAdminToken(user.UserId, user.FullName);
 
         await _audit.LogAsync("LOGIN", "User", user.UserId, AuditSeverity.Info,
-            $"SuperAdmin login: {user.FullName}",
+            $"Admin login: {user.FullName} ({req.Email}) from {ClientIp}",
             user.UserId, user.FullName, CorrelationId, ClientIp, ct);
 
         return Ok(ApiResponse<object>.Ok(new

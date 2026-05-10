@@ -10,6 +10,7 @@ public class RoleUpgradeRequest
     public UserRole RequestedRole { get; set; }
     public Guid? FederationId { get; set; }
     public UpgradeRequestStatus Status { get; set; } = UpgradeRequestStatus.Pending;
+    public string? ClubName { get; set; }
     public string? Notes { get; set; }
     public Guid? ReviewedByUserId { get; set; }
     public DateTime? ReviewedAt { get; set; }

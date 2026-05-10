@@ -41,6 +41,35 @@ public static class SubscriptionSeeder
         await db.SaveChangesAsync();
     }
 
+    public static async Task SeedDemoAsync(SubscriptionDbContext db)
+    {
+        var demoFedId = new Guid("a1a1a1a1-0000-0000-0000-000000000001");
+        if (db.FederationSubscriptions.Any(s => s.FederationId == demoFedId))
+            return;
+
+        var plan = db.SubscriptionPlans.FirstOrDefault(p =>
+            p.Name == "Standard" && p.BillingCycle == BillingCycle.Annual);
+        if (plan == null) return;
+
+        db.FederationSubscriptions.Add(new FederationSubscription
+        {
+            FederationId      = demoFedId,
+            FederationName    = "United Kingdom",
+            PlanId            = plan.Id,
+            Status            = SubscriptionStatus.Active,
+            BillingCycle      = BillingCycle.Annual,
+            StartedAt         = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            ExpiresAt         = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+            RenewsAt          = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            CurrentClubCount  = 1,
+            AmountPaid        = plan.Price,
+            PaymentReference  = "DEMO-2025",
+            Notes             = "Demo subscription seeded at startup",
+        });
+
+        await db.SaveChangesAsync();
+    }
+
     private static IEnumerable<SubscriptionPlan> BuildTier(
         string name, string description, int sortOrder, bool isHighlighted,
         SubscriptionType type,

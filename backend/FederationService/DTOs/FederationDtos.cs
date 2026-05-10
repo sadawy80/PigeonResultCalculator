@@ -37,7 +37,7 @@ public record FederationResultEntryDto(
     string RingNumber,
     string? FancierName,
     string ClubName,
-    double VelocityMperMin,
+    double SpeedMperMin,
     double DistanceKm);
 
 // ── Requests from RaceService (race result data for aggregation) ──────────────
@@ -50,7 +50,7 @@ public record RaceResultSnapshot(
     string RingNumber,
     Guid? UserId,
     string? UserFullName,
-    double VelocityMperMin,
+    double SpeedMperMin,
     double DistanceKm,
     DateTime? ArrivalTime);
 

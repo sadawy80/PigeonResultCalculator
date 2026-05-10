@@ -41,7 +41,7 @@ export class FederationPageEditorComponent implements OnInit {
   ];
 
   ngOnInit() {
-    this.api.getMyCountryPage().subscribe({
+    this.api.getMyFederationPage().subscribe({
       next: p => {
         this.page.set(p);
         this.selectedTheme = p.theme ?? 1;
@@ -71,7 +71,7 @@ export class FederationPageEditorComponent implements OnInit {
     this.saving.set(true);
     this.error.set(null);
     this.success.set(null);
-    this.api.updateMyCountryPage({
+    this.api.updateMyFederationPage({
       theme: this.selectedTheme,
       isPublished: this.isPublished,
       announcementsJson: JSON.stringify(this.announcements()),

@@ -202,10 +202,10 @@ export class ProgrammeFormComponent implements OnInit {
   error   = signal<string | null>(null);
 
   scoringOptions = [
-    { value: ScoringMethod.AverageVelocity,         icon: '📊', label: 'Average Velocity',          desc: 'Average m/min across all races (standard)' },
-    { value: ScoringMethod.PointsByRank,             icon: '🏅', label: 'Points by Rank',            desc: '1st earns N points, 2nd earns N-1, etc.' },
-    { value: ScoringMethod.PointsByVelocityPercentage, icon: '📈', label: 'Velocity % Points',      desc: "Score = pigeon's % of winner's velocity per race" },
-    { value: ScoringMethod.TotalVelocity,            icon: '⚡', label: 'Total Velocity',            desc: 'Sum of all velocities across races' },
+    { value: ScoringMethod.AverageSpeed,           icon: '📊', label: 'Average Speed',          desc: 'Average m/min across all races (standard)' },
+    { value: ScoringMethod.PointsByRank,               icon: '🏅', label: 'Points by Rank',          desc: '1st earns N points, 2nd earns N-1, etc.' },
+    { value: ScoringMethod.PointsBySpeedPercentage, icon: '📈', label: 'Speed % Points',          desc: "Score = pigeon's % of winner's speed per race" },
+    { value: ScoringMethod.TotalSpeed,              icon: '⚡', label: 'Total Speed',              desc: 'Sum of all speeds across races' },
   ];
 
   form = this.fb.group({
@@ -214,7 +214,7 @@ export class ProgrammeFormComponent implements OnInit {
     year:                    [new Date().getFullYear(), Validators.required],
     startDate:               [''],
     endDate:                 [''],
-    scoringMethod:           [ScoringMethod.AverageVelocity, Validators.required],
+    scoringMethod:           [ScoringMethod.AverageSpeed, Validators.required],
     pointsForFirst:          [10],
     maxPointPositions:       [0],
     bestLoftPigeonsPerRace:  [0],

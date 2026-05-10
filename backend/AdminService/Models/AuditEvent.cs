@@ -14,4 +14,5 @@ public class AuditEvent : BaseEntity
     public string? CorrelationId { get; set; }
     public string ServiceName { get; set; } = "AdminService";
     public string? IpAddress { get; set; }
+    public string? Country { get; set; }
 }

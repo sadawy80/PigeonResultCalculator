@@ -13,9 +13,11 @@ public class GetFederationStatsConsumer : IConsumer<GetFederationStatsRequest>
 
     public async Task Consume(ConsumeContext<GetFederationStatsRequest> ctx)
     {
-        var total  = await _db.Federations.CountAsync();
-        var active = await _db.Federations.CountAsync(c => c.IsActive);
-        await ctx.RespondAsync(new FederationStatsResult(total, active));
+        var yearStart = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var total     = await _db.Federations.CountAsync();
+        var active    = await _db.Federations.CountAsync(c => c.IsActive);
+        var thisYear  = await _db.Federations.CountAsync(f => f.CreatedAt >= yearStart);
+        await ctx.RespondAsync(new FederationStatsResult(total, active, thisYear));
     }
 }
 
@@ -32,7 +34,7 @@ public class GetFederationsConsumer : IConsumer<GetFederationsRequest>
             .OrderBy(c => c.Name)
             .Skip((ctx.Message.Page - 1) * ctx.Message.PageSize)
             .Take(ctx.Message.PageSize)
-            .Select(c => new AdminFederationItem(c.Id, c.Name, c.Code, c.Slug, c.FlagUrl, c.IsActive))
+            .Select(c => new AdminFederationItem(c.Id, c.Name, c.Code, c.Slug, c.FlagUrl, c.IsActive, c.ManagerEmail))
             .ToListAsync();
 
         await ctx.RespondAsync(new FederationsResult(items, total));
@@ -121,3 +123,55 @@ public class FederationManagerAssignedConsumer : IConsumer<FederationManagerAssi
         _log.LogInformation("Federation {FederationId} manager updated to {Email}", msg.FederationId, msg.ManagerEmail);
     }
 }
+
+public class AdminDeleteFederationConsumer : IConsumer<AdminDeleteFederationRequest>
+{
+    private readonly FederationDbContext _db;
+    public AdminDeleteFederationConsumer(FederationDbContext db) => _db = db;
+
+    public async Task Consume(ConsumeContext<AdminDeleteFederationRequest> ctx)
+    {
+        var m = ctx.Message;
+        var fed = await _db.Federations
+            .Include(f => f.FederationPage)
+            .Include(f => f.FederationResults)
+                .ThenInclude(r => r.IncludedRaces)
+            .Include(f => f.FederationResults)
+                .ThenInclude(r => r.Entries)
+            .FirstOrDefaultAsync(f => f.Id == m.FederationId, ctx.CancellationToken);
+
+        if (fed is null)
+        {
+            await ctx.RespondAsync(new AdminDeleteFederationResult(false, "Federation not found.", null));
+            return;
+        }
+        if (fed.IsActive)
+        {
+            await ctx.RespondAsync(new AdminDeleteFederationResult(false, "Federation must be deactivated before deletion.", fed.Name));
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+
+        if (fed.FederationPage != null)
+        {
+            fed.FederationPage.IsDeleted = true;
+            fed.FederationPage.UpdatedAt = now;
+        }
+
+        foreach (var result in fed.FederationResults)
+        {
+            foreach (var race  in result.IncludedRaces) { race.IsDeleted  = true; race.UpdatedAt  = now; }
+            foreach (var entry in result.Entries)       { entry.IsDeleted = true; entry.UpdatedAt = now; }
+            result.IsDeleted = true;
+            result.UpdatedAt = now;
+        }
+
+        fed.IsDeleted = true;
+        fed.UpdatedAt = now;
+
+        await _db.SaveChangesAsync(ctx.CancellationToken);
+        await ctx.RespondAsync(new AdminDeleteFederationResult(true, null, fed.Name));
+    }
+}
+

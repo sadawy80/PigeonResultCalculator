@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.IntegrationService.Models;
 
@@ -19,5 +20,9 @@ public class IntegrationDbContext : DbContext
             e.HasIndex(x => new { x.ClubId, x.Status });
             e.HasIndex(x => new { x.ExternalPlatformName, x.ExternalLoftId, x.ClubId });
         });
+
+        mb.AddOutboxMessageEntity();
+        mb.AddOutboxStateEntity();
+        mb.AddInboxStateEntity();
     }
 }

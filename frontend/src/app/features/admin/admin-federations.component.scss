@@ -1,1 +1,66 @@
-// No component-specific styles — uses global pr-* utilities
+.fed-actions { display: flex; gap: 6px; align-items: center; }
+.row-actions  { display: flex; gap: 6px; align-items: center; }
+.btn-icon-only { padding: 4px 8px !important; min-width: unset; font-weight: 700; }
+.pr-table td  { vertical-align: middle; }
+
+.modal-card--danger .modal-header { border-bottom-color: var(--pr-error, #dc2626); }
+.modal-header--danger .modal-title { color: var(--pr-error, #dc2626); }
+
+.delete-warning {
+  font-size: 0.9rem; background: rgba(220,38,38,.07); border: 1px solid rgba(220,38,38,.2);
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; line-height: 1.55;
+}
+.delete-target-name {
+  font-size: 1rem; font-weight: 700; text-align: center; padding: 8px 0;
+  color: var(--pr-error, #dc2626);
+}
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-card {
+  background: var(--pr-surface); border-radius: 12px; padding: 0;
+  width: 100%; max-width: 500px; box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--pr-border);
+}
+.modal-title  { font-size: 1.1rem; font-weight: 700; margin: 0; }
+.modal-close  { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--pr-text-muted); padding: 4px 8px; }
+.modal-body   { padding: 20px 24px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--pr-border); }
+.modal-subtitle { font-size: 0.875rem; color: var(--pr-text-muted); margin: 0 0 16px; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.input-row { display: flex; gap: 8px; }
+.input-row .pr-input { flex: 1; }
+
+.req { color: var(--pr-text-muted); }
+
+.lookup-card {
+  background: var(--pr-surface-2); border: 1px solid var(--pr-border);
+  border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+}
+.lookup-card__name { font-weight: 700; font-size: 0.95rem; }
+.lookup-card__meta { font-size: 0.8rem; color: var(--pr-text-muted); margin-top: 2px; }
+.lookup-card__role { font-size: 0.8rem; margin-top: 6px; }
+
+.country-combo { position: relative; }
+.country-flag  { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; pointer-events: none; }
+.country-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 300;
+  background: var(--pr-surface); border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius); box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  max-height: 220px; overflow-y: auto;
+}
+.country-option {
+  display: block; width: 100%; padding: 9px 14px; border: none; background: none;
+  cursor: pointer; text-align: left; font-size: 0.875rem; color: var(--pr-text);
+  transition: background var(--t-fast);
+}
+.country-option:hover { background: var(--pr-surface-2); }
+.country-option--active { background: rgba(30,144,255,0.08); font-weight: 600; }
+.country-option--empty  { cursor: default; color: var(--pr-text-muted); font-style: italic; }

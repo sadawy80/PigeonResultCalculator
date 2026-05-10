@@ -20,13 +20,16 @@ import { ApiService } from '../../core/services/api.service';
     td           { padding: .75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
     tr:last-child td { border-bottom: none; }
     .badge       { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
-    .badge-pending  { background: #fef3c7; color: #92400e; }
-    .badge-approved { background: #d1fae5; color: #065f46; }
-    .badge-rejected { background: #fee2e2; color: #991b1b; }
+    .badge-pending       { background: #fef3c7; color: #92400e; }
+    .badge-approved      { background: #d1fae5; color: #065f46; }
+    .badge-rejected      { background: #fee2e2; color: #991b1b; }
+    .badge-revoked       { background: #e0e7ff; color: #3730a3; }
+    .badge-admin-revoked { background: #fce7f3; color: #9d174d; }
     .actions     { display: flex; gap: .5rem; }
     .btn         { padding: .35rem .85rem; border-radius: 6px; border: none; cursor: pointer; font-size: .85rem; font-weight: 600; }
     .btn-approve { background: #10b981; color: #fff; }
     .btn-reject  { background: #ef4444; color: #fff; }
+    .btn-revoke  { background: #f59e0b; color: #fff; }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
     .empty       { text-align: center; padding: 3rem; color: var(--text-muted); }
     .error-msg   { color: #ef4444; padding: .75rem; background: #fee2e2; border-radius: 8px; margin-bottom: 1rem; }
@@ -52,22 +55,30 @@ import { ApiService } from '../../core/services/api.service';
       <div class="error-msg">{{ error() }}</div>
     }
 
-    <div class="toolbar">
-      <label>Federation</label>
-      <select [(ngModel)]="fedFilter" (change)="onFilterChange()">
-        <option value="">All Federations</option>
-        @for (f of federations(); track f.id) {
-          <option [value]="f.id">{{ f.name }}</option>
-        }
-      </select>
-
-      <label>Status</label>
-      <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
-        <option value="">All</option>
-        <option value="0">Pending</option>
-        <option value="1">Approved</option>
-        <option value="2">Rejected</option>
-      </select>
+    <div class="pr-card mb-4">
+      <div class="flex flex-wrap gap-4 items-end">
+        <div class="pr-form-group" style="flex:1;min-width:160px">
+          <label class="pr-label">Federation</label>
+          <select class="pr-select" [(ngModel)]="fedFilter" (change)="onFilterChange()">
+            <option value="">All Federations</option>
+            @for (f of federations(); track f.id) {
+              <option [value]="f.id">{{ f.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="pr-form-group" style="flex:1;min-width:140px">
+          <label class="pr-label">Status</label>
+          <select class="pr-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+            <option value="">All</option>
+            <option value="0">Pending</option>
+            <option value="1">Approved</option>
+            <option value="2">Rejected</option>
+            <option value="3">Revoked</option>
+            <option value="4">Admin Revoked</option>
+          </select>
+        </div>
+        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="fedFilter=''; statusFilter=''; onFilterChange()">Reset</button>
+      </div>
     </div>
 
     <div class="table-wrap">
@@ -96,7 +107,7 @@ import { ApiService } from '../../core/services/api.service';
                   <small>{{ item.userEmail }}</small>
                 </td>
                 <td>{{ roleLabel(item.requestedRole) }}</td>
-                <td>{{ item.federationName || '—' }}</td>
+                <td>{{ federationName(item.federationId) }}</td>
                 <td>{{ item.notes || '—' }}</td>
                 <td>
                   <span class="badge" [ngClass]="badgeClass(item.status)">
@@ -114,6 +125,16 @@ import { ApiService } from '../../core/services/api.service';
                       <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">Reject</button>
                     </div>
                   }
+                  @if (item.status === 1) {
+                    <div class="actions">
+                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">Revoke</button>
+                    </div>
+                  }
+                  @if (item.status === 3) {
+                    <div class="actions">
+                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Re-approve</button>
+                    </div>
+                  }
                 </td>
               </tr>
             }
@@ -122,10 +143,18 @@ import { ApiService } from '../../core/services/api.service';
       </table>
     </div>
 
-    <div class="pagination">
-      <button class="page-btn" (click)="prevPage()" [disabled]="page === 1">‹ Prev</button>
-      <span>Page {{ page }} / {{ totalPages() }}</span>
-      <button class="page-btn" (click)="nextPage()" [disabled]="page >= totalPages()">Next ›</button>
+    <div class="pagination-row">
+      <span class="text-muted text-sm">{{ total() }} requests · page {{ page }} of {{ totalPages() }}</span>
+      <div class="flex gap-2 items-center">
+        <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="10">10 / page</option>
+          <option [ngValue]="25">25 / page</option>
+          <option [ngValue]="50">50 / page</option>
+          <option [ngValue]="100">100 / page</option>
+        </select>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="prevPage()" [disabled]="page === 1">Prev</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="nextPage()" [disabled]="page >= totalPages()">Next</button>
+      </div>
     </div>
 
     @if (showRejectModal()) {
@@ -156,8 +185,8 @@ export class AdminUpgradeRequestsComponent implements OnInit {
   busy        = signal(false);
   error       = signal<string | null>(null);
   page        = 1;
-  pageSize    = 20;
-  statusFilter = '0';
+  pageSize = 10;
+  statusFilter = '';
   fedFilter    = '';
 
   showRejectModal = signal(false);
@@ -192,12 +221,21 @@ export class AdminUpgradeRequestsComponent implements OnInit {
   prevPage()        { if (this.page > 1) { this.page--; this.load(); } }
   nextPage()        { if (this.page < this.totalPages()) { this.page++; this.load(); } }
   totalPages()      { return Math.max(1, Math.ceil(this.total() / this.pageSize)); }
+  onPageSizeChange() { this.page = 1; this.load(); }
 
   approve(item: any) {
     this.busy.set(true);
     this.api.approveAdminUpgradeRequest(item.id).subscribe({
       next: () => { this.busy.set(false); this.load(); },
       error: (e) => { this.error.set(e?.error?.message ?? 'Failed to approve request.'); this.busy.set(false); }
+    });
+  }
+
+  revoke(item: any) {
+    this.busy.set(true);
+    this.api.revokeAdminUpgradeRequest(item.id).subscribe({
+      next: () => { this.busy.set(false); this.load(); },
+      error: (e) => { this.error.set(e?.error?.message ?? 'Failed to revoke request.'); this.busy.set(false); }
     });
   }
 
@@ -225,10 +263,20 @@ export class AdminUpgradeRequestsComponent implements OnInit {
   }
 
   statusLabel(status: number): string {
-    return ['Pending', 'Approved', 'Rejected'][status] ?? String(status);
+    const map: Record<number, string> = { 0: 'Pending', 1: 'Approved', 2: 'Rejected', 3: 'Revoked', 4: 'Admin Revoked' };
+    return map[status] ?? String(status);
+  }
+
+  federationName(id: string | null): string {
+    if (!id) return '—';
+    return this.federations().find(f => f.id === id)?.name ?? '—';
   }
 
   badgeClass(status: number): string {
-    return ['badge-pending', 'badge-approved', 'badge-rejected'][status] ?? '';
+    const map: Record<number, string> = {
+      0: 'badge-pending', 1: 'badge-approved', 2: 'badge-rejected',
+      3: 'badge-revoked', 4: 'badge-admin-revoked'
+    };
+    return map[status] ?? '';
   }
 }

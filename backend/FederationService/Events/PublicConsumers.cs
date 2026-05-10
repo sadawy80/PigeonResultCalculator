@@ -40,7 +40,7 @@ public class GetPublicFederationBySlugConsumer : IConsumer<GetPublicFederationBy
                 .OrderBy(e => e.NationalRank)
                 .Take(10)
                 .Select(e => new PublicFederationResultEntry(
-                    e.NationalRank, e.RingNumber, e.VelocityMperMin,
+                    e.NationalRank, e.RingNumber, e.SpeedMperMin,
                     e.UserFullName, e.ClubName ?? ""))
                 .ToList()
         )).ToList();

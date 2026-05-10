@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PRC.Common.Consul;
 using PRC.Common.Messages;
 using PRC.IdentityService.Data;
 using PRC.IdentityService.Events;
@@ -76,8 +77,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(opts =>
     opts.AddPolicy("Gateway", p => p
         .WithOrigins(
-            builder.Configuration["App:GatewayUrl"] ?? "http://localhost:9500",
-            builder.Configuration["App:AngularUrl"]  ?? "http://localhost:4300")
+            builder.Configuration["App:GatewayUrl"]   ?? "http://localhost:9500",
+            builder.Configuration["App:FrontendUrl"] ?? "http://localhost:4300")
         .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 // ── MassTransit ───────────────────────────────────────────────────────────────
@@ -93,9 +94,17 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<GetUserEmailsConsumer>();
     x.AddConsumer<GetUpgradeRequestsConsumer>();
     x.AddConsumer<ReviewUpgradeRequestConsumer>();
+    x.AddConsumer<RevokeUpgradeRequestConsumer>();
+    x.AddConsumer<DeleteUserConsumer>();
 
     x.AddRequestClient<GetFederationSubscriptionLimitsRequest>();
     x.AddRequestClient<GetActiveClubCountForFederationRequest>();
+
+    x.AddEntityFrameworkOutbox<IdentityDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
@@ -134,6 +143,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "identity-service", 9501);
+
 var app = builder.Build();
 
 app.UseMiddleware<PRC.IdentityService.Middleware.CorrelationIdMiddleware>();
@@ -162,7 +173,13 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Iden
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try { await db.Database.MigrateAsync(); break; }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("IdentityService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
+    await AdminSeeder.SeedAsync(scope.ServiceProvider, app.Configuration);
 }
 
 app.Run();

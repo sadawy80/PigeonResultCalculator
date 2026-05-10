@@ -94,6 +94,11 @@ public class ResultService : IResultService
         };
 
         _db.RaceResults.Add(result);
+
+        await UpsertPigeonAsync(
+            req.RingNumber, req.PigeonName, req.PigeonSex, req.PigeonYearOfBirth,
+            race.ClubId, race.ClubName, race.FederationId, addedBy, ct);
+
         await _db.SaveChangesAsync(ct);
 
         // Fire-and-forget increment (don't block the response)
@@ -112,6 +117,8 @@ public class ResultService : IResultService
         if (race == null) return Result.NotFound<IngestionLogDto>("Race");
         if (race.ActualReleaseTime == null)
             return Result.Failure<IngestionLogDto>("Race has not been started.", "NO_RELEASE_TIME");
+        if (!race.ProgrammeId.HasValue)
+            return Result.Failure<IngestionLogDto>("Race must be linked to a programme before results can be ingested.", "NO_PROGRAMME");
 
         fileStream.Position = 0;
         var parseResult = await _parser.ParseAsync(fileStream, fileName, ct);
@@ -128,6 +135,35 @@ public class ResultService : IResultService
         var newResults = new List<RaceResult>();
         var inSessionDuplicates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        // Upsert fanciers: resolve existing records then create new ones in bulk
+        var fancierNames = parseResult.Rows
+            .Where(r => !r.HasError && !string.IsNullOrWhiteSpace(r.FancierName))
+            .Select(r => r.FancierName!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var existingFanciers = fancierNames.Count > 0
+            ? await _db.Fanciers
+                .Where(f => f.ClubId == race.ClubId && fancierNames.Contains(f.Name))
+                .ToDictionaryAsync(f => f.Name.ToUpperInvariant(), ct)
+            : new Dictionary<string, Fancier>();
+
+        var newFanciers = new List<Fancier>();
+        foreach (var name in fancierNames)
+        {
+            if (!existingFanciers.ContainsKey(name.ToUpperInvariant()))
+            {
+                var f = new Fancier
+                {
+                    Name = name, ClubId = race.ClubId, ClubName = race.ClubName,
+                    FederationId = race.FederationId
+                };
+                newFanciers.Add(f);
+                existingFanciers[name.ToUpperInvariant()] = f;
+            }
+        }
+        if (newFanciers.Count > 0) await _db.Fanciers.AddRangeAsync(newFanciers, ct);
+
         foreach (var row in parseResult.Rows.Where(r => !r.HasError))
         {
             var isDuplicate = existingRings.Contains(row.RingNumber) || inSessionDuplicates.Contains(row.RingNumber);
@@ -137,9 +173,14 @@ public class ResultService : IResultService
             var speedMperMin = (!hasInvalidTs && !isDuplicate && baseDistanceKm > 0)
                 ? _speed.Calculate(baseDistanceKm, flightDuration) : 0;
 
+            Fancier? fancier = row.FancierName != null
+                ? existingFanciers.GetValueOrDefault(row.FancierName.ToUpperInvariant())
+                : null;
+
             newResults.Add(new RaceResult
             {
                 RaceId = raceId, CategoryId = categoryId,
+                FancierId = fancier?.Id, FancierName = row.FancierName,
                 RingNumber = row.RingNumber, PigeonName = row.PigeonName,
                 PigeonSex = row.Sex, PigeonYearOfBirth = row.YearOfBirth,
                 ArrivalTime = row.ArrivalTime,
@@ -151,6 +192,20 @@ public class ResultService : IResultService
             });
 
             inSessionDuplicates.Add(row.RingNumber);
+        }
+
+        // Upsert pigeons — club comes from the fancier (same club as the race, but fancier is the authoritative source)
+        foreach (var row in parseResult.Rows.Where(r => !r.HasError))
+        {
+            var fancierForPigeon = row.FancierName != null
+                ? existingFanciers.GetValueOrDefault(row.FancierName.ToUpperInvariant())
+                : null;
+            await UpsertPigeonAsync(
+                row.RingNumber, row.PigeonName, row.Sex, row.YearOfBirth,
+                fancierForPigeon?.ClubId ?? race.ClubId,
+                fancierForPigeon?.ClubName ?? race.ClubName,
+                fancierForPigeon?.FederationId ?? race.FederationId,
+                processedBy, ct);
         }
 
         if (newResults.Count > 0)
@@ -328,6 +383,39 @@ public class ResultService : IResultService
         var r = await _db.RaceResults.Include(x => x.Race).Include(x => x.Category)
             .FirstAsync(x => x.Id == id, ct);
         return r.ToDto();
+    }
+
+    private async Task UpsertPigeonAsync(
+        string ringNumber, string? name, string? sex, int? yearOfBirth,
+        Guid clubId, string clubName, Guid? federationId, Guid byUser, CancellationToken ct)
+    {
+        var pigeon = await _db.Pigeons.FirstOrDefaultAsync(p => p.RingNumber == ringNumber, ct);
+        if (pigeon is null)
+        {
+            pigeon = new Models.Pigeon
+            {
+                RingNumber    = ringNumber,
+                Name          = name,
+                Sex           = sex,
+                YearOfBirth   = yearOfBirth,
+                ClubId        = clubId,
+                ClubName      = clubName,
+                FederationId  = federationId,
+                CreatedBy     = byUser
+            };
+            _db.Pigeons.Add(pigeon);
+        }
+        else
+        {
+            // Keep club association current; fill in missing cached fields
+            pigeon.ClubId   = clubId;
+            pigeon.ClubName = clubName;
+            if (pigeon.FederationId is null) pigeon.FederationId = federationId;
+            if (pigeon.Name is null && name is not null) pigeon.Name = name;
+            if (pigeon.Sex is null && sex is not null) pigeon.Sex = sex;
+            if (pigeon.YearOfBirth is null && yearOfBirth is not null) pigeon.YearOfBirth = yearOfBirth;
+            pigeon.UpdatedAt = DateTime.UtcNow;
+        }
     }
 
     private static string? BuildValidationNotes(bool dup, bool late, bool invalidTs)

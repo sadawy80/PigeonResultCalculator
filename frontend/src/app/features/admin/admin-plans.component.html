@@ -1,0 +1,363 @@
+<div class="pr-page-header">
+  <div>
+    <h1 class="pr-page-header__title">Plans</h1>
+    <p class="pr-page-header__subtitle">Manage subscription plans and pricing</p>
+  </div>
+  <button class="pr-btn pr-btn--primary" (click)="openCreate()">+ New Plan</button>
+</div>
+
+@if (error()) {
+  <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
+}
+
+<div class="pr-card">
+
+  <!-- Header row: type tabs + cycle toggle -->
+  <div class="plans-header">
+    <div class="type-tabs">
+      <button class="type-tab" [class.type-tab--active]="selectedType() === 'Federation'" (click)="selectedType.set('Federation')">
+        Federation Plans
+        <span class="type-tab__count">{{ federationTiers().length }}</span>
+      </button>
+      <button class="type-tab" [class.type-tab--active]="selectedType() === 'Club'" (click)="selectedType.set('Club')">
+        Club Plans
+        <span class="type-tab__count">{{ clubTiers().length }}</span>
+      </button>
+    </div>
+
+    <div class="cycle-toggle">
+      @for (c of cycles; track c) {
+        <button class="cycle-btn" [class.cycle-btn--active]="selectedCycle() === c" (click)="selectedCycle.set(c)">
+          {{ c }}
+          @if (c === 'Seasonal') { <span class="cycle-badge">6 mo</span> }
+          @if (c === 'Annual')   { <span class="cycle-badge cycle-badge--green">Save ~20%</span> }
+        </button>
+      }
+    </div>
+  </div>
+
+  <p class="cycle-note text-muted text-sm mb-6">{{ cycleNotes[selectedCycle()] }}</p>
+
+  <!-- Plan grid -->
+  @if (loading()) {
+    <div class="text-center py-8 text-muted">Loading plans…</div>
+  } @else if (activeTiers().length === 0) {
+    <div class="pr-empty">
+      <div class="pr-empty__icon">📋</div>
+      <div class="pr-empty__title">No {{ selectedType() }} plans found</div>
+    </div>
+  } @else {
+    <div class="plans-grid">
+      @for (tier of activeTiers(); track tier.name) {
+        @let card = cardForCycle(tier);
+        <div class="plan-tile" [class.plan-tile--highlight]="tier.isHighlighted" [class.plan-tile--inactive]="card && !card.isActive">
+
+          @if (tier.isHighlighted) {
+            <div class="plan-tile__badge">⭐ Most Popular</div>
+          }
+          @if (card && !card.isActive) {
+            <div class="plan-tile__badge plan-tile__badge--inactive">Inactive</div>
+          }
+
+          <div class="plan-tile__header">
+            <div class="plan-tile__name">{{ tier.name }}</div>
+            @if (tier.description) {
+              <div class="plan-tile__desc text-muted text-sm">{{ tier.description }}</div>
+            }
+          </div>
+
+          @if (card) {
+            <div class="plan-tile__price">
+              <span class="plan-tile__currency">{{ card.currency === 'EUR' ? '€' : card.currency }}</span>
+              <span class="plan-tile__amount">{{ card.price }}</span>
+              <span class="plan-tile__period text-muted">{{ cycleLabels[selectedCycle()] }}</span>
+            </div>
+
+            <div class="plan-tile__limits">
+              @if (selectedType() === 'Federation') {
+                <div class="limit-row">
+                  <span class="limit-icon">🏟️</span>
+                  <span>{{ formatLimit(card.maxClubs, 'clubs') }}</span>
+                </div>
+              }
+              <div class="limit-row">
+                <span class="limit-icon">📊</span>
+                <span>{{ formatLimit(card.maxResultsPerClub, 'results') }}</span>
+                @if (selectedType() === 'Federation') { <span class="text-muted text-sm">/club</span> }
+              </div>
+            </div>
+
+            @if (card.features.length) {
+              <ul class="plan-tile__features">
+                @for (f of card.features; track f) {
+                  <li><span class="feature-check">✓</span> {{ f }}</li>
+                }
+              </ul>
+            }
+
+            <div class="plan-tile__actions">
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openEdit(card)">
+                ✏️ Edit
+              </button>
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error,#dc2626)"
+                [disabled]="deletingPlanId() === card.id"
+                (click)="confirmDeletePlan(card)">
+                {{ deletingPlanId() === card.id ? '…' : '🗑️' }}
+              </button>
+            </div>
+          } @else {
+            <div class="plan-tile__no-variant text-muted text-sm">No {{ selectedCycle() }} variant</div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ── Create Plan Modal ─────────────────────────────────── -->
+@if (showCreateModal()) {
+  <div class="pr-modal-backdrop" (click)="closeCreate()">
+    <div class="pr-modal pr-modal--lg" (click)="$event.stopPropagation()">
+      <div class="edit-modal-header">
+        <h3 class="pr-modal__title">New Subscription Plan</h3>
+        <button class="pr-btn pr-btn--icon pr-btn--ghost" (click)="closeCreate()">✕</button>
+      </div>
+      <hr class="pr-modal__divider">
+
+      @if (createError()) {
+        <div class="pr-alert pr-alert--error mb-4">{{ createError() }}</div>
+      }
+
+      <div class="create-form">
+
+        <!-- Row 1: Name | Description (full modal width) -->
+        <div class="modal-grid">
+          <div class="pr-form-group">
+            <label class="pr-label">Name</label>
+            <input class="pr-input" [(ngModel)]="createName" placeholder="e.g. Pro Federation">
+          </div>
+          <div class="pr-form-group">
+            <label class="pr-label">Description <span class="pr-label-hint">pricing page</span></label>
+            <input class="pr-input" [(ngModel)]="createDescription" placeholder="e.g. For growing federations">
+          </div>
+        </div>
+
+        <!-- Row 2: Billing Cycle | Currency | Price -->
+        <div class="modal-grid-3">
+          <div class="pr-form-group">
+            <label class="pr-label">Billing Cycle</label>
+            <select class="pr-select" [(ngModel)]="createCycle">
+              <option value="Monthly">Monthly</option>
+              <option value="Seasonal">Seasonal</option>
+              <option value="Annual">Annual</option>
+            </select>
+          </div>
+          <div class="pr-form-group">
+            <label class="pr-label">Currency</label>
+            <input class="pr-input" [(ngModel)]="createCurrency" list="iso-currencies" placeholder="Search currency…" autocomplete="off">
+            <datalist id="iso-currencies">
+              @for (c of isoCurrencies; track c.code) {
+                <option [value]="c.code">{{ c.code }} — {{ c.name }}</option>
+              }
+            </datalist>
+          </div>
+          <div class="pr-form-group">
+            <label class="pr-label">Price</label>
+            <input class="pr-input" type="number" min="0" step="0.01" [(ngModel)]="createPrice">
+          </div>
+        </div>
+
+        <!-- Row 3: Limits + Sort Order -->
+        @if (createType === 'Federation') {
+          <div class="modal-grid-3--bottom">
+            <div class="pr-form-group">
+              <label class="pr-label">Max Clubs <span class="pr-label-hint">0 = ∞</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">🏟️</span>
+                <input class="pr-input" type="number" min="0" [(ngModel)]="createMaxClubs">
+              </div>
+            </div>
+            <div class="pr-form-group">
+              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">📊</span>
+                <input class="pr-input" type="number" min="0" [(ngModel)]="createMaxResults">
+              </div>
+            </div>
+            <div class="pr-form-group">
+              <label class="pr-label">Sort Order</label>
+              <input class="pr-input" type="number" min="1" [(ngModel)]="createSortOrder">
+            </div>
+          </div>
+        } @else {
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">
+            <div class="pr-form-group">
+              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">📊</span>
+                <input class="pr-input" type="number" min="0" [(ngModel)]="createMaxResults">
+              </div>
+            </div>
+            <div class="pr-form-group">
+              <label class="pr-label">Sort Order</label>
+              <input class="pr-input" type="number" min="1" [(ngModel)]="createSortOrder">
+            </div>
+          </div>
+        }
+
+        <!-- Row 4: Plan Type | Most Popular -->
+        <div class="create-row4">
+          <div class="pr-form-group">
+            <label class="pr-label">Plan Type</label>
+            <select class="pr-select" [(ngModel)]="createType">
+              <option value="Federation">Federation Plan</option>
+              <option value="Club">Club Plan</option>
+            </select>
+          </div>
+          <label class="edit-flag-item" [class.edit-flag-item--on]="createHighlighted">
+            <input type="checkbox" [(ngModel)]="createHighlighted">
+            <div class="edit-flag-dot" [class.edit-flag-dot--gold]="createHighlighted"></div>
+            <span>⭐ Most Popular</span>
+          </label>
+        </div>
+
+      </div>
+
+      <hr class="pr-modal__divider">
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeCreate()">Cancel</button>
+        <button class="pr-btn pr-btn--primary" [disabled]="creating()" (click)="saveCreate()">
+          {{ creating() ? 'Creating…' : 'Create Plan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Delete Plan Confirmation Modal ────────────────────── -->
+@if (deletePlanTarget()) {
+  <div class="pr-modal-backdrop" (click)="deletePlanTarget.set(null)">
+    <div class="pr-modal pr-modal--sm" (click)="$event.stopPropagation()">
+      <h3 class="pr-modal__title">Delete Plan</h3>
+      <p class="pr-modal__subtitle" style="margin-top:8px">
+        Delete <strong>{{ deletePlanTarget()!.name }}</strong> ({{ deletePlanTarget()!.billingCycle }})?
+      </p>
+      <p style="margin-top:.5rem;font-size:.875rem;color:var(--pr-error,#dc2626);font-weight:600">
+        Plans with active subscriptions cannot be deleted.
+      </p>
+      @if (deletePlanError()) {
+        <div class="pr-alert pr-alert--error mt-3">{{ deletePlanError() }}</div>
+      }
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="deletePlanTarget.set(null)">Cancel</button>
+        <button class="pr-btn pr-btn--primary" style="background:var(--pr-error,#dc2626);border-color:var(--pr-error,#dc2626)"
+          [disabled]="!!deletingPlanId()" (click)="executeDeletePlan()">
+          {{ deletingPlanId() ? 'Deleting…' : 'Delete Plan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Edit Plan Modal ───────────────────────────────────── -->
+@if (editingPlan()) {
+  <div class="pr-modal-backdrop" (click)="closeEdit()">
+    <div class="pr-modal pr-modal--lg" (click)="$event.stopPropagation()">
+
+      <div class="edit-modal-header">
+        <div>
+          <h3 class="pr-modal__title">Edit Plan Variant</h3>
+          <p class="pr-modal__subtitle">
+            {{ editingPlan()!.name }}
+            <span class="edit-cycle-badge">{{ editingPlan()!.billingCycle }}</span>
+            <span class="edit-type-badge">{{ editingPlan()!.type }}</span>
+          </p>
+        </div>
+        <button class="pr-btn pr-btn--icon pr-btn--ghost" (click)="closeEdit()" title="Close">✕</button>
+      </div>
+
+      <hr class="pr-modal__divider">
+
+      @if (editError()) {
+        <div class="pr-alert pr-alert--error mb-4">{{ editError() }}</div>
+      }
+
+      <div class="create-form">
+
+        <!-- Row 1: pricing -->
+        @if (editingPlan()!.type === 'Federation') {
+          <div class="modal-grid-3">
+            <div class="pr-form-group">
+              <label class="pr-label">Price <span class="pr-label-hint">{{ editingPlan()!.currency }}</span></label>
+              <input class="pr-input" type="number" min="0" step="0.01" [(ngModel)]="editPrice">
+            </div>
+            <div class="pr-form-group">
+              <label class="pr-label">Max Clubs <span class="pr-label-hint">0 = ∞</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">🏟️</span>
+                <input class="pr-input" type="number" min="0" [(ngModel)]="editMaxClubs">
+              </div>
+            </div>
+            <div class="pr-form-group">
+              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">📊</span>
+                <input class="pr-input" type="number" min="0" [(ngModel)]="editMaxResults">
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="modal-grid">
+            <div class="pr-form-group">
+              <label class="pr-label">Price <span class="pr-label-hint">{{ editingPlan()!.currency }}</span></label>
+              <input class="pr-input" type="number" min="0" step="0.01" [(ngModel)]="editPrice">
+            </div>
+            <div class="pr-form-group">
+              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">📊</span>
+                <input class="pr-input" type="number" min="0" [(ngModel)]="editMaxResults">
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Row 2: description + sort -->
+        <div class="modal-grid">
+          <div class="pr-form-group">
+            <label class="pr-label">Description <span class="pr-label-hint">pricing page</span></label>
+            <input class="pr-input" [(ngModel)]="editDescription" placeholder="e.g. For growing national federations">
+          </div>
+          <div class="pr-form-group">
+            <label class="pr-label">Sort Order <span class="pr-label-hint">display position</span></label>
+            <input class="pr-input" type="number" min="1" [(ngModel)]="editSortOrder">
+          </div>
+        </div>
+
+        <!-- Row 3: flags -->
+        <div class="edit-flags-row">
+          <label class="edit-flag-item" [class.edit-flag-item--on]="editIsActive">
+            <input type="checkbox" [(ngModel)]="editIsActive">
+            <div class="edit-flag-dot" [class.edit-flag-dot--green]="editIsActive"></div>
+            <span>Active</span>
+          </label>
+          <label class="edit-flag-item" [class.edit-flag-item--on]="editIsHighlighted">
+            <input type="checkbox" [(ngModel)]="editIsHighlighted">
+            <div class="edit-flag-dot" [class.edit-flag-dot--gold]="editIsHighlighted"></div>
+            <span>⭐ Most Popular</span>
+          </label>
+        </div>
+
+      </div>
+
+      <hr class="pr-modal__divider">
+
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeEdit()">Cancel</button>
+        <button class="pr-btn pr-btn--primary" [disabled]="saving()" (click)="saveEdit()">
+          {{ saving() ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

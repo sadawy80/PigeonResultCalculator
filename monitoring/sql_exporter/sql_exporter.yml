@@ -3,17 +3,56 @@
 
 global:
   scrape_timeout: 10s
-  scrape_timeout_jitter: 500ms
   min_interval: 0s
   max_connections: 3
   max_idle_connections: 3
 
 target:
-  data_source_name: "sqlserver://sa:${SQL_PASSWORD}@sqlserver:1433?database=PigeonRacingDb&encrypt=disable&TrustServerCertificate=true"
+  data_source_name: "sqlserver://sa:${SQL_PASSWORD}@sqlserver:1433?database=master&encrypt=disable&TrustServerCertificate=true"
 
   collectors:
-    - mssql_standard
-    - pigeon_racing
+    - prc_sqlserver
 
-collector_files:
-  - /etc/sql_exporter/collectors/*.yml
+collectors:
+  - collector_name: prc_sqlserver
+
+    metrics:
+      - metric_name: mssql_up
+        type: gauge
+        help: "SQL Server is reachable (1 = yes)"
+        values: [up]
+        query: |
+          SELECT 1 AS up
+
+      - metric_name: mssql_connections_active
+        type: gauge
+        help: "Number of active user connections"
+        values: [count]
+        query: |
+          SELECT COUNT(*) AS count
+          FROM sys.dm_exec_sessions
+          WHERE is_user_process = 1
+
+      - metric_name: mssql_database_size_mb
+        type: gauge
+        help: "Total size of each database in MB"
+        key_labels: [database_name]
+        values: [size_mb]
+        query: |
+          SELECT
+            name AS database_name,
+            CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(10,2)) AS size_mb
+          FROM sys.master_files
+          GROUP BY name
+
+      - metric_name: mssql_io_stall_ms
+        type: counter
+        help: "Cumulative I/O stall per database in milliseconds"
+        key_labels: [database_name]
+        values: [io_stall]
+        query: |
+          SELECT
+            DB_NAME(vfs.database_id) AS database_name,
+            SUM(vfs.io_stall) AS io_stall
+          FROM sys.dm_io_virtual_file_stats(NULL, NULL) vfs
+          GROUP BY vfs.database_id

@@ -264,10 +264,10 @@
             <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.totalSuperAcePigeonResults }}</span><span class="int-kpi__label">{{ 'integ.superAce' | translate }}</span></div>
             <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.totalBestLoftResults }}</span><span class="int-kpi__label">{{ 'integ.bestLoft' | translate }}</span></div>
             <div class="int-kpi"><span class="int-kpi__val">#{{ previewSummary()!.bestEverClubRank || '—' }}</span><span class="int-kpi__label">{{ 'integ.bestRank' | translate }}</span></div>
-            <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.bestEverVelocityMperMin | number:'1.0-0' }}</span><span class="int-kpi__label">{{ 'integ.bestMpm' | translate }}</span></div>
+            <div class="int-kpi"><span class="int-kpi__val">{{ previewSummary()!.bestEverSpeedMperMin | number:'1.0-0' }}</span><span class="int-kpi__label">{{ 'integ.bestMpm' | translate }}</span></div>
           </div>
 
-          @if (previewSummary()!.achievements.length > 0) {
+          @if ((previewSummary()!.achievements ?? []).length > 0) {
             <h4 class="mb-3">{{ 'integ.achievements' | translate }}</h4>
             <div class="int-achievement-grid mb-4">
               @for (ach of previewSummary()!.achievements; track ach.programmeName + ach.category) {
@@ -290,7 +290,7 @@
                   <th>{{ 'result.pigeon' | translate }}</th>
                   <th>{{ 'result.race' | translate }}</th>
                   <th>{{ 'result.distance' | translate }}</th>
-                  <th>{{ 'result.velocity' | translate }}</th>
+                  <th>{{ 'result.speed' | translate }}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -302,7 +302,7 @@
                     <td>{{ r.pigeonName ?? '—' }}</td>
                     <td class="text-sm">{{ r.raceName }}</td>
                     <td class="text-sm">{{ r.distanceKm | number:'1.0-0' }} km</td>
-                    <td class="font-bold">{{ r.velocityMperMin | number:'1.4-4' }}</td>
+                    <td class="font-bold">{{ r.speedMperMin | number:'1.4-4' }}</td>
                     <td class="flex gap-1">
                       @if (r.isAcePigeon) { <span class="int-badge int-badge--ace">🕊️ Ace</span> }
                       @if (r.isSuperAcePigeon) { <span class="int-badge int-badge--super">⭐ Super</span> }

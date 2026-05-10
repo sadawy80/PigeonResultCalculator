@@ -154,6 +154,20 @@ public class IntegrationController : ControllerBase
         return result.IsSuccess ? Ok() : BadRequest(result.Error);
     }
 
+    // ── Admin: all links (SuperAdmin) ────────────────────────────────────────
+
+    [HttpGet("admin/links")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> GetAllLinks(
+        [FromQuery] ExternalLinkStatus? status = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _svc.GetAllLinksAsync(status, page, pageSize, ct);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
+    }
+
     // ── C. Fancier endpoints (JWT) ─────────────────────────────────────────────
 
     [HttpGet("my-links")]

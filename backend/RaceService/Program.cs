@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PRC.Common.Consul;
 using PRC.RaceService.Data;
 using PRC.Common.Messages;
 using PRC.RaceService.Events;
@@ -34,7 +35,7 @@ builder.Host.UseSerilog();
 
 // ── Database ──────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<RaceDbContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ── JWT Authentication ────────────────────────────────────────────────────────
 var jwtKey = builder.Configuration["Jwt:Key"]
@@ -89,9 +90,23 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<GetPublishedResultsForProgrammeConsumer>();
     x.AddConsumer<GetPigeonLookupConsumer>();
     x.AddConsumer<GetPublishedRacesForPublicConsumer>();
+    x.AddConsumer<GetAdminRacesConsumer>();
+    x.AddConsumer<AdminDeleteRaceConsumer>();
+    x.AddConsumer<GetAdminPigeonsConsumer>();
+    x.AddConsumer<AdminUpdatePigeonConsumer>();
+    x.AddConsumer<AdminDeletePigeonConsumer>();
+    x.AddConsumer<GetAdminFanciersConsumer>();
+    x.AddConsumer<LinkFancierToUserConsumer>();
+    x.AddConsumer<UnlinkFancierConsumer>();
 
     x.AddRequestClient<CheckResultLimitRequest>();
     x.AddRequestClient<IncrementResultUsageRequest>();
+
+    x.AddEntityFrameworkOutbox<RaceDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
@@ -133,6 +148,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "race-service", 9503);
+
 var app = builder.Build();
 
 app.UseMiddleware<PRC.RaceService.Middleware.CorrelationIdMiddleware>();
@@ -162,7 +179,13 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Race
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<RaceDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try { await db.Database.MigrateAsync(); break; }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("RaceService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
+    await PRC.RaceService.Data.DemoSeeder.SeedAsync(db);
 }
 
 app.Run();

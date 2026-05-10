@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using PRC.Common;
 
 namespace PRC.FederationService.Models;
@@ -38,7 +39,8 @@ public class FederationResultEntry : BaseEntity
     public Guid? UserId { get; set; }
     public string? UserFullName { get; set; }
     public string? ClubName { get; set; }
-    public double VelocityMperMin { get; set; }
+    [Column("VelocityMperMin")]
+    public double SpeedMperMin { get; set; }
     public double DistanceKm { get; set; }
     public int NationalRank { get; set; }
     public int? NationalCategoryRank { get; set; }

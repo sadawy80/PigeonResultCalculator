@@ -101,7 +101,7 @@
                         <td><span [class]="'pr-rank ' + rankClass(r.clubRank)">{{ r.clubRank }}</span></td>
                         <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 6px;border-radius:4px">{{ r.ringNumber }}</code></td>
                         <td class="font-bold">{{ r.fancierName ?? '—' }}</td>
-                        <td>{{ r.velocityMperMin | number:'1.0-1' }} <span class="text-muted text-sm">m/min</span></td>
+                        <td>{{ r.speedMperMin | number:'1.0-1' }} <span class="text-muted text-sm">m/min</span></td>
                         <td>{{ r.distanceKm | number:'1.1-1' }} km</td>
                         <td class="text-muted text-sm">{{ r.categoryName ?? '—' }}</td>
                       </tr>

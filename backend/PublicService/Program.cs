@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Prometheus;
 using Serilog;
+using PRC.Common.Consul;
 using PRC.Common.Messages;
 using PRC.PublicService.Services;
 
@@ -69,6 +70,8 @@ builder.Services.AddCors(opts => opts.AddPolicy("FrontendCors",
     p => p.WithOrigins(
             builder.Configuration["App:FrontendUrl"] ?? "http://localhost:4300")
         .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "public-service", 9508);
 
 var app = builder.Build();
 

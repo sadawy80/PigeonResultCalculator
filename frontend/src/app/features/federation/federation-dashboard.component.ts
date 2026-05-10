@@ -1,12 +1,12 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/services';
-import { FederationResult, CountryResultStatus } from '../../core/models';
+import { FederationResult, FederationResultStatus } from '../../core/models';
 
-// ── Country Dashboard ─────────────────────────────────────────────────────────
+// ── Federation Dashboard ──────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-federation-dashboard',
@@ -15,19 +15,39 @@ import { FederationResult, CountryResultStatus } from '../../core/models';
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>
-        <h1 class="pr-page-header__title">Country Dashboard</h1>
+        <h1 class="pr-page-header__title">Federation Dashboard</h1>
         <p class="pr-page-header__subtitle">Monitor all clubs and generate national results</p>
       </div>
-      <a routerLink="/country/results" class="pr-btn pr-btn--primary">+ New National Result</a>
     </div>
 
-    <div class="pr-grid-4 mb-8">
-      @for (s of stats(); track s.label) {
-        <div class="pr-card pr-card--flat pr-stat">
-          <div class="pr-stat__value">{{ s.value }}</div>
-          <div class="pr-stat__label">{{ s.label }}</div>
+    <!-- Activity stats -->
+    <div class="kpi-section-label">Activity</div>
+    <div class="kpi-grid mb-2">
+      <div class="pr-card pr-card--flat kpi-card">
+        <div class="kpi-icon">🏆</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activityStats().totalResults ?? '—' }}</div>
+          <div class="kpi-label">Total Results</div>
         </div>
-      }
+        <a routerLink="/federation/results" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
+      </div>
+      <div class="pr-card pr-card--flat kpi-card">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ thisYear }}</div>
+          <div class="kpi-label">Active Season</div>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-section-label kpi-section-label--sub">↳ This Year ({{ thisYear }})</div>
+    <div class="kpi-grid mb-8">
+      <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
+        <div class="kpi-icon">🏆</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activityStats().resultsThisYear ?? '—' }}</div>
+          <div class="kpi-label">Results This Year</div>
+        </div>
+      </div>
     </div>
 
     <div class="pr-card">
@@ -46,8 +66,8 @@ import { FederationResult, CountryResultStatus } from '../../core/models';
               @for (r of results(); track r.id) {
                 <tr>
                   <td class="font-bold">{{ r.name }}</td>
-                  <td><span [class]="r.status === CountryResultStatus.Published ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">
-                    {{ r.status === CountryResultStatus.Published ? 'Published' : 'Draft' }}
+                  <td><span [class]="r.status === FederationResultStatus.Published ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">
+                    {{ r.status === FederationResultStatus.Published ? 'Published' : 'Draft' }}
                   </span></td>
                   <td>{{ r.totalClubsCount }}</td>
                   <td>{{ r.totalEntriesCount }}</td>
@@ -60,33 +80,54 @@ import { FederationResult, CountryResultStatus } from '../../core/models';
         </div>
       }
     </div>
-  `
+  `,
+  styles: [`
+    .kpi-section-label {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--pr-text-muted);
+      margin-bottom: 6px;
+    }
+    .kpi-section-label--sub {
+      font-size: 0.63rem; margin-top: 4px; margin-left: 8px;
+      letter-spacing: 0.06em; opacity: 0.75;
+    }
+    .kpi-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .kpi-grid > * {
+      flex: 1 1 calc((100% - 7 * 8px) / 8);
+      min-width: 120px;
+    }
+    .kpi-card { display:flex; align-items:center; gap:8px; padding:8px 10px !important; }
+    .kpi-card--sub { opacity: 0.85; }
+    .kpi-icon  { font-size:1.2rem; flex-shrink:0; }
+    .kpi-body  { flex:1; min-width:0; }
+    .kpi-value { font-size:1.05rem; font-weight:700; line-height:1.2; }
+    .kpi-label { font-size:0.65rem; color:var(--pr-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .kpi-link  { flex-shrink:0; padding:2px 6px !important; font-size:0.75rem !important; }
+    .mb-2 { margin-bottom:8px; }
+  `]
 })
 export class FederationDashboardComponent implements OnInit {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
-  CountryResultStatus = CountryResultStatus;
+  FederationResultStatus = FederationResultStatus;
   results = signal<FederationResult[]>([]);
-  stats = signal([
-    { label: 'Total Clubs',     value: '—' as string | number },
-    { label: 'Published Results', value: '—' as string | number },
-    { label: 'Total Entries',   value: '—' as string | number },
-    { label: 'This Season',     value: new Date().getFullYear() as string | number },
-  ]);
+  activityStats = signal<{ totalResults: number | null; resultsThisYear: number | null }>({
+    totalResults: null, resultsThisYear: null
+  });
+  readonly thisYear = new Date().getFullYear();
 
   ngOnInit() {
     const FederationId = this.auth.FederationId();
     if (!FederationId) return;
     this.api.getFederationResults(FederationId, 1, 5).subscribe(p => {
       this.results.set(p.items as FederationResult[]);
-      const published = (p.items as FederationResult[]).filter(r => r.status === CountryResultStatus.Published);
-      const totalEntries = (p.items as FederationResult[]).reduce((s, r) => s + (r.totalEntriesCount ?? 0), 0);
-      this.stats.update(arr => [
-        arr[0],
-        { label: 'Published Results', value: p.totalCount },
-        { label: 'Total Entries',     value: totalEntries },
-        arr[3],
-      ]);
+    });
+    this.api.getFederationStats().subscribe(s => {
+      this.activityStats.set({ totalResults: s.totalResults, resultsThisYear: s.resultsThisYear });
     });
   }
 }
@@ -96,7 +137,7 @@ export class FederationDashboardComponent implements OnInit {
 @Component({
   selector: 'app-federation-results',
   standalone: true,
-  imports: [DatePipe, NgClass, FormsModule],
+  imports: [FormsModule],
   template: `
     <div class="pr-page-header">
       <h1 class="pr-page-header__title">National Results</h1>
@@ -143,10 +184,10 @@ export class FederationDashboardComponent implements OnInit {
                 <div class="text-muted text-sm">{{ r.totalClubsCount }} clubs · {{ r.totalEntriesCount }} entries</div>
               </div>
               <div class="flex gap-2 items-center">
-                <span [class]="r.status === CountryResultStatus.Published ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">
-                  {{ r.status === CountryResultStatus.Published ? 'Published' : 'Draft' }}
+                <span [class]="r.status === FederationResultStatus.Published ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">
+                  {{ r.status === FederationResultStatus.Published ? 'Published' : 'Draft' }}
                 </span>
-                @if (r.status !== CountryResultStatus.Published) {
+                @if (r.status !== FederationResultStatus.Published) {
                   <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="publish(r.id)">Publish</button>
                 }
               </div>
@@ -167,7 +208,7 @@ export class FederationDashboardComponent implements OnInit {
 export class FederationResultsComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
-  CountryResultStatus = CountryResultStatus;
+  FederationResultStatus = FederationResultStatus;
   results  = signal<FederationResult[]>([]);
   creating = signal(false);
   newName  = '';

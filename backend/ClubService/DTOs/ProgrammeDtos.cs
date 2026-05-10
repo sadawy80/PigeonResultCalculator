@@ -3,7 +3,7 @@ using PRC.Common;
 namespace PRC.ClubService.DTOs;
 
 public record ProgrammeDto(
-    Guid Id, Guid ClubId, string ClubName,
+    Guid Id, Guid? ClubId, string? ClubName, Guid? FederationId, string? FederationName,
     string Name, string? Description,
     int Year, DateTime? StartDate, DateTime? EndDate,
     ProgrammeStatus Status, ScoringMethod ScoringMethod,
@@ -57,7 +57,8 @@ public record SuperAcePigeonResultDto(
 
 // Requests
 public record CreateProgrammeRequest(
-    Guid ClubId, string Name, string? Description,
+    Guid? ClubId, Guid? FederationId, string? FederationName,
+    string Name, string? Description,
     int Year, DateTime? StartDate, DateTime? EndDate,
     ScoringMethod ScoringMethod, int PointsForFirst, int MaxPointPositions,
     int BestLoftPigeonsPerRace, int BestLoftMinRaces, int AcePigeonMinRaces,

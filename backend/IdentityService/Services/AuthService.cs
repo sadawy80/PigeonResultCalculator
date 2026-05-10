@@ -232,6 +232,35 @@ public class AuthService : IAuthService
         return Result.Success();
     }
 
+    public async Task<Result<UserDto>> UpdateProfileAsync(Guid userId, UpdateProfileRequest req, CancellationToken ct)
+    {
+        var user = await _users.FindByIdAsync(userId.ToString());
+        if (user == null) return Result.NotFound<UserDto>("User");
+
+        user.FirstName = req.FirstName.Trim();
+        user.LastName  = req.LastName.Trim();
+        user.UpdatedAt = DateTime.UtcNow;
+
+        var result = await _users.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            return Result.Failure<UserDto>(errors, "UPDATE_FAILED");
+        }
+
+        Guid? clubId = null;
+        if (user.Role == UserRole.ClubManager || user.Role == UserRole.Fancier)
+        {
+            clubId = await _db.ClubMemberships
+                .Where(m => m.UserId == user.Id && m.IsActive && !m.IsDeleted)
+                .OrderBy(m => m.JoinedAt)
+                .Select(m => (Guid?)m.ClubId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        return Result.Success(user.ToDto(clubId));
+    }
+
     public async Task<Result> ResendVerificationAsync(ResendVerificationRequest req, CancellationToken ct)
     {
         var user = await _users.FindByEmailAsync(req.Email);

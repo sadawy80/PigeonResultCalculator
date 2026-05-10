@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.IdentityModel.Tokens;
 using MassTransit;
 using Prometheus;
 using Serilog;
 using System.Text;
+using PRC.Common.Consul;
 using PRC.Common.Messages;
 using PRC.RenderingService.Data;
 using PRC.RenderingService.Middleware;
@@ -72,12 +75,26 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "rendering-service", 9505);
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<RenderingDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try
+        {
+            await db.Database.MigrateAsync();
+            var creator = db.Database.GetInfrastructure()
+                .GetRequiredService<IRelationalDatabaseCreator>();
+            try { await creator.CreateTablesAsync(); } catch { /* tables already exist */ }
+            break;
+        }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("RenderingService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
     await TemplateSeeder.SeedAsync(db);
 }
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PRC.Common.Consul;
 using PRC.SubscriptionService.Data;
 using PRC.SubscriptionService.Events;
 using PRC.SubscriptionService.Middleware;
@@ -33,7 +34,7 @@ builder.Host.UseSerilog();
 
 // ── Database ──────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<SubscriptionDbContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ── JWT Authentication ────────────────────────────────────────────────────────
 var jwtKey = builder.Configuration["Jwt:Key"]
@@ -89,6 +90,7 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<GetSubscriptionStatsConsumer>();
     x.AddConsumer<GetSubscriptionPlansConsumer>();
+    x.AddConsumer<UpdateSubscriptionPlanConsumer>();
     x.AddConsumer<GetFederationSubscriptionsConsumer>();
     x.AddConsumer<CreateFederationSubscriptionConsumer>();
     x.AddConsumer<GetActiveSubscriptionCountConsumer>();
@@ -96,6 +98,14 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<CheckResultLimitConsumer>();
     x.AddConsumer<IncrementResultUsageConsumer>();
     x.AddConsumer<GetFederationSubscriptionLimitsConsumer>();
+    x.AddConsumer<AdminCreateSubscriptionPlanConsumer>();
+    x.AddConsumer<AdminDeleteSubscriptionPlanConsumer>();
+
+    x.AddEntityFrameworkOutbox<SubscriptionDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
@@ -136,6 +146,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "subscription-service", 9509);
+
 var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -164,8 +176,14 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Subs
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try { await db.Database.MigrateAsync(); break; }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("SubscriptionService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
     await SubscriptionSeeder.SeedAsync(db);
+    await SubscriptionSeeder.SeedDemoAsync(db);
 }
 
 app.Run();

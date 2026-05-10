@@ -269,7 +269,7 @@ export class ClubMembersComponent implements OnInit {
   initials(name: string) { return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2); }
 
   roleLabel(role: number) {
-    return ['', 'Super Admin', 'Country Mgr', 'Club Mgr', 'Fancier'][role] ?? 'Unknown';
+    return ['', 'Super Admin', 'Federation Mgr', 'Club Mgr', 'Fancier'][role] ?? 'Unknown';
   }
 
   inviteStatusBadge(s: InvitationStatus) {

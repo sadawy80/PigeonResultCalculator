@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { CanActivateFn } from '@angular/router';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, switchMap, tap, throwError } from 'rxjs';
 import { DOCUMENT } from '@angular/common';
 import * as signalR from '@microsoft/signalr';
 import { environment } from '../../../environments/environment';
@@ -30,32 +30,33 @@ export class AuthService {
   });
   /** Primary club ID for ClubManagers and Fanciers — resolved by the backend on login */
   readonly clubId = computed(() => this.currentUser()?.clubId ?? null);
-  /** Country ID for FederationManagers */
+  /** Federation ID for FederationManagers */
   readonly FederationId = computed(() => this.currentUser()?.FederationId ?? null);
 
   login(email: string, password: string) {
     return this.api.login(email, password).pipe(
-      catchError(err => { throw err; })
-    ).subscribe(tokens => {
-      localStorage.setItem('access_token', tokens.accessToken);
-      localStorage.setItem('refresh_token', tokens.refreshToken);
-      localStorage.setItem('user', JSON.stringify(tokens.user));
-      this.currentUser.set(tokens.user);
-      this.logger.setUserId(tokens.user.id);
-      this.logger.info('User signed in', { userId: tokens.user.id, role: tokens.user.role }, 'Angular.Auth');
-      this.navigateByRole(tokens.user.role);
-    });
+      tap(tokens => {
+        localStorage.setItem('access_token', tokens.accessToken);
+        localStorage.setItem('refresh_token', tokens.refreshToken);
+        localStorage.setItem('user', JSON.stringify(tokens.user));
+        this.currentUser.set(tokens.user);
+        this.logger.setUserId(tokens.user.id);
+        this.logger.info('User signed in', { userId: tokens.user.id, role: tokens.user.role }, 'Angular.Auth');
+        this.navigateByRole(tokens.user.role);
+      })
+    );
   }
 
   logout() {
     const user = this.currentUser();
     this.logger.info('User signed out', { userId: user?.id }, 'Angular.Auth');
+    const isAdminSession = !!this.getAdminToken();
     const rt = localStorage.getItem('refresh_token');
     if (rt) this.api.revokeToken(rt).subscribe({ error: () => {} });
     localStorage.clear();
     this.currentUser.set(null);
     this.logger.setUserId(null);
-    this.router.navigate(['/auth/login']);
+    this.router.navigate([isAdminSession ? '/admin/login' : '/auth/login']);
   }
 
   getAccessToken(): string | null {
@@ -73,6 +74,29 @@ export class AuthService {
     this.currentUser.set(user);
   }
 
+  /** Stores the short-lived admin JWT (signed with Jwt:AdminKey on the admin service). */
+  setAdminSession(token: string, userId: string, fullName: string) {
+    const names = fullName.trim().split(' ');
+    const user: User = {
+      id: userId,
+      email: '',
+      firstName: names[0] ?? '',
+      lastName: names.slice(1).join(' '),
+      fullName,
+      role: UserRole.SuperAdmin,
+      isActive: true
+    };
+    localStorage.setItem('admin_token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    this.currentUser.set(user);
+    this.logger.setUserId(userId);
+    this.logger.info('Admin signed in', { userId }, 'Angular.Auth');
+  }
+
+  getAdminToken(): string | null {
+    return localStorage.getItem('admin_token');
+  }
+
   private loadUser(): User | null {
     const raw = localStorage.getItem('user');
     if (!raw) return null;
@@ -85,7 +109,7 @@ export class AuthService {
   private navigateByRole(role: UserRole) {
     const routes: Record<UserRole, string> = {
       [UserRole.SuperAdmin]: '/admin/dashboard',
-      [UserRole.FederationManager]: '/country/dashboard',
+      [UserRole.FederationManager]: '/federation/dashboard',
       [UserRole.ClubManager]: '/club/dashboard',
       [UserRole.Fancier]: '/fancier/dashboard',
     };
@@ -254,9 +278,14 @@ export const jwtInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>, next: HttpHandlerFn
 ) => {
   const auth = inject(AuthService);
-  const api = inject(ApiService);
+  const api  = inject(ApiService);
 
-  const token = auth.getAccessToken();
+  // Admin service routes use the separate admin JWT; all others use the normal access token.
+  const isAdminRoute = req.url.includes('/api/admin/');
+  const token = isAdminRoute
+    ? (auth.getAdminToken() ?? auth.getAccessToken())
+    : auth.getAccessToken();
+
   const cloned = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
@@ -264,24 +293,30 @@ export const jwtInterceptor: HttpInterceptorFn = (
   return next(cloned).pipe(
     catchError((err: HttpErrorResponse) => {
       if (err.status === 401 && auth.isAuthenticated()) {
-        const rt = auth.getRefreshToken();
         const at = auth.getAccessToken();
-        if (rt && at) {
-          return api.refreshToken(at, rt).pipe(
-            switchMap(tokens => {
-              auth.setTokens(tokens.accessToken, tokens.refreshToken, tokens.user);
-              const retried = req.clone({
-                setHeaders: { Authorization: `Bearer ${tokens.accessToken}` }
-              });
-              return next(retried);
-            }),
-            catchError(() => {
-              auth.logout();
-              return throwError(() => err);
-            })
-          );
+        const rt = auth.getRefreshToken();
+        // Admin-only sessions have no normal access/refresh tokens.
+        // Only logout if it is an admin route (admin JWT expired); for other
+        // requests (e.g. theme loading) that require a normal JWT, silently
+        // propagate the error so background calls don't end the session.
+        if (!at || !rt) {
+          if (isAdminRoute) auth.logout();
+          return throwError(() => err);
         }
-        auth.logout();
+
+        return api.refreshToken(at, rt).pipe(
+          switchMap(tokens => {
+            auth.setTokens(tokens.accessToken, tokens.refreshToken, tokens.user);
+            const retried = req.clone({
+              setHeaders: { Authorization: `Bearer ${tokens.accessToken}` }
+            });
+            return next(retried);
+          }),
+          catchError(() => {
+            auth.logout();
+            return throwError(() => err);
+          })
+        );
       }
       return throwError(() => err);
     })

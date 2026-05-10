@@ -38,8 +38,8 @@ public class PublicController : ControllerBase
                     res.RingNumber,
                     res.PigeonName,
                     FancierName = res.FancierId.HasValue && names.TryGetValue(res.FancierId.Value, out var n) ? n : null,
-                    VelocityMperMin = res.VelocityMperMin,
-                    VelocityKmH = res.VelocityMperMin * 60.0 / 1000.0,
+                    SpeedMperMin = res.SpeedMperMin,
+                    SpeedKmH = res.SpeedMperMin * 60.0 / 1000.0,
                     res.DistanceKm,
                     res.ClubRank,
                     res.CategoryRank,
@@ -93,25 +93,25 @@ public class PublicController : ControllerBase
     [HttpGet("countries/{slug}")]
     public async Task<IActionResult> GetFederationPage(string slug, CancellationToken ct)
     {
-        var country = await _svc.GetFederationBySlugAsync(slug, ct);
-        if (country == null)
-            return NotFound(new { success = false, message = "Country page not found or not published." });
+        var federation = await _svc.GetFederationBySlugAsync(slug, ct);
+        if (federation == null)
+            return NotFound(new { success = false, message = "Federation page not found or not published." });
 
-        var clubs = await _svc.ListPublishedClubsAsync(null, country.FederationId, 1, 100, ct);
+        var clubs = await _svc.ListPublishedClubsAsync(null, federation.FederationId, 1, 100, ct);
 
         return Ok(new
         {
             success = true,
             data = new
             {
-                country = new
+                federation = new
                 {
-                    country.FederationId,
-                    country.Name,
-                    country.Code,
-                    Slug = country.FederationSlug
+                    federation.FederationId,
+                    federation.Name,
+                    federation.Code,
+                    Slug = federation.FederationSlug
                 },
-                theme = country.Theme,
+                theme = federation.Theme,
                 clubCount = clubs?.Items.Count ?? 0,
                 clubPages = clubs?.Items.Select(c => new
                 {
@@ -123,7 +123,7 @@ public class PublicController : ControllerBase
                     c.LogoUrl,
                     c.Theme
                 }),
-                recentResults = country.RecentResults.Select(r => new
+                recentResults = federation.RecentResults.Select(r => new
                 {
                     r.Id,
                     r.Name,
@@ -135,12 +135,12 @@ public class PublicController : ControllerBase
                     {
                         e.NationalRank,
                         e.RingNumber,
-                        e.VelocityMperMin,
+                        e.SpeedMperMin,
                         e.FancierName,
                         e.ClubName
                     })
                 }),
-                announcements = ParseAnnouncements(country.AnnouncementsJson)
+                announcements = ParseAnnouncements(federation.AnnouncementsJson)
             }
         });
     }

@@ -21,20 +21,20 @@ import { ApiService } from '../../core/services/api.service';
         <a routerLink="/" class="pr-btn pr-btn--primary" style="margin-top:16px">Go Home</a>
       </div>
     } @else {
-      <div class="pub-country theme-{{ pageData()?.theme ?? 1 }}">
+      <div class="pub-federation theme-{{ pageData()?.theme ?? 1 }}">
 
         <!-- Hero -->
-        <header class="pub-country__hero">
-          <div class="pub-country__hero-content">
-            <div class="pub-country__flag-code">{{ pageData()?.country?.code }}</div>
-            <h1 class="pub-country__title">{{ pageData()?.country?.name }}</h1>
-            <p class="pub-country__meta">
+        <header class="pub-federation__hero">
+          <div class="pub-federation__hero-content">
+            <div class="pub-federation__flag-code">{{ pageData()?.federation?.code }}</div>
+            <h1 class="pub-federation__title">{{ pageData()?.federation?.name }}</h1>
+            <p class="pub-federation__meta">
               {{ pageData()?.clubCount }} active clubs · Pigeon Racing Federation
             </p>
           </div>
         </header>
 
-        <div class="pub-country__body">
+        <div class="pub-federation__body">
 
           <!-- Announcements -->
           @if (pageData()?.announcements?.length > 0) {
@@ -73,7 +73,7 @@ import { ApiService } from '../../core/services/api.service';
                     <div class="pr-table-wrapper mt-3">
                       <table class="pr-table pr-table--compact">
                         <thead>
-                          <tr><th>#</th><th>Ring</th><th>Fancier</th><th>Club</th><th style="text-align:right">Velocity (m/min)</th></tr>
+                          <tr><th>#</th><th>Ring</th><th>Fancier</th><th>Club</th><th style="text-align:right">Speed (m/min)</th></tr>
                         </thead>
                         <tbody>
                           @for (e of r.topEntries; track e.nationalRank) {
@@ -82,7 +82,7 @@ import { ApiService } from '../../core/services/api.service';
                               <td><code style="font-size:0.8rem">{{ e.ringNumber }}</code></td>
                               <td>{{ e.fancierName ?? '—' }}</td>
                               <td class="text-muted text-sm">{{ e.clubName }}</td>
-                              <td style="text-align:right" class="font-bold">{{ e.velocityMperMin | number:'1.4-4' }}</td>
+                              <td style="text-align:right" class="font-bold">{{ e.speedMperMin | number:'1.4-4' }}</td>
                             </tr>
                           }
                         </tbody>
@@ -96,7 +96,7 @@ import { ApiService } from '../../core/services/api.service';
 
           <!-- Clubs directory -->
           <section class="pub-section">
-            <h2 class="pub-section__title">Clubs in {{ pageData()?.country?.name }}</h2>
+            <h2 class="pub-section__title">Clubs in {{ pageData()?.federation?.name }}</h2>
             @if (pageData()?.clubPages?.length === 0) {
               <p class="text-muted">No published club pages yet.</p>
             } @else {
@@ -127,21 +127,21 @@ import { ApiService } from '../../core/services/api.service';
       padding:40px;
     }
 
-    .pub-country__hero {
+    .pub-federation__hero {
       background: linear-gradient(135deg, var(--pr-primary) 0%, color-mix(in srgb, var(--pr-primary) 70%, #000) 100%);
       color: #fff; padding: 80px 24px; text-align: center;
     }
-    .pub-country__flag-code {
+    .pub-federation__flag-code {
       font-size: 3.5rem; font-weight: 900; letter-spacing: 0.15em;
       opacity: 0.3; margin-bottom: 8px;
     }
-    .pub-country__title {
+    .pub-federation__title {
       font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.5rem);
       font-weight: 800; margin: 0 0 12px;
     }
-    .pub-country__meta { opacity: 0.85; font-size: 1rem; }
+    .pub-federation__meta { opacity: 0.85; font-size: 1rem; }
 
-    .pub-country__body { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+    .pub-federation__body { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
 
     .pub-section { margin-bottom: 48px; }
     .pub-section__title {

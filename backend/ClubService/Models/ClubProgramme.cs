@@ -4,7 +4,9 @@ namespace PRC.ClubService.Models;
 
 public class ClubProgramme : BaseEntity
 {
-    public Guid ClubId { get; set; }
+    public Guid? ClubId { get; set; }          // null for federation-owned programmes
+    public Guid? FederationId { get; set; }    // set when created by a federation
+    public string? FederationName { get; set; } // cached
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int Year { get; set; } = DateTime.UtcNow.Year;
@@ -23,7 +25,7 @@ public class ClubProgramme : BaseEntity
     public DateTime? PublishedAt { get; set; }
     public Guid? PublishedByUserId { get; set; }
 
-    public Club Club { get; set; } = null!;
+    public Club? Club { get; set; }
     public ICollection<ProgrammeRace> ProgrammeRaces { get; set; } = new List<ProgrammeRace>();
     public ICollection<BestLoftResult> BestLoftResults { get; set; } = new List<BestLoftResult>();
     public ICollection<AcePigeonResult> AcePigeonResults { get; set; } = new List<AcePigeonResult>();

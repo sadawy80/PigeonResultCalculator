@@ -40,8 +40,8 @@ export interface IntegrationRaceResult {
   releaseLocation: string;
   raceDate: string;
   distanceKm: number;
-  velocityMperMin: number;
-  velocityKmH: number;
+  speedMperMin: number;
+  speedKmH: number;
   clubRank?: number;
   categoryRank?: number;
   categoryName?: string;
@@ -68,8 +68,8 @@ export interface IntegrationAcePigeon {
   racesEntered: number;
   racesInProgramme: number;
   participationRate: number;
-  bestVelocityMperMin: number;
-  averageVelocityMperMin: number;
+  bestSpeedMperMin: number;
+  averageSpeedMperMin: number;
   bestClubRank: number;
 }
 
@@ -85,8 +85,8 @@ export interface IntegrationBestLoft {
   averageScore: number;
   racesEntered: number;
   pigeonsEntered: number;
-  bestSingleVelocityMperMin: number;
-  averageVelocityMperMin: number;
+  bestSingleSpeedMperMin: number;
+  averageSpeedMperMin: number;
 }
 
 export interface IntegrationAchievement {
@@ -106,7 +106,7 @@ export interface IntegrationSummary {
   totalSuperAcePigeonResults: number;
   totalBestLoftResults: number;
   bestEverClubRank: number;
-  bestEverVelocityMperMin: number;
+  bestEverSpeedMperMin: number;
   lastRaceDate?: string;
-  achievements: IntegrationAchievement[];
+  achievements: IntegrationAchievement[] | null;
 }

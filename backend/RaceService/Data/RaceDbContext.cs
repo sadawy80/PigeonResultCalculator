@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.RaceService.Models;
 
@@ -13,6 +14,7 @@ public class RaceDbContext : DbContext
     public DbSet<DataIngestionLog> DataIngestionLogs => Set<DataIngestionLog>();
     public DbSet<Pigeon> Pigeons => Set<Pigeon>();
     public DbSet<PigeonLink> PigeonLinks => Set<PigeonLink>();
+    public DbSet<Fancier> Fanciers => Set<Fancier>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -36,7 +38,7 @@ public class RaceDbContext : DbContext
 
         b.Entity<RaceResult>()
             .HasOne(r => r.Race).WithMany(r => r.Results)
-            .HasForeignKey(r => r.RaceId).OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(r => r.RaceId).OnDelete(DeleteBehavior.Restrict);
 
         b.Entity<RaceResult>()
             .HasOne(r => r.Category).WithMany(c => c.Results)
@@ -46,11 +48,19 @@ public class RaceDbContext : DbContext
             .HasOne(l => l.Race).WithMany(r => r.IngestionLogs)
             .HasForeignKey(l => l.RaceId).OnDelete(DeleteBehavior.Cascade);
 
+        b.Entity<Fancier>().HasIndex(f => new { f.Name, f.ClubId }).IsUnique();
+        b.Entity<Fancier>().HasIndex(f => f.ClubId);
+        b.Entity<Fancier>().HasIndex(f => f.FederationId);
+
         b.Entity<Pigeon>().HasIndex(p => p.RingNumber).IsUnique();
 
         b.Entity<PigeonLink>().HasIndex(p => new { p.MembershipId, p.RingNumber }).IsUnique();
         b.Entity<PigeonLink>()
             .HasOne(l => l.Pigeon).WithMany(p => p.Links)
             .HasForeignKey(l => l.PigeonId).OnDelete(DeleteBehavior.SetNull);
+
+        b.AddOutboxMessageEntity();
+        b.AddOutboxStateEntity();
+        b.AddInboxStateEntity();
     }
 }

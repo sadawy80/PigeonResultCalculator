@@ -8,9 +8,9 @@ contactPoints:
       - uid: slack-platform
         type: slack
         settings:
-          url: ${SLACK_WEBHOOK_URL}
-          channel: '#pigeon-alerts'
-          username: 'PigeonRacing Alerts'
+          url: 'https://hooks.slack.com/services/T00000000/B00000000/placeholder'
+          recipient: '#pigeon-alerts'
+          username: 'PRC Alerts'
           icon_emoji: ':warning:'
           title: |
             [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}
@@ -27,9 +27,9 @@ contactPoints:
       - uid: slack-critical
         type: slack
         settings:
-          url: ${SLACK_WEBHOOK_URL}
-          channel: '#pigeon-alerts-critical'
-          username: 'PigeonRacing CRITICAL'
+          url: 'https://hooks.slack.com/services/T00000000/B00000000/placeholder'
+          recipient: '#pigeon-alerts-critical'
+          username: 'PRC CRITICAL'
           icon_emoji: ':fire:'
           title: '🚨 CRITICAL: {{ .CommonLabels.alertname }}'
           text: |
@@ -43,22 +43,10 @@ contactPoints:
       - uid: email-ops
         type: email
         settings:
-          addresses: ${ALERT_EMAIL:-ops@pigeonracing.com}
+          addresses: ops@pigeonresultcalculator.com
           singleEmail: false
         disableResolveMessage: false
 
-  - orgId: 1
-    name: PagerDuty
-    receivers:
-      - uid: pagerduty-oncall
-        type: pagerduty
-        settings:
-          integrationKey: ${PAGERDUTY_KEY}
-          severity: critical
-          class: '{{ .CommonLabels.alertname }}'
-          component: '{{ .CommonLabels.service }}'
-          group: pigeon-racing
-        disableResolveMessage: false
 
 # ── Notification Policy ────────────────────────────────────────────────────────
 policies:
@@ -79,10 +67,6 @@ policies:
         group_interval: 1m
         repeat_interval: 30m
         routes:
-          - receiver: PagerDuty
-            matchers:
-              - alertname =~ "APIDown|SQLServerDown|CriticalHostCPU|CriticalHostMemory"
-            continue: true
           - receiver: Email Ops
             matchers:
               - alertname =~ "APIDown|SQLServerDown"

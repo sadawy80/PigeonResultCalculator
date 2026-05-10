@@ -97,6 +97,12 @@ builder.Services.AddMassTransit(x =>
     x.AddRequestClient<GetPublishedResultsForProgrammeRequest>();
     x.AddRequestClient<GetPigeonLookupRequest>();
 
+    x.AddEntityFrameworkOutbox<ClubDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+
     x.UsingRabbitMq((ctx, cfg) =>
     {
         cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/",

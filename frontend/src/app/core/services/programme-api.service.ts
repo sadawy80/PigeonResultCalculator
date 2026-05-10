@@ -60,8 +60,8 @@ export class ProgrammeApiService {
     return this.get<Programme>(`/programmes/${id}`);
   }
 
-  getClubProgrammes(clubId: string, page = 1, pageSize = 20): Observable<PagedResult<ProgrammeSummary>> {
-    return this.get<PagedResult<ProgrammeSummary>>(`/programmes/club/${clubId}`, { page, pageSize });
+  getClubProgrammes(clubId: string, page = 1, pageSize = 20, year?: number): Observable<PagedResult<ProgrammeSummary>> {
+    return this.get<PagedResult<ProgrammeSummary>>(`/programmes/club/${clubId}`, { page, pageSize, year });
   }
 
   deleteProgramme(id: string): Observable<void> {

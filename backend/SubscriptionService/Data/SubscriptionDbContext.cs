@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.SubscriptionService.Models;
 
@@ -49,5 +50,9 @@ public class SubscriptionDbContext : DbContext
              .HasForeignKey(x => x.PlanId)
              .OnDelete(DeleteBehavior.Restrict);
         });
+
+        mb.AddOutboxMessageEntity();
+        mb.AddOutboxStateEntity();
+        mb.AddInboxStateEntity();
     }
 }

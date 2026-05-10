@@ -95,7 +95,7 @@ export class ProgrammeListComponent implements OnInit {
   statusLabel(s: ProgrammeStatus) { return ProgrammeStatus[s] ?? 'Unknown'; }
 
   scoringLabel(s: ScoringMethod) {
-    const m: Record<number, string> = { 1:'Avg Velocity', 2:'Points/Rank', 3:'% Velocity', 4:'Total Velocity' };
+    const m: Record<number, string> = { 1:'Avg Speed', 2:'Points/Rank', 3:'% Speed', 4:'Total Speed' };
     return m[s] ?? 'Unknown';
   }
 }
@@ -314,7 +314,7 @@ export class ProgrammeDetailComponent implements OnInit {
   selectedRaceId = '';
 
   resultTabs = [
-    { id: 'race-results',      icon: '🏁', label: 'Race Results',      desc: 'Per-race velocity rankings' },
+    { id: 'race-results',      icon: '🏁', label: 'Race Results',      desc: 'Per-race speed rankings' },
     { id: 'best-loft',         icon: '🏠', label: 'Best Loft',         desc: 'Top fanciers across all races' },
     { id: 'ace-pigeon',        icon: '🕊️', label: 'Ace Pigeon',        desc: 'Top individual birds' },
     { id: 'super-ace-pigeon',  icon: '⭐', label: 'Super Ace Pigeon',  desc: 'Elite qualifying pigeons' },
@@ -367,7 +367,7 @@ export class ProgrammeDetailComponent implements OnInit {
   }
 
   scoringLabel(s: ScoringMethod) {
-    const m: Record<number, string> = { 1:'Average Velocity', 2:'Points by Rank', 3:'Velocity %', 4:'Total Velocity' };
+    const m: Record<number, string> = { 1:'Average Speed', 2:'Points by Rank', 3:'Speed %', 4:'Total Speed' };
     return m[s] ?? 'Unknown';
   }
 

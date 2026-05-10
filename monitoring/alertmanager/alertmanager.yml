@@ -1,10 +1,10 @@
 global:
   resolve_timeout: 5m
-  smtp_smarthost: '${SMTP_HOST:-smtp.gmail.com:587}'
-  smtp_from: '${SMTP_FROM:-alerts@pigeonracing.com}'
-  smtp_auth_username: '${SMTP_USER}'
-  smtp_auth_password: '${SMTP_PASSWORD}'
-  slack_api_url: '${SLACK_WEBHOOK_URL}'
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@pigeonresultcalculator.com'
+  smtp_auth_username: ''
+  smtp_auth_password: ''
+  slack_api_url: 'https://hooks.slack.com/services/T00000000/B00000000/placeholder'
 
 # ── Templates ─────────────────────────────────────────────────────────────────
 templates:
@@ -12,36 +12,31 @@ templates:
 
 # ── Routing tree ──────────────────────────────────────────────────────────────
 route:
-  # Default: route everything to the platform team
   receiver: platform-slack
   group_by: ['alertname', 'severity', 'service']
-  group_wait:      30s    # wait 30s before sending a new group
-  group_interval:  5m     # wait 5m before resending an existing group
-  repeat_interval: 4h     # resend if still firing after 4h
+  group_wait:      30s
+  group_interval:  5m
+  repeat_interval: 4h
 
   routes:
-    # ── Critical alerts → immediate page ──────────────────────────────────────
     - match:
         severity: critical
       receiver: platform-critical
-      group_wait: 0s          # send immediately
+      group_wait: 0s
       group_interval: 1m
       repeat_interval: 30m
       routes:
-        # API down → all channels
         - match:
             alertname: APIDown
           receiver: all-channels
           group_wait: 0s
 
-    # ── Security alerts → security team ───────────────────────────────────────
     - match:
         team: security
       receiver: security-slack
       group_wait: 0s
       repeat_interval: 1h
 
-    # ── Warning alerts → Slack only, less urgent ──────────────────────────────
     - match:
         severity: warning
       receiver: platform-slack
@@ -49,7 +44,6 @@ route:
       group_interval: 10m
       repeat_interval: 6h
 
-    # ── Info / watchdog ───────────────────────────────────────────────────────
     - match:
         alertname: Watchdog
       receiver: devnull
@@ -57,28 +51,24 @@ route:
 
 # ── Inhibition rules ──────────────────────────────────────────────────────────
 inhibit_rules:
-  # If API is down, suppress all API latency/error alerts (root cause is the outage)
   - source_match:
       alertname: APIDown
     target_match_re:
       alertname: HighHTTPErrorRate|HighLatency.*|ElevatedHTTPErrorRate
     equal: ['environment']
 
-  # If SQL Server is down, suppress DB connection pool alerts
   - source_match:
       alertname: SQLServerDown
     target_match_re:
       alertname: DBConnectionPool.*|SlowDBQueries
     equal: ['environment']
 
-  # If Redis is down, suppress Redis memory/hit-rate alerts
   - source_match:
       alertname: RedisDown
     target_match_re:
       alertname: Redis.*
     equal: ['environment']
 
-  # If host is critically OOM, suppress container memory alerts
   - source_match:
       alertname: CriticalHostMemory
     target_match_re:
@@ -95,7 +85,7 @@ receivers:
       - channel: '#pigeon-alerts'
         send_resolved: true
         icon_emoji: ':warning:'
-        username: 'PigeonRacing Alerts'
+        username: 'PRC Alerts'
         title: |-
           [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
         text: |-
@@ -114,7 +104,7 @@ receivers:
       - channel: '#pigeon-alerts-critical'
         send_resolved: true
         icon_emoji: ':fire:'
-        username: 'PigeonRacing CRITICAL'
+        username: 'PRC CRITICAL'
         title: '🚨 CRITICAL: {{ .CommonLabels.alertname }}'
         text: |-
           {{ range .Alerts }}
@@ -122,12 +112,8 @@ receivers:
           {{ .Annotations.description }}
           Started: {{ .StartsAt | since }} ago
           {{ end }}
-    pagerduty_configs:
-      - routing_key: '${PAGERDUTY_KEY}'
-        description: '{{ .CommonAnnotations.summary }}'
-        severity: critical
     email_configs:
-      - to: '${ALERT_EMAIL:-ops@pigeonracing.com}'
+      - to: 'ops@pigeonresultcalculator.com'
         send_resolved: true
         headers:
           Subject: '🚨 CRITICAL ALERT: {{ .CommonLabels.alertname }}'
@@ -145,7 +131,7 @@ receivers:
       - channel: '#pigeon-security'
         send_resolved: true
         icon_emoji: ':lock:'
-        username: 'PigeonRacing Security'
+        username: 'PRC Security'
         title: '🔒 Security Alert: {{ .CommonLabels.alertname }}'
         text: |-
           {{ range .Alerts }}
@@ -159,14 +145,10 @@ receivers:
         send_resolved: true
         icon_emoji: ':rotating_light:'
         title: '🚨 API DOWN: {{ .CommonLabels.alertname }}'
-        text: 'The PigeonRacing API is unreachable. All services are affected.'
+        text: 'The PRC API is unreachable. All services are affected.'
     email_configs:
-      - to: '${ALERT_EMAIL:-ops@pigeonracing.com}'
+      - to: 'ops@pigeonresultcalculator.com'
         send_resolved: true
         headers:
-          Subject: '🚨 OUTAGE: PigeonRacing API is DOWN'
-        html: '<h1>🚨 PigeonRacing API is DOWN</h1><p>The API has been unreachable for more than 1 minute. Immediate action required.</p>'
-    pagerduty_configs:
-      - routing_key: '${PAGERDUTY_KEY}'
-        description: 'PigeonRacing API is DOWN'
-        severity: critical
+          Subject: '🚨 OUTAGE: PRC API is DOWN'
+        html: '<h1>🚨 PRC API is DOWN</h1><p>The API has been unreachable for more than 1 minute. Immediate action required.</p>'

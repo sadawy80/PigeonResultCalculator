@@ -82,9 +82,11 @@ public class GetProgrammeForRenderConsumer : IConsumer<GetProgrammeForRenderRequ
             true, prog.Id, prog.Name, prog.Year, prog.ScoringMethod.ToString(),
             prog.AcePigeonMinRaces, prog.SuperAceQualification.ToString(),
             prog.ProgrammeRaces.Count(r => !r.IsDeleted),
-            prog.ClubId, prog.Club.Name, prog.Club.LogoUrl,
-            prog.Club.PrimaryColor ?? "#1E3A5F",
-            prog.Club.SecondaryColor ?? "#C9A84C",
+            prog.ClubId ?? Guid.Empty,
+            prog.Club?.Name ?? prog.FederationName ?? "Federation",
+            prog.Club?.LogoUrl,
+            prog.Club?.PrimaryColor ?? "#1E3A5F",
+            prog.Club?.SecondaryColor ?? "#C9A84C",
             bestLoft, acePigeon, superAce));
     }
 }

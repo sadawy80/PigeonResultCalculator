@@ -22,7 +22,7 @@ public class SubscriptionsController : SubscriptionControllerBase
         _bus = bus;
     }
 
-    [HttpGet("country")]
+    [HttpGet("federation")]
     public async Task<IActionResult> GetFederationSubscriptions(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
@@ -30,7 +30,7 @@ public class SubscriptionsController : SubscriptionControllerBase
         return FromResult(result);
     }
 
-    [HttpGet("country/{FederationId:guid}/active")]
+    [HttpGet("federation/{FederationId:guid}/active")]
     [Authorize]
     public async Task<IActionResult> GetActiveFederationSubscription(Guid FederationId, CancellationToken ct)
     {
@@ -38,7 +38,7 @@ public class SubscriptionsController : SubscriptionControllerBase
         return FromResult(result);
     }
 
-    [HttpPost("country")]
+    [HttpPost("federation")]
     public async Task<IActionResult> CreateFederationSubscription(
         [FromBody] CreateFederationSubscriptionRequest req, CancellationToken ct)
     {

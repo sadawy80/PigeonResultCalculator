@@ -13,10 +13,10 @@ import { ApiService } from '../../core/services/api.service';
 export class AdminEventsComponent implements OnInit {
   private api = inject(ApiService);
 
-  typeFilter      = '';
-  aggregateFilter = '';
+  actionFilter    = '';
+  entityTypeFilter = '';
   page            = 1;
-  pageSize        = 50;
+  pageSize = 10;
   total           = signal(0);
   events          = signal<any[]>([]);
   loading         = signal(false);
@@ -28,10 +28,10 @@ export class AdminEventsComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     this.api.adminGetEvents({
-      eventType:     this.typeFilter || undefined,
-      aggregateType: this.aggregateFilter || undefined,
-      page:          this.page,
-      pageSize:      this.pageSize
+      action:     this.actionFilter || undefined,
+      entityType: this.entityTypeFilter || undefined,
+      page:       this.page,
+      pageSize:   this.pageSize
     }).subscribe({
       next: r => { this.events.set(r.items); this.total.set(r.totalCount); this.loading.set(false); },
       error: () => { this.error.set('Failed to load events.'); this.loading.set(false); }
@@ -43,4 +43,5 @@ export class AdminEventsComponent implements OnInit {
   get totalPages() { return Math.ceil(this.total() / this.pageSize); }
   prevPage() { if (this.page > 1) { this.page--; this.load(); } }
   nextPage() { if (this.page < this.totalPages) { this.page++; this.load(); } }
+  onPageSizeChange() { this.page = 1; this.load(); }
 }

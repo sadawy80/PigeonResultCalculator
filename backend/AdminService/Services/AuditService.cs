@@ -16,8 +16,13 @@ public interface IAuditService
 public class AuditService : IAuditService
 {
     private readonly AdminDbContext _db;
+    private readonly IGeoIpService  _geoIp;
 
-    public AuditService(AdminDbContext db) => _db = db;
+    public AuditService(AdminDbContext db, IGeoIpService geoIp)
+    {
+        _db    = db;
+        _geoIp = geoIp;
+    }
 
     public async Task LogAsync(string action, string entityType, Guid? entityId,
         AuditSeverity severity, string? details,
@@ -25,6 +30,8 @@ public class AuditService : IAuditService
         string? correlationId, string? ipAddress,
         CancellationToken ct = default)
     {
+        var country = await _geoIp.GetCountryAsync(ipAddress, ct);
+
         _db.AuditEvents.Add(new AuditEvent
         {
             Action              = action,
@@ -36,7 +43,8 @@ public class AuditService : IAuditService
             TriggeredByName     = triggeredByName,
             CorrelationId       = correlationId,
             ServiceName         = "AdminService",
-            IpAddress           = ipAddress
+            IpAddress           = ipAddress,
+            Country             = country
         });
         await _db.SaveChangesAsync(ct);
     }

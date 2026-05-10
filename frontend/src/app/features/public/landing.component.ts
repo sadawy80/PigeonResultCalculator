@@ -111,7 +111,7 @@ export class LandingComponent implements OnInit, OnDestroy {
     if (!user) return '/auth/login';
     const routes: Record<number, string> = {
       [UserRole.SuperAdmin]:     '/admin/dashboard',
-      [UserRole.FederationManager]: '/country/dashboard',
+      [UserRole.FederationManager]: '/federation/dashboard',
       [UserRole.ClubManager]:    '/club/dashboard',
       [UserRole.Fancier]:        '/fancier/dashboard',
     };

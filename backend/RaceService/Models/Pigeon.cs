@@ -11,6 +11,8 @@ public class Pigeon : AuditableEntity
     public string? Color { get; set; }
     public string? Strain { get; set; }
     public Guid? FederationId { get; set; }
+    public Guid? ClubId { get; set; }
+    public string? ClubName { get; set; }
     public string? ExternalLoftSystemId { get; set; }
     public string? PhotoUrl { get; set; }
 

@@ -16,7 +16,7 @@ export class AdminUsersComponent implements OnInit {
   search     = '';
   roleFilter = '';
   page       = 1;
-  pageSize   = 20;
+  pageSize = 10;
   total      = signal(0);
   users      = signal<any[]>([]);
   loading    = signal(false);
@@ -26,13 +26,18 @@ export class AdminUsersComponent implements OnInit {
   showRoleModal  = signal(false);
   selectedUser   = signal<any>(null);
   assignRoleVal  = '';
-  assignCountry  = '';
+  assignFederation  = '';
 
   // Limits modal
   showLimitsModal = signal(false);
   limitsUser      = signal<any>(null);
   limitMaxResults: number | null = null;
   limitMaxClubs: number | null = null;
+
+  // Delete modal
+  showDeleteModal = signal(false);
+  deleteUser      = signal<any>(null);
+  deleting        = signal(false);
 
   readonly roles = ['SuperAdmin', 'FederationManager', 'ClubManager', 'Fancier'];
 
@@ -47,7 +52,7 @@ export class AdminUsersComponent implements OnInit {
       page: this.page,
       pageSize: this.pageSize
     }).subscribe({
-      next: r => { this.users.set(r.items); this.total.set(r.totalCount); this.loading.set(false); },
+      next: r => { this.users.set((r as any).users ?? r.items ?? []); this.total.set(r.totalCount); this.loading.set(false); },
       error: () => { this.error.set('Failed to load users.'); this.loading.set(false); }
     });
   }
@@ -64,7 +69,7 @@ export class AdminUsersComponent implements OnInit {
   openRoleModal(user: any) {
     this.selectedUser.set(user);
     this.assignRoleVal = user.role ?? '';
-    this.assignCountry = user.FederationId ?? '';
+    this.assignFederation = user.FederationId ?? '';
     this.showRoleModal.set(true);
   }
 
@@ -72,7 +77,7 @@ export class AdminUsersComponent implements OnInit {
     const user = this.selectedUser();
     if (!user) return;
     const roleMap: Record<string, number> = { SuperAdmin: 1, FederationManager: 2, ClubManager: 3, Fancier: 4 };
-    this.api.adminAssignRole(user.id, roleMap[this.assignRoleVal], this.assignCountry || undefined).subscribe({
+    this.api.adminAssignRole(user.id, roleMap[this.assignRoleVal], this.assignFederation || undefined).subscribe({
       next: r => {
         this.users.update(arr => arr.map(u => u.id === user.id ? { ...u, role: this.assignRoleVal, isActive: r.isActive } : u));
         this.showRoleModal.set(false);
@@ -86,6 +91,26 @@ export class AdminUsersComponent implements OnInit {
     this.limitMaxResults = user.maxResultsOverride ?? null;
     this.limitMaxClubs   = user.maxClubsOverride ?? null;
     this.showLimitsModal.set(true);
+  }
+
+  openDeleteModal(user: any) {
+    this.deleteUser.set(user);
+    this.showDeleteModal.set(true);
+  }
+
+  confirmDelete() {
+    const user = this.deleteUser();
+    if (!user) return;
+    this.deleting.set(true);
+    this.api.adminDeleteUser(user.id).subscribe({
+      next: () => {
+        this.users.update(arr => arr.filter(u => u.id !== user.id));
+        this.total.update(t => t - 1);
+        this.showDeleteModal.set(false);
+        this.deleting.set(false);
+      },
+      error: () => { this.error.set('Failed to delete user.'); this.deleting.set(false); }
+    });
   }
 
   saveLimits() {
@@ -104,4 +129,5 @@ export class AdminUsersComponent implements OnInit {
   get totalPages() { return Math.ceil(this.total() / this.pageSize); }
   prevPage() { if (this.page > 1) { this.page--; this.load(); } }
   nextPage() { if (this.page < this.totalPages) { this.page++; this.load(); } }
+  onPageSizeChange() { this.page = 1; this.load(); }
 }

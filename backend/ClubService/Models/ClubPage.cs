@@ -17,5 +17,5 @@ public class ClubPage : BaseEntity
     public string? CertificateTemplateId { get; set; }
     public string? ResultsTemplateId { get; set; }
 
-    public Club Club { get; set; } = null!;
+    public Club? Club { get; set; }
 }

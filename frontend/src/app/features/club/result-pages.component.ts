@@ -20,7 +20,7 @@ function breakdownPanel(items: RaceBreakdownItem[]): string {
     `<div class="bd-row ${i.dnf ? 'bd-row--dnf' : ''}">
       <span class="bd-race">${i.raceName}</span>
       <span class="bd-rank">${i.dnf ? 'DNF' : '#' + i.clubRank}</span>
-      <span class="bd-vel">${i.dnf ? '—' : i.velocity.toFixed(1) + ' m/min'}</span>
+      <span class="bd-vel">${i.dnf ? '—' : i.speed.toFixed(1) + ' m/min'}</span>
       <span class="bd-score">${i.dnf ? '0' : i.score.toFixed(2)} pts</span>
     </div>`
   ).join('');
@@ -44,7 +44,7 @@ function breakdownPanel(items: RaceBreakdownItem[]): string {
     <div class="pr-page-header flex justify-between items-center">
       <div>
         <h1 class="pr-page-header__title">🏁 Race Results</h1>
-        <p class="pr-page-header__subtitle">Per-race velocity rankings for all races in this programme</p>
+        <p class="pr-page-header__subtitle">Per-race speed rankings for all races in this programme</p>
       </div>
       <app-print-button
         [category]="TemplateCategory.RaceResults"
@@ -82,8 +82,8 @@ function breakdownPanel(items: RaceBreakdownItem[]): string {
               <thead>
                 <tr>
                   <th>Rank</th><th>Ring #</th><th>Pigeon</th><th>Fancier</th>
-                  <th>Category</th><th style="text-align:right">Velocity (m/min)</th>
-                  <th style="text-align:right">Velocity (km/h)</th>
+                  <th>Category</th><th style="text-align:right">Speed (m/min)</th>
+                  <th style="text-align:right">Speed (km/h)</th>
                   <th style="text-align:right">Distance</th><th>Arrival</th>
                 </tr>
               </thead>
@@ -95,8 +95,8 @@ function breakdownPanel(items: RaceBreakdownItem[]): string {
                     <td>{{ r.pigeonName ?? '—' }} <span class="text-muted text-sm">{{ r.pigeonSex }}</span></td>
                     <td>{{ r.fancierName ?? '—' }}</td>
                     <td class="text-muted text-sm">{{ r.categoryName ?? 'Open' }}</td>
-                    <td style="text-align:right" class="font-bold">{{ r.velocityMperMin | number:'1.4-4' }}</td>
-                    <td style="text-align:right" class="text-muted">{{ r.velocityKmH | number:'1.3-3' }}</td>
+                    <td style="text-align:right" class="font-bold">{{ r.speedMperMin | number:'1.4-4' }}</td>
+                    <td style="text-align:right" class="text-muted">{{ r.speedKmH | number:'1.3-3' }}</td>
                     <td style="text-align:right" class="text-muted text-sm">{{ r.distanceKm | number:'1.3-3' }} km</td>
                     <td class="text-muted text-sm">{{ r.arrivalTime | date:'HH:mm:ss' }}</td>
                   </tr>
@@ -214,8 +214,8 @@ export class ProgrammeRaceResultsComponent implements OnInit {
                 <th style="text-align:right">Avg Score</th>
                 <th style="text-align:right">Races</th>
                 <th style="text-align:right">Pigeons</th>
-                <th style="text-align:right">Best Velocity</th>
-                <th style="text-align:right">Avg Velocity</th>
+                <th style="text-align:right">Best Speed</th>
+                <th style="text-align:right">Avg Speed</th>
                 <th></th>
               </tr>
             </thead>
@@ -228,8 +228,8 @@ export class ProgrammeRaceResultsComponent implements OnInit {
                   <td style="text-align:right">{{ r.averageScore | number:'1.2-2' }}</td>
                   <td style="text-align:right">{{ r.racesEntered }}</td>
                   <td style="text-align:right">{{ r.pigeonsEntered }}</td>
-                  <td style="text-align:right">{{ r.bestSingleVelocityMperMin | number:'1.0-1' }}</td>
-                  <td style="text-align:right">{{ r.averageVelocityMperMin | number:'1.0-1' }}</td>
+                  <td style="text-align:right">{{ r.bestSingleSpeedMperMin | number:'1.0-1' }}</td>
+                  <td style="text-align:right">{{ r.averageSpeedMperMin | number:'1.0-1' }}</td>
                   <td>
                     <button class="pr-btn pr-btn--ghost pr-btn--sm"
                             (click)="toggleBreakdown(r.id)">
@@ -242,13 +242,13 @@ export class ProgrammeRaceResultsComponent implements OnInit {
                     <td colspan="9">
                       <div class="breakdown-panel">
                         <div class="bd-header">
-                          <span>Race</span><span>Rank</span><span>Velocity</span><span>Score</span>
+                          <span>Race</span><span>Rank</span><span>Speed</span><span>Score</span>
                         </div>
                         @for (b of r.raceBreakdown; track b.raceId) {
                           <div class="bd-row" [class.bd-row--dnf]="b.dnf">
                             <span class="bd-race">{{ b.raceName }}</span>
                             <span class="bd-rank">{{ b.dnf ? 'DNF' : '#' + b.clubRank }}</span>
-                            <span class="bd-vel">{{ b.dnf ? '—' : (b.velocity | number:'1.0-1') + ' m/min' }}</span>
+                            <span class="bd-vel">{{ b.dnf ? '—' : (b.speed | number:'1.0-1') + ' m/min' }}</span>
                             <span class="bd-score">{{ b.score | number:'1.2-2' }}</span>
                           </div>
                         }
@@ -370,7 +370,7 @@ export class BestLoftResultsComponent implements OnInit {
                 <th style="text-align:right">Avg Score</th>
                 <th style="text-align:right">Races</th>
                 <th style="text-align:right">Participation</th>
-                <th style="text-align:right">Best Velocity</th>
+                <th style="text-align:right">Best Speed</th>
                 <th style="text-align:right">Best Rank</th>
                 <th></th>
               </tr>
@@ -394,7 +394,7 @@ export class BestLoftResultsComponent implements OnInit {
                       {{ r.participationRate | number:'1.0-0' }}%
                     </span>
                   </td>
-                  <td style="text-align:right">{{ r.bestVelocityMperMin | number:'1.0-1' }}</td>
+                  <td style="text-align:right">{{ r.bestSpeedMperMin | number:'1.0-1' }}</td>
                   <td style="text-align:right">
                     <span [class]="'pr-rank pr-rank--' + (r.bestClubRank <= 3 ? r.bestClubRank : 'other')" style="width:auto;border-radius:4px;padding:2px 8px">
                       #{{ r.bestClubRank }}
@@ -411,13 +411,13 @@ export class BestLoftResultsComponent implements OnInit {
                     <td colspan="11">
                       <div class="breakdown-panel">
                         <div class="bd-header">
-                          <span>Race</span><span>Club Rank</span><span>Velocity (m/min)</span><span>Score</span>
+                          <span>Race</span><span>Club Rank</span><span>Speed (m/min)</span><span>Score</span>
                         </div>
                         @for (b of r.raceBreakdown; track b.raceId) {
                           <div class="bd-row" [class.bd-row--dnf]="b.dnf">
                             <span>{{ b.raceName }}</span>
                             <span class="font-bold">{{ b.dnf ? 'DNF' : '#' + b.clubRank }}</span>
-                            <span>{{ b.dnf ? '—' : (b.velocity | number:'1.4-4') }}</span>
+                            <span>{{ b.dnf ? '—' : (b.speed | number:'1.4-4') }}</span>
                             <span class="font-bold" style="color:var(--pr-primary)">{{ b.score | number:'1.2-2' }}</span>
                           </div>
                         }
@@ -544,7 +544,7 @@ export class AcePigeonResultsComponent implements OnInit {
                 <div class="podium-card__name">{{ r.pigeonName ?? 'Unnamed' }}</div>
                 <div class="podium-card__fancier">{{ r.fancierName }}</div>
                 <div class="podium-card__score">{{ r.totalScore | number:'1.2-2' }}</div>
-                <div class="podium-card__sub">{{ r.averageVelocityMperMin | number:'1.0-1' }} m/min avg</div>
+                <div class="podium-card__sub">{{ r.averageSpeedMperMin | number:'1.0-1' }} m/min avg</div>
                 <div class="podium-card__races">{{ r.racesEntered }}/{{ r.racesInProgramme }} races</div>
               </div>
             }
@@ -582,8 +582,8 @@ export class AcePigeonResultsComponent implements OnInit {
                   <td style="text-align:right" class="font-bold">{{ r.totalScore | number:'1.2-2' }}</td>
                   <td style="text-align:right">{{ r.averageScore | number:'1.2-2' }}</td>
                   <td style="text-align:right">{{ r.racesEntered }}/{{ r.racesInProgramme }}</td>
-                  <td style="text-align:right">{{ r.bestVelocityMperMin | number:'1.0-1' }}</td>
-                  <td style="text-align:right">{{ r.averageVelocityMperMin | number:'1.0-1' }}</td>
+                  <td style="text-align:right">{{ r.bestSpeedMperMin | number:'1.0-1' }}</td>
+                  <td style="text-align:right">{{ r.averageSpeedMperMin | number:'1.0-1' }}</td>
                   <td style="text-align:right">
                     <span [class]="'pr-rank pr-rank--' + (r.bestClubRank <= 3 ? r.bestClubRank : 'other')" style="width:auto;border-radius:4px;padding:2px 8px">
                       #{{ r.bestClubRank }}
@@ -599,12 +599,12 @@ export class AcePigeonResultsComponent implements OnInit {
                   <tr class="breakdown-row">
                     <td colspan="11">
                       <div class="breakdown-panel">
-                        <div class="bd-header"><span>Race</span><span>Club Rank</span><span>Velocity</span><span>Score</span></div>
+                        <div class="bd-header"><span>Race</span><span>Club Rank</span><span>Speed</span><span>Score</span></div>
                         @for (b of r.raceBreakdown; track b.raceId) {
                           <div class="bd-row" [class.bd-row--dnf]="b.dnf">
                             <span>{{ b.raceName }}</span>
                             <span class="font-bold">{{ b.dnf ? 'DNF' : '#' + b.clubRank }}</span>
-                            <span>{{ b.dnf ? '—' : (b.velocity | number:'1.4-4') + ' m/min' }}</span>
+                            <span>{{ b.dnf ? '—' : (b.speed | number:'1.4-4') + ' m/min' }}</span>
                             <span class="font-bold" style="color:var(--pr-primary)">{{ b.score | number:'1.2-2' }}</span>
                           </div>
                         }

@@ -21,6 +21,7 @@ public class ETSRow
 {
     public string RingNumber { get; set; } = string.Empty;
     public DateTime ArrivalTime { get; set; }
+    public string? FancierName { get; set; }
     public string? PigeonName { get; set; }
     public string? Sex { get; set; }
     public int? YearOfBirth { get; set; }
@@ -74,11 +75,12 @@ public class ETSFileParser : IETSFileParser
         var table = dataSet.Tables[0];
         result.TotalRows = table.Rows.Count;
 
-        var ringCol = FindColumn(table, "ring", "ringnumber", "ring_number", "pigeon", "id");
-        var timeCol = FindColumn(table, "time", "arrival", "arrivaltime", "arrival_time", "timestamp");
-        var nameCol = FindColumn(table, "name", "pigeonname", "pigeon_name");
-        var sexCol = FindColumn(table, "sex", "gender");
-        var yearCol = FindColumn(table, "year", "yearofbirth", "year_of_birth", "born");
+        var ringCol    = FindColumn(table, "ring", "ringnumber", "ring_number", "pigeon", "id");
+        var timeCol    = FindColumn(table, "time", "arrival", "arrivaltime", "arrival_time", "timestamp");
+        var fancierCol = FindColumn(table, "fancier", "fancier_name", "fanciername", "owner", "breeder");
+        var nameCol    = FindColumn(table, "name", "pigeonname", "pigeon_name");
+        var sexCol     = FindColumn(table, "sex", "gender");
+        var yearCol    = FindColumn(table, "year", "yearofbirth", "year_of_birth", "born");
 
         if (ringCol == -1 || timeCol == -1)
         {
@@ -121,10 +123,11 @@ public class ETSFileParser : IETSFileParser
 
             var etRow = new ETSRow
             {
-                RingNumber = ring,
+                RingNumber  = ring,
                 ArrivalTime = arrivalTime,
-                PigeonName = nameCol >= 0 ? row[nameCol]?.ToString()?.Trim() : null,
-                Sex = sexCol >= 0 ? NormalizeSex(row[sexCol]?.ToString()) : null
+                FancierName = fancierCol >= 0 ? row[fancierCol]?.ToString()?.Trim().NullIfEmpty() : null,
+                PigeonName  = nameCol >= 0 ? row[nameCol]?.ToString()?.Trim().NullIfEmpty() : null,
+                Sex         = sexCol >= 0 ? NormalizeSex(row[sexCol]?.ToString()) : null
             };
 
             if (yearCol >= 0 && int.TryParse(row[yearCol]?.ToString(), out var yr))
@@ -189,12 +192,18 @@ public class ETSFileParser : IETSFileParser
             if (seen.Contains(ring)) { result.DuplicateRows++; rowNum++; continue; }
             seen.Add(ring);
 
+            string? fancierName = null;
+            if (csv.TryGetField<string>("FancierName", out var fn) && !string.IsNullOrWhiteSpace(fn)) fancierName = fn.Trim();
+            else if (csv.TryGetField<string>("Fancier", out var fn2) && !string.IsNullOrWhiteSpace(fn2)) fancierName = fn2.Trim();
+            else if (csv.TryGetField<string>("Owner", out var fn3) && !string.IsNullOrWhiteSpace(fn3)) fancierName = fn3.Trim();
+
             var etRow = new ETSRow
             {
-                RingNumber = ring,
+                RingNumber  = ring,
                 ArrivalTime = arrivalTime,
-                PigeonName = csv.TryGetField<string>("Name", out var n) ? n?.Trim() : null,
-                Sex = csv.TryGetField<string>("Sex", out var s) ? NormalizeSex(s) : null
+                FancierName = fancierName,
+                PigeonName  = csv.TryGetField<string>("Name", out var n) ? n?.Trim().NullIfEmpty() : null,
+                Sex         = csv.TryGetField<string>("Sex", out var s) ? NormalizeSex(s) : null
             };
 
             if (csv.TryGetField<string>("Year", out var yr) && int.TryParse(yr, out var yrInt))
@@ -245,4 +254,9 @@ public class ETSFileParser : IETSFileParser
             _ => "U"
         };
     }
+}
+
+internal static class StringExtensions
+{
+    internal static string? NullIfEmpty(this string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
 }

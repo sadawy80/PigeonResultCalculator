@@ -74,8 +74,8 @@ td{{font-size:9.5pt;border-bottom:1px solid {accent}44;padding:6px 9px}}
   <td>{{{{fancierName}}}}</td>
   <td class='part'>{{{{racesEntered}}}}/{{{{racesInProgramme}}}}</td>
   <td class='part'>{{{{participationRate}}}}%</td>
-  <td>{{{{bestVelocityMperMin}}}}</td>
-  <td>{{{{averageVelocityMperMin}}}}</td>
+  <td>{{{{bestSpeedMperMin}}}}</td>
+  <td>{{{{averageSpeedMperMin}}}}</td>
   <td>#{{{{bestClubRank}}}}</td>
   <td class='score'>{{{{totalScore}}}}</td>
 </tr>{{{{/each}}}}</tbody></table>
@@ -104,7 +104,7 @@ tbody tr:nth-child(even){background:#FBF7EC} td{border:1px solid #E8DFC8;font-si
 <div class='qual'>Qualification: {{programme.superAceQualification}}</div>
 <table>
 <thead><tr><th>#</th><th>Ring</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Races</th><th>Best m/min</th><th>Score</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{superAceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{bestVelocityMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{superAceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{bestSpeedMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &mdash; Super Ace {{programme.year}} &mdash; Printed {{printDate}}</div>
 </div></body></html>";
@@ -136,7 +136,7 @@ tr:nth-child(1) .rank{color:#D4A017} tr:nth-child(2) .rank{color:#888} tr:nth-ch
 </div>
 <table>
 <thead><tr><th>#</th><th>Ring</th><th>Pigeon</th><th>Sex</th><th>Yr</th><th>Fancier</th><th>Races</th><th>Part%</th><th>Best m/min</th><th>Avg m/min</th><th>Best#</th><th>Score</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{superAceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td class='part'>{{racesEntered}}/{{racesInProgramme}}</td><td class='part'>{{participationRate}}%</td><td>{{bestVelocityMperMin}}</td><td>{{averageVelocityMperMin}}</td><td>#{{bestClubRank}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{superAceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td class='part'>{{racesEntered}}/{{racesInProgramme}}</td><td class='part'>{{participationRate}}%</td><td>{{bestSpeedMperMin}}</td><td>{{averageSpeedMperMin}}</td><td>#{{bestClubRank}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &bull; Printed {{printDate}}</div>
 </body></html>";
@@ -161,7 +161,7 @@ tbody tr:nth-child(even){background:{{club.secondaryColour}}11} td{font-size:9.5
 <div class='elite'>⭐ Super Ace Qualified — {{programme.superAceQualification}}</div>
 <div class='meta'><div><strong>Programme</strong>{{programme.name}}</div><div><strong>Season</strong>{{programme.year}}</div><div><strong>Races</strong>{{programme.raceCount}}</div><div><strong>Qualifiers</strong>{{totalQualifiers}}</div><div><strong>Club</strong>{{club.name}}</div></div>
 <table><thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Races</th><th>Part%</th><th>Best m/min</th><th>Score</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{superAceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td class='part'>{{racesEntered}}/{{racesInProgramme}}</td><td class='part'>{{participationRate}}%</td><td>{{bestVelocityMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{superAceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td class='part'>{{racesEntered}}/{{racesInProgramme}}</td><td class='part'>{{participationRate}}%</td><td>{{bestSpeedMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
 </table><div class='footer'>{{club.name}} Super Ace Pigeon {{programme.year}} &bull; Printed {{printDate}}</div></body></html>";
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -169,7 +169,7 @@ tbody tr:nth-child(even){background:{{club.secondaryColour}}11} td{font-size:9.5
     //  All certificates are A4 portrait, landscape, or custom formats.
     //  Variables: {{certificate.recipientName}}, {{certificate.rank}},
     //             {{certificate.achievement}}, {{certificate.ringNumber}},
-    //             {{certificate.pigeonName}}, {{certificate.velocityMperMin}},
+    //             {{certificate.pigeonName}}, {{certificate.speedMperMin}},
     //             {{certificate.raceName}}, {{race.date}},
     //             {{club.name}}, {{club.logoUrl}}, {{programme.name}}, etc.
     // ═══════════════════════════════════════════════════════════════════════════
@@ -214,7 +214,7 @@ tbody tr:nth-child(even){background:{{club.secondaryColour}}11} td{font-size:9.5
         ("CERT-36", "Third Place Podium",           "Modern",    BuildCertPodium("3rd","🥉","#CD7F32","#FFF3E0")),
         ("CERT-37", "Participation Certificate",    "Classic",   BuildCertParticipation()),
         ("CERT-38", "Club Membership Cert",         "Corporate", BuildCertMembership()),
-        ("CERT-39", "Velocity Record Cert",         "Sporty",    BuildCertVelocity()),
+        ("CERT-39", "Speed Record Cert",             "Sporty",    BuildCertSpeed()),
         ("CERT-40", "Distance Record Cert",         "Sporty",    BuildCertDistance()),
         ("CERT-41", "Multi-Race Champion Landscape","Elegant",   BuildCertMultiRaceLandscape()),
         ("CERT-42", "Vintage Ornate Classic",       "Heritage",  BuildCertVintage()),
@@ -270,7 +270,7 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:{bg};color:#111}}
 <div style='margin:10px 0'><span class='pigeon-ring'>{{{{certificate.ringNumber}}}}</span></div>
 {{{{#if certificate.pigeonName}}}}<div style='font-size:11pt;color:#555;margin-bottom:8px'>Pigeon: <strong>{{{{certificate.pigeonName}}}}</strong></div>{{{{/if}}}}
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{{{certificate.velocityMperMin}}}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{{{certificate.speedMperMin}}}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{{{certificate.distanceKm}}}}</span><span class='label'>km</span></div>
   <div class='stat-item'><span class='value'>{{{{certificate.arrivalTime}}}}</span><span class='label'>Arrival</span></div>
 </div>
@@ -300,7 +300,7 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:{bg};color:#111}}
 <div class='achievement'>Achieved <strong style='color:#C9A84C'>{{certificate.rank}}</strong> place in <strong style='color:#C9A84C'>{{certificate.raceName}}</strong></div>
 <div style='margin:10px 0'><span class='pigeon-ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{certificate.velocityMperMin}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.speedMperMin}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{certificate.distanceKm}}</span><span class='label'>km</span></div>
 </div>
 <div class='divider'></div>
@@ -324,7 +324,7 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:{bg};color:#111}}
 <div class='achievement'>for achieving position <strong>{{certificate.rank}}</strong> in<br><strong>{{certificate.raceName}}</strong></div>
 <div style='margin:10px 0'><span class='pigeon-ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{certificate.velocityMperMin}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.speedMperMin}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{certificate.distanceKm}}</span><span class='label'>km</span></div>
   <div class='stat-item'><span class='value'>{{race.date}}</span><span class='label'>Date</span></div>
 </div>
@@ -351,7 +351,7 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:{bg};color:#111}}
 <div class='achievement'>on finishing <strong>{{certificate.rank}}</strong> in <strong>{{certificate.raceName}}</strong></div>
 <div style='margin:10px 0'><span class='pigeon-ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{certificate.velocityMperMin}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.speedMperMin}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{certificate.distanceKm}}</span><span class='label'>km</span></div>
 </div>
 <div class='divider'></div>
@@ -401,7 +401,7 @@ body{{font-family:Georgia,'Times New Roman',serif;background:#FFFEF8;color:#111}
 <div class='race'>{{certificate.raceName}}</div>
 <div style='margin:8px 0'><span class='ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{certificate.velocityMperMin}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.speedMperMin}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{certificate.distanceKm}}</span><span class='label'>km</span></div>
   <div class='stat-item'><span class='value'>{{certificate.arrivalTime}}</span><span class='label'>Arrival</span></div>
 </div>
@@ -437,7 +437,7 @@ body{{font-family:Georgia,'Times New Roman',serif;background:#FFFEF8;color:#111}
 <div class='achievement'>for achieving <strong style='color:#1E90FF'>{{certificate.rank}}</strong> in<br><strong style='color:#1E90FF'>{{certificate.raceName}}</strong></div>
 <div style='margin:10px 0'><span class='pigeon-ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{certificate.velocityMperMin}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.speedMperMin}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{certificate.distanceKm}}</span><span class='label'>km</span></div>
 </div>
 <div class='divider'></div>
@@ -482,7 +482,7 @@ body{{font-family:Georgia,'Times New Roman',serif;background:#FFFEF8;color:#111}
 <div class='ach'>for <strong>{{certificate.rank}}</strong> place in <strong>{{certificate.raceName}}</strong></div>
 <div style='margin:8px 0'><span class='ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='s'><span class='val'>{{certificate.velocityMperMin}}</span><span class='lbl'>m/min</span></div>
+  <div class='s'><span class='val'>{{certificate.speedMperMin}}</span><span class='lbl'>m/min</span></div>
   <div class='s'><span class='val'>{{certificate.distanceKm}}</span><span class='lbl'>km</span></div>
   <div class='s'><span class='val'>{{race.date}}</span><span class='lbl'>Date</span></div>
 </div>
@@ -515,7 +515,7 @@ body{{font-family:Georgia,'Times New Roman',serif;background:#FFFEF8;color:#111}
   <div class='stat-item'><span class='value'>{{certificate.aceRank}}</span><span class='label'>Ace Rank</span></div>
   <div class='stat-item'><span class='value'>{{certificate.totalScore}}</span><span class='label'>Total Score</span></div>
   <div class='stat-item'><span class='value'>{{certificate.racesEntered}}</span><span class='label'>Races</span></div>
-  <div class='stat-item'><span class='value'>{{certificate.bestVelocityMperMin}}</span><span class='label'>Best m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.bestSpeedMperMin}}</span><span class='label'>Best m/min</span></div>
 </div>
 <div class='divider'></div>
 <div class='season'>{{club.name}} &bull; Programme: {{programme.name}} &bull; {{programme.year}}</div>
@@ -543,7 +543,7 @@ body{{font-family:Georgia,'Times New Roman',serif;background:#FFFEF8;color:#111}
   <div class='stat-item'><span class='value'>{{certificate.superAceRank}}</span><span class='label'>Super Ace Rank</span></div>
   <div class='stat-item'><span class='value'>{{certificate.totalScore}}</span><span class='label'>Total Score</span></div>
   <div class='stat-item'><span class='value'>{{certificate.racesEntered}}/{{certificate.racesInProgramme}}</span><span class='label'>All Races</span></div>
-  <div class='stat-item'><span class='value'>{{certificate.bestVelocityMperMin}}</span><span class='label'>Best m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.bestSpeedMperMin}}</span><span class='label'>Best m/min</span></div>
 </div>
 <div class='divider'></div>
 <div class='season'>{{club.name}} &bull; {{programme.name}} &bull; {{programme.year}}</div>
@@ -595,7 +595,7 @@ body{{font-family:Georgia,'Times New Roman',serif;background:#FFFEF8;color:#111}
 <div class='achievement'>for <strong>{{{{certificate.rank}}}}</strong> place in <strong>{{{{certificate.raceName}}}}</strong></div>
 <div style='margin:8px 0'><span class='pigeon-ring'>{{{{certificate.ringNumber}}}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{{{certificate.velocityMperMin}}}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{{{certificate.speedMperMin}}}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{{{certificate.distanceKm}}}}</span><span class='label'>km</span></div>
 </div>
 <div class='divider'></div>
@@ -641,7 +641,7 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:#FAFAF9;color:#111}}
 <div class='ach'>for <strong>{{{{certificate.rank}}}}</strong> place in <strong>{{{{certificate.raceName}}}}</strong></div>
 <div style='margin:8px 0'><span class='ring'>{{{{certificate.ringNumber}}}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{{{certificate.velocityMperMin}}}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{{{certificate.speedMperMin}}}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{{{certificate.distanceKm}}}}</span><span class='label'>km</span></div>
   <div class='stat-item'><span class='value'>{{{{race.date}}}}</span><span class='label'>Date</span></div>
 </div>
@@ -686,7 +686,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#FAFAF9;color:#111}
 <div class='ach'>for <strong>{{certificate.rank}}</strong> place in <strong>{{certificate.raceName}}</strong></div>
 <div style='margin:8px 0'><span class='ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{certificate.velocityMperMin}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.speedMperMin}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{certificate.distanceKm}}</span><span class='label'>km</span></div>
   <div class='stat-item'><span class='value'>{{race.date}}</span><span class='label'>Date</span></div>
 </div>
@@ -730,7 +730,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#FAFAF9;color:#111}
 <div class='ach'>for <strong>{{certificate.rank}}</strong> place in <strong>{{certificate.raceName}}</strong></div>
 <div style='margin:10px 0'><span class='ring'>{{certificate.ringNumber}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{certificate.velocityMperMin}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{certificate.speedMperMin}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{certificate.distanceKm}}</span><span class='label'>km</span></div>
   <div class='stat-item'><span class='value'>{{race.date}}</span><span class='label'>Date</span></div>
 </div>
@@ -779,7 +779,7 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:{bg};color:#111}}
 <div class='ach'>in <strong>{{{{certificate.raceName}}}}</strong></div>
 <div style='margin:8px 0'><span class='ring'>{{{{certificate.ringNumber}}}}</span></div>
 <div class='stats'>
-  <div class='stat-item'><span class='value'>{{{{certificate.velocityMperMin}}}}</span><span class='label'>m/min</span></div>
+  <div class='stat-item'><span class='value'>{{{{certificate.speedMperMin}}}}</span><span class='label'>m/min</span></div>
   <div class='stat-item'><span class='value'>{{{{certificate.distanceKm}}}}</span><span class='label'>km</span></div>
   <div class='stat-item'><span class='value'>{{{{race.date}}}}</span><span class='label'>Date</span></div>
 </div>
@@ -795,7 +795,7 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:{bg};color:#111}}
     private static string BuildCertSeason() => BuildCert13();
     private static string BuildCertParticipation() => BuildCert14();
     private static string BuildCertMembership() => BuildCertSimple("#374151","#D1D5DB","Membership Certificate");
-    private static string BuildCertVelocity() => BuildCertSimple("#C2410C","#FDBA74","Velocity Record");
+    private static string BuildCertSpeed() => BuildCertSimple("#C2410C","#FDBA74","Speed Record");
     private static string BuildCertDistance() => BuildCertSimple("#1E40AF","#93C5FD","Distance Record");
     private static string BuildCertMultiRaceLandscape() => BuildCertLandscape("#1E3A5F","#C9A84C","Season Champion");
     private static string BuildCertVintage() => BuildCert05();

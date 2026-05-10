@@ -44,12 +44,19 @@ public class ProgrammeService : IProgrammeService
 
     public async Task<Result<ProgrammeDto>> CreateAsync(CreateProgrammeRequest req, Guid createdBy, CancellationToken ct)
     {
-        var club = await _db.Clubs.FirstOrDefaultAsync(c => c.Id == req.ClubId && !c.IsDeleted, ct);
-        if (club == null) return Result.NotFound<ProgrammeDto>("Club");
+        if (req.ClubId == null && req.FederationId == null)
+            return Result.Failure<ProgrammeDto>("Either ClubId or FederationId must be provided.", "INVALID_OWNER");
+
+        if (req.ClubId.HasValue)
+        {
+            var club = await _db.Clubs.FirstOrDefaultAsync(c => c.Id == req.ClubId && !c.IsDeleted, ct);
+            if (club == null) return Result.NotFound<ProgrammeDto>("Club");
+        }
 
         var prog = new ClubProgramme
         {
-            ClubId = req.ClubId, Name = req.Name, Description = req.Description,
+            ClubId = req.ClubId, FederationId = req.FederationId, FederationName = req.FederationName,
+            Name = req.Name, Description = req.Description,
             Year = req.Year, StartDate = req.StartDate, EndDate = req.EndDate,
             ScoringMethod = req.ScoringMethod, PointsForFirst = req.PointsForFirst,
             MaxPointPositions = req.MaxPointPositions,
@@ -98,12 +105,18 @@ public class ProgrammeService : IProgrammeService
 
     public async Task<Result<PagedResult<ProgrammeSummaryDto>>> GetByClubAsync(Guid clubId, PagedQuery paged, CancellationToken ct)
     {
+        var club = await _db.Clubs.FirstOrDefaultAsync(c => c.Id == clubId, ct);
+        var federationId = club?.FederationId;
+
         var q = _db.ClubProgrammes
             .Include(p => p.ProgrammeRaces)
-            .Where(p => p.ClubId == clubId);
+            .Where(p => p.ClubId == clubId
+                     || (federationId.HasValue && p.FederationId == federationId));
 
         if (!string.IsNullOrEmpty(paged.Search))
             q = q.Where(p => p.Name.Contains(paged.Search));
+        if (paged.Year.HasValue)
+            q = q.Where(p => p.Year == paged.Year.Value);
 
         var total = await q.CountAsync(ct);
         var items = await q
@@ -460,7 +473,7 @@ public class ProgrammeService : IProgrammeService
 public static class ProgrammeMappingExtensions
 {
     public static ProgrammeDto ToDto(this ClubProgramme p) => new(
-        p.Id, p.ClubId, p.Club?.Name ?? string.Empty,
+        p.Id, p.ClubId, p.Club?.Name, p.FederationId, p.FederationName,
         p.Name, p.Description, p.Year, p.StartDate, p.EndDate,
         p.Status, p.ScoringMethod, p.PointsForFirst, p.MaxPointPositions,
         p.BestLoftPigeonsPerRace, p.BestLoftMinRaces, p.AcePigeonMinRaces,

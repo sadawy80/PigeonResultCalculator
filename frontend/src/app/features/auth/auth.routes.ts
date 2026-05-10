@@ -30,9 +30,5 @@ export const AUTH_ROUTES: Routes = [
     path: 'resend-verification',
     loadComponent: () => import('./auth.components').then(m => m.ResendVerificationComponent)
   },
-  {
-    path: 'upgrade-request',
-    loadComponent: () => import('./auth.components').then(m => m.UpgradeRequestComponent)
-  },
   { path: '', redirectTo: 'login', pathMatch: 'full' }
 ];

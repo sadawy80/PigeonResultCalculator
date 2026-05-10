@@ -26,7 +26,7 @@ export const routes: Routes = [
   {
     path: 'federation',
     canActivate: [authGuard, roleGuard([UserRole.FederationManager, UserRole.SuperAdmin])],
-    loadChildren: () => import('./features/federation/federation.routes').then(m => m.COUNTRY_ROUTES)
+    loadChildren: () => import('./features/federation/federation.routes').then(m => m.FEDERATION_ROUTES)
   },
 
   // Fancier
@@ -34,6 +34,12 @@ export const routes: Routes = [
     path: 'fancier',
     canActivate: [authGuard, roleGuard([UserRole.Fancier, UserRole.SuperAdmin])],
     loadChildren: () => import('./features/fancier/fancier.routes').then(m => m.FANCIER_ROUTES)
+  },
+
+  // Admin login — must be before the guarded /admin route
+  {
+    path: 'admin/login',
+    loadComponent: () => import('./features/auth/auth.components').then(m => m.AdminLoginComponent)
   },
 
   // Super Admin
@@ -51,6 +57,24 @@ export const routes: Routes = [
   {
     path: 'c/:slug',
     loadComponent: () => import('./features/public/public-federation-page.component').then(m => m.PublicFederationPageComponent)
+  },
+
+  // Settings + Upgrade Request (all authenticated users — wrapped in shell)
+  {
+    path: 'settings',
+    canActivate: [authGuard],
+    loadComponent: () => import('./shared/components/shell.component').then(m => m.ShellComponent),
+    children: [
+      { path: '', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) }
+    ]
+  },
+  {
+    path: 'auth/upgrade-request',
+    canActivate: [authGuard],
+    loadComponent: () => import('./shared/components/shell.component').then(m => m.ShellComponent),
+    children: [
+      { path: '', loadComponent: () => import('./features/auth/auth.components').then(m => m.UpgradeRequestComponent) }
+    ]
   },
 
   { path: 'unauthorized', loadComponent: () => import('./shared/components/unauthorized.component').then(m => m.UnauthorizedComponent) },

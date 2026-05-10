@@ -71,7 +71,7 @@ public class FederationService : IFederationService
                 RingNumber      = r.RingNumber,
                 UserId          = r.UserId,
                 UserFullName    = r.UserFullName,
-                VelocityMperMin = r.SpeedMperMin,
+                SpeedMperMin    = r.SpeedMperMin,
                 DistanceKm      = r.DistanceKm,
                 NationalRank    = i + 1
             });
@@ -198,7 +198,7 @@ public static class MappingExtensions
             e.Id, e.NationalRank, e.NationalCategoryRank,
             e.RingNumber, e.UserFullName,
             e.ClubName ?? string.Empty,
-            e.VelocityMperMin, e.DistanceKm)).ToList());
+            e.SpeedMperMin, e.DistanceKm)).ToList());
 
     public static FederationDto ToDto(this Federation f) => new(
         f.Id, f.Name, f.Code, f.Slug, f.FlagUrl,

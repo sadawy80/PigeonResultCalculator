@@ -6,6 +6,8 @@ public class Race : AuditableEntity
 {
     public Guid ClubId { get; set; }
     public Guid? FederationId { get; set; }                  // cached from club's federation
+    public Guid? ProgrammeId { get; set; }                   // cross-service ref to ClubService programme
+    public string? ProgrammeName { get; set; }               // cached
     public string ClubName { get; set; } = string.Empty;    // cached from ClubService
     public double? ClubLatitude { get; set; }               // cached for speed calculation
     public double? ClubLongitude { get; set; }              // cached for speed calculation
@@ -52,6 +54,8 @@ public class RaceResult : AuditableEntity
     public Guid RaceId { get; set; }
     public Guid? CategoryId { get; set; }
     public Guid? UserId { get; set; }
+    public Guid? FancierId { get; set; }
+    public string? FancierName { get; set; }
     public string RingNumber { get; set; } = string.Empty;
     public string? PigeonName { get; set; }
     public string? PigeonSex { get; set; }

@@ -18,14 +18,18 @@ import { ApiService } from '../../core/services/api.service';
     td           { padding: .75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
     tr:last-child td { border-bottom: none; }
     .badge       { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
-    .badge-pending  { background: #fef3c7; color: #92400e; }
-    .badge-approved { background: #d1fae5; color: #065f46; }
-    .badge-rejected { background: #fee2e2; color: #991b1b; }
+    .badge-pending       { background: #fef3c7; color: #92400e; }
+    .badge-approved      { background: #d1fae5; color: #065f46; }
+    .badge-rejected      { background: #fee2e2; color: #991b1b; }
+    .badge-revoked       { background: #e0e7ff; color: #3730a3; }
+    .badge-admin-revoked { background: #fce7f3; color: #9d174d; }
     .actions     { display: flex; gap: .5rem; }
     .btn         { padding: .35rem .85rem; border-radius: 6px; border: none; cursor: pointer; font-size: .85rem; font-weight: 600; }
     .btn-approve { background: #10b981; color: #fff; }
     .btn-reject  { background: #ef4444; color: #fff; }
+    .btn-revoke  { background: #f59e0b; color: #fff; }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .locked-note { font-size: .8rem; color: var(--text-muted); font-style: italic; }
     .empty       { text-align: center; padding: 3rem; color: var(--text-muted); }
     .error-msg   { color: #ef4444; padding: .75rem; background: #fee2e2; border-radius: 8px; margin-bottom: 1rem; }
     /* reject modal */
@@ -57,6 +61,8 @@ import { ApiService } from '../../core/services/api.service';
         <option value="0">Pending</option>
         <option value="1">Approved</option>
         <option value="2">Rejected</option>
+        <option value="3">Revoked</option>
+        <option value="4">Admin Revoked</option>
       </select>
     </div>
 
@@ -101,6 +107,19 @@ import { ApiService } from '../../core/services/api.service';
                       <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Approve</button>
                       <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">Reject</button>
                     </div>
+                  }
+                  @if (item.status === 1) {
+                    <div class="actions">
+                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">Revoke</button>
+                    </div>
+                  }
+                  @if (item.status === 3) {
+                    <div class="actions">
+                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Re-approve</button>
+                    </div>
+                  }
+                  @if (item.status === 4) {
+                    <span class="locked-note">Locked by admin</span>
                   }
                 </td>
               </tr>
@@ -180,6 +199,14 @@ export class FederationUpgradeRequestsComponent implements OnInit {
     });
   }
 
+  revoke(item: any) {
+    this.busy.set(true);
+    this.api.revokeFederationUpgradeRequest(item.id).subscribe({
+      next: () => { this.busy.set(false); this.load(); },
+      error: (e) => { this.error.set(e?.error?.message ?? 'Failed to revoke request.'); this.busy.set(false); }
+    });
+  }
+
   openReject(item: any) {
     this.rejectTarget.set(item);
     this.rejectReason = '';
@@ -204,10 +231,15 @@ export class FederationUpgradeRequestsComponent implements OnInit {
   }
 
   statusLabel(status: number): string {
-    return ['Pending', 'Approved', 'Rejected'][status] ?? String(status);
+    const map: Record<number, string> = { 0: 'Pending', 1: 'Approved', 2: 'Rejected', 3: 'Revoked', 4: 'Admin Revoked' };
+    return map[status] ?? String(status);
   }
 
   badgeClass(status: number): string {
-    return ['badge-pending', 'badge-approved', 'badge-rejected'][status] ?? '';
+    const map: Record<number, string> = {
+      0: 'badge-pending', 1: 'badge-approved', 2: 'badge-rejected',
+      3: 'badge-revoked', 4: 'badge-admin-revoked'
+    };
+    return map[status] ?? '';
   }
 }

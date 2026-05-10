@@ -41,8 +41,7 @@ public class UpgradeRequestSubmitController : ControllerBase
         if (req.RequestedRole != UserRole.ClubManager && req.RequestedRole != UserRole.FederationManager)
             return BadRequest(ApiResponse<object?>.Fail("Only ClubManager or FederationManager roles can be requested."));
 
-        if (req.RequestedRole == UserRole.ClubManager && !req.FederationId.HasValue)
-            return BadRequest(ApiResponse<object?>.Fail("A federation must be selected for club manager requests."));
+        // FederationId is optional for ClubManager — routes to admin if no federation exists for the country
 
         var userId = CurrentUserId;
 
@@ -59,6 +58,7 @@ public class UpgradeRequestSubmitController : ControllerBase
             UserId        = userId,
             RequestedRole = req.RequestedRole,
             FederationId  = req.FederationId,
+            ClubName      = req.ClubName?.Trim(),
             Notes         = req.Notes,
             Status        = UpgradeRequestStatus.Pending
         };
@@ -69,6 +69,8 @@ public class UpgradeRequestSubmitController : ControllerBase
         await _bus.Publish(new UpgradeRequestSubmitted(
             request.Id, userId, user.FullName, user.Email!,
             req.RequestedRole, req.FederationId, DateTime.UtcNow), ct);
+
+        await NotifyReviewers(req.RequestedRole, req.FederationId, user.FullName, req.ClubName, ct);
 
         return Ok(ApiResponse<object>.Ok(new
         {
@@ -89,12 +91,74 @@ public class UpgradeRequestSubmitController : ControllerBase
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => new
             {
-                r.Id, r.RequestedRole, r.FederationId, r.Status,
+                r.Id, r.RequestedRole, r.FederationId, r.ClubName, r.Status,
                 r.Notes, r.RejectionReason, r.CreatedAt, r.ReviewedAt
             })
             .ToListAsync(ct);
 
         return Ok(ApiResponse<object>.Ok(items));
+    }
+
+    [HttpPost("upgrade-request/{requestId:guid}/remind")]
+    public async Task<IActionResult> SendReminder(Guid requestId, CancellationToken ct)
+    {
+        var userId  = CurrentUserId;
+        var request = await _db.UpgradeRequests
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.UserId == userId, ct);
+
+        if (request is null)
+            return NotFound(ApiResponse<object?>.Fail("Request not found."));
+
+        if (request.Status != UpgradeRequestStatus.Pending)
+            return BadRequest(ApiResponse<object?>.Fail("Only pending requests can send a reminder."));
+
+        var user = await _users.FindByIdAsync(userId.ToString());
+        if (user is null) return NotFound();
+
+        await _bus.Publish(new UpgradeRequestSubmitted(
+            request.Id, userId, user.FullName, user.Email!,
+            request.RequestedRole, request.FederationId, DateTime.UtcNow), ct);
+
+        await NotifyReviewers(request.RequestedRole, request.FederationId, user.FullName, request.ClubName, ct, isReminder: true);
+
+        return Ok(ApiResponse<object>.Ok(new { requestId, remindedAt = DateTime.UtcNow }));
+    }
+
+    private async Task NotifyReviewers(UserRole requestedRole, Guid? federationId,
+        string applicantName, string? clubName, CancellationToken ct, bool isReminder = false)
+    {
+        var prefix = isReminder ? "Reminder: " : "";
+        var body   = $"{applicantName} has requested the {requestedRole} role" +
+                     (clubName != null ? $" for club \"{clubName}\"" : "") + ".";
+
+        var superAdmins = await _users.GetUsersInRoleAsync(UserRole.SuperAdmin.ToString());
+        foreach (var admin in superAdmins)
+        {
+            await _bus.Publish(new CreateInAppNotification(
+                admin.Id,
+                NotificationType.RoleRequest,
+                $"{prefix}New {requestedRole} request",
+                body,
+                "/admin/upgrade-requests"), ct);
+        }
+
+        if (requestedRole == UserRole.ClubManager && federationId.HasValue)
+        {
+            var fedManagers = await _users.Users
+                .Where(u => u.FederationId == federationId.Value &&
+                            u.Role == UserRole.FederationManager && u.IsActive)
+                .ToListAsync(ct);
+
+            foreach (var fm in fedManagers)
+            {
+                await _bus.Publish(new CreateInAppNotification(
+                    fm.Id,
+                    NotificationType.RoleRequest,
+                    $"{prefix}New Club Manager request",
+                    body,
+                    "/federation/upgrade-requests"), ct);
+            }
+        }
     }
 }
 
@@ -107,17 +171,20 @@ public class UpgradeRequestsController : ControllerBase
 {
     private readonly IdentityDbContext _db;
     private readonly UserManager<ApplicationUser> _users;
+    private readonly IPublishEndpoint _bus;
     private readonly IRequestClient<GetFederationSubscriptionLimitsRequest> _subscriptionClient;
     private readonly IRequestClient<GetActiveClubCountForFederationRequest> _clubCountClient;
 
     public UpgradeRequestsController(
         IdentityDbContext db,
         UserManager<ApplicationUser> users,
+        IPublishEndpoint bus,
         IRequestClient<GetFederationSubscriptionLimitsRequest> subscriptionClient,
         IRequestClient<GetActiveClubCountForFederationRequest> clubCountClient)
     {
         _db                 = db;
         _users              = users;
+        _bus                = bus;
         _subscriptionClient = subscriptionClient;
         _clubCountClient    = clubCountClient;
     }
@@ -163,6 +230,7 @@ public class UpgradeRequestsController : ControllerBase
                 r.User.Email,
                 r.RequestedRole,
                 r.FederationId,
+                r.ClubName,
                 r.Status,
                 r.Notes,
                 r.RejectionReason,
@@ -184,8 +252,14 @@ public class UpgradeRequestsController : ControllerBase
         if (req is null)
             return NotFound(ApiResponse<object?>.Fail("Request not found."));
 
-        if (req.Status != UpgradeRequestStatus.Pending)
-            return BadRequest(ApiResponse<object?>.Fail("Request is not pending."));
+        var isRevoked = req.Status == UpgradeRequestStatus.Revoked ||
+                        req.Status == UpgradeRequestStatus.AdminRevoked;
+
+        if (!isRevoked && req.Status != UpgradeRequestStatus.Pending)
+            return BadRequest(ApiResponse<object?>.Fail("Request cannot be approved in its current state."));
+
+        if (req.Status == UpgradeRequestStatus.AdminRevoked && !User.IsInRole("SuperAdmin"))
+            return BadRequest(ApiResponse<object?>.Fail("This request was revoked by an admin — only an admin can re-approve it."));
 
         var federationId = CurrentFederationId;
         if (federationId.HasValue && !User.IsInRole("SuperAdmin") && req.FederationId != federationId)
@@ -230,6 +304,13 @@ public class UpgradeRequestsController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
+        await _bus.Publish(new CreateInAppNotification(
+            user.Id,
+            NotificationType.RoleRequest,
+            "Role upgrade approved",
+            $"Your request to become a {req.RequestedRole} has been approved. Your new role is now active.",
+            "/settings"), ct);
+
         return Ok(ApiResponse<object>.Ok(new
         {
             RequestId = req.Id, req.Status,
@@ -262,6 +343,56 @@ public class UpgradeRequestsController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
+        var rejectBody = "Your role upgrade request was declined." +
+                         (body.Reason != null ? $" Reason: {body.Reason}" : "");
+        await _bus.Publish(new CreateInAppNotification(
+            req.UserId,
+            NotificationType.RoleRequest,
+            "Role upgrade request declined",
+            rejectBody,
+            "/auth/upgrade-request"), ct);
+
         return Ok(ApiResponse<object>.Ok(new { req.Id, req.Status, req.RejectionReason }));
+    }
+
+    [HttpPost("upgrade-requests/{requestId:guid}/revoke")]
+    public async Task<IActionResult> Revoke(Guid requestId, CancellationToken ct)
+    {
+        var req = await _db.UpgradeRequests
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r => r.Id == requestId, ct);
+
+        if (req is null)
+            return NotFound(ApiResponse<object?>.Fail("Request not found."));
+
+        if (req.Status != UpgradeRequestStatus.Approved)
+            return BadRequest(ApiResponse<object?>.Fail("Only approved requests can be revoked."));
+
+        var federationId = CurrentFederationId;
+        if (federationId.HasValue && !User.IsInRole("SuperAdmin") && req.FederationId != federationId)
+            return Forbid();
+
+        var isAdmin = User.IsInRole("SuperAdmin");
+        var user    = req.User;
+
+        await _users.RemoveFromRoleAsync(user, user.Role.ToString());
+        user.Role      = UserRole.Fancier;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _users.AddToRoleAsync(user, UserRole.Fancier.ToString());
+        await _users.UpdateAsync(user);
+
+        req.Status           = isAdmin ? UpgradeRequestStatus.AdminRevoked : UpgradeRequestStatus.Revoked;
+        req.ReviewedByUserId = CurrentUserId;
+        req.ReviewedAt       = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        await _bus.Publish(new CreateInAppNotification(
+            user.Id, NotificationType.RoleRequest,
+            "Role revoked",
+            $"Your {req.RequestedRole} role has been revoked. Please contact your administrator.",
+            "/auth/upgrade-request"), ct);
+
+        return Ok(ApiResponse<object>.Ok(new { req.Id, req.Status }));
     }
 }

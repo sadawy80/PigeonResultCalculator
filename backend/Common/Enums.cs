@@ -8,7 +8,7 @@ public enum SubscriptionType  { Federation = 1, Club = 2 }
 public enum SubscriptionStatus{ Active = 1, Expired = 2, Suspended = 3, Trial = 4, Cancelled = 5 }
 public enum BillingCycle      { Monthly = 1, Annual = 2, Seasonal = 3 }
 public enum NotificationChannel{ InApp = 1, Email = 2, Push = 3 }
-public enum NotificationType  { RaceResult = 1, ClubUpdate = 2, RaceAnnouncement = 3, SystemUpdate = 4, InvitationSent = 5, ErrorAlert = 6 }
+public enum NotificationType  { RaceResult = 1, ClubUpdate = 2, RaceAnnouncement = 3, SystemUpdate = 4, InvitationSent = 5, ErrorAlert = 6, RoleRequest = 7 }
 public enum NotificationStatus{ Pending = 1, Sent = 2, Failed = 3, Read = 4 }
 public enum ReportFormat      { PDF = 1, Excel = 2 }
 public enum ReportType        { ClubRaceResults = 1, FederationAggregated = 2, FancierPerformance = 3, Certificate = 4 }
@@ -26,7 +26,7 @@ public enum AggregateResultType   { BestLoft = 1, AcePigeon = 2, SuperAcePigeon 
 
 // Audit enums
 public enum AuditSeverity        { Info = 1, Warning = 2, Critical = 3 }
-public enum UpgradeRequestStatus { Pending = 0, Approved = 1, Rejected = 2 }
+public enum UpgradeRequestStatus { Pending = 0, Approved = 1, Rejected = 2, Revoked = 3, AdminRevoked = 4 }
 
 // Template enums
 public enum TemplateCategory  { RaceResults = 1, BestLoft = 2, AcePigeon = 3, SuperAcePigeon = 4, Certificate = 5 }

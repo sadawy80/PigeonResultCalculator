@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PRC.Common;
 using PRC.ClubService.DTOs;
 using PRC.ClubService.Services;
+using PRC.ClubService.Data;
 
 namespace PRC.ClubService.Controllers;
 
@@ -12,11 +14,13 @@ public class ClubsController : ClubControllerBase
 {
     private readonly IClubService _clubs;
     private readonly ICurrentUserService _user;
+    private readonly ClubDbContext _db;
 
-    public ClubsController(IClubService clubs, ICurrentUserService user)
+    public ClubsController(IClubService clubs, ICurrentUserService user, ClubDbContext db)
     {
         _clubs = clubs;
         _user = user;
+        _db = db;
     }
 
     [HttpPost]
@@ -78,4 +82,20 @@ public class ClubsController : ClubControllerBase
     [Authorize(Roles = "ClubManager,FederationManager,SuperAdmin")]
     public async Task<IActionResult> UpdateSlug(Guid clubId, [FromBody] UpdateSlugRequest req, CancellationToken ct)
         => FromResult(await _clubs.UpdateSlugAsync(clubId, req.NewSlug, ct));
+
+    [HttpGet("{clubId:guid}/stats")]
+    [Authorize(Roles = "ClubManager,FederationManager,SuperAdmin")]
+    public async Task<IActionResult> GetStats(Guid clubId, CancellationToken ct)
+    {
+        var thisYear = DateTime.UtcNow.Year;
+        var totalProgrammes     = await _db.ClubProgrammes.CountAsync(p => p.ClubId == clubId, ct);
+        var programmesThisYear  = await _db.ClubProgrammes.CountAsync(p => p.ClubId == clubId && p.Year == thisYear, ct);
+        var totalMembers        = await _db.ClubMemberships.CountAsync(m => m.ClubId == clubId && m.IsActive, ct);
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            totalProgrammes,
+            programmesThisYear,
+            totalMembers
+        }));
+    }
 }

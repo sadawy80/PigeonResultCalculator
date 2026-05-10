@@ -42,12 +42,12 @@ public class PrintJob : BaseEntity
     public Guid? UserId { get; set; }
 }
 
-// ── Page-builder template (club/country visual pages) ────────────────────────
+// ── Page-builder template (club/federation visual pages) ─────────────────────
 
 public class PageTemplate : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
-    /// <summary>"certificate" | "race_results" | "club_page" | "country_page"</summary>
+    /// <summary>"certificate" | "race_results" | "club_page" | "federation_page"</summary>
     public string Category { get; set; } = string.Empty;
     public string PreviewImageUrl { get; set; } = string.Empty;
     public string TemplateJson { get; set; } = "{}";

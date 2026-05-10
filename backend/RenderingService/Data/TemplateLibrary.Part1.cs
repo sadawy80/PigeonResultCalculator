@@ -67,11 +67,11 @@ td:first-child { text-align: center; font-weight: 700; color: #1E3A5F; font-size
 <table>
   <thead><tr>
     <th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th>
-    <th>Arrival</th><th>Distance (km)</th><th>Velocity (m/min)</th><th>Category</th>
+    <th>Arrival</th><th>Distance (km)</th><th>Speed (m/min)</th><th>Category</th>
   </tr></thead>
   <tbody>{{#each results}}<tr>
     <td>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td>
-    <td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td>{{velocityMperMin}}</td><td>{{categoryName}}</td>
+    <td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td>{{speedMperMin}}</td><td>{{categoryName}}</td>
   </tr>{{/each}}</tbody>
 </table>
 <div class='footer'><span>Printed {{printDate}}</span><span>{{club.name}} &mdash; Official Race Results</span></div>
@@ -103,10 +103,10 @@ td:first-child { font-weight: 900; font-size: 13pt; color: #C9A84C; text-align: 
   <span>Season {{season}}</span>
 </div>
 <table>
-  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Arrival</th><th>Distance</th><th>Velocity (m/min)</th><th>km/h</th><th>Cat.</th></tr></thead>
+  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Arrival</th><th>Distance</th><th>Speed (m/min)</th><th>km/h</th><th>Cat.</th></tr></thead>
   <tbody>{{#each results}}<tr class='{{#if isFirst}}top1{{/if}}'>
     <td>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYear}}</td>
-    <td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td><strong>{{velocityMperMin}}</strong></td><td>{{velocityKmH}}</td><td>{{categoryName}}</td>
+    <td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td><strong>{{speedMperMin}}</strong></td><td>{{speedKmH}}</td><td>{{categoryName}}</td>
   </tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} Official Results &bull; Printed {{printDate}}</div>
@@ -142,8 +142,8 @@ td { font-size: 9pt; border-bottom: 1px solid #D4EAE0; }
   <div class='info-item'><span>Wind</span>{{race.wind}}</div>
 </div>
 <table>
-  <thead><tr><th style='width:42px'>#</th><th>Ring Number</th><th>Fancier</th><th>Pigeon</th><th>Arrival Time</th><th>Distance (km)</th><th>Velocity m/min</th><th>Velocity km/h</th><th>Category</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank'>{{rank}}</td><td>{{ringNumber}}</td><td>{{fancierName}}</td><td>{{pigeonName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+  <thead><tr><th style='width:42px'>#</th><th>Ring Number</th><th>Fancier</th><th>Pigeon</th><th>Arrival Time</th><th>Distance (km)</th><th>Speed m/min</th><th>Speed km/h</th><th>Category</th></tr></thead>
+  <tbody>{{#each results}}<tr><td class='rank'>{{rank}}</td><td>{{ringNumber}}</td><td>{{fancierName}}</td><td>{{pigeonName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'><span>Official Results — {{club.name}}</span><span>Generated {{printDate}}</span></div>
 </body></html>";
@@ -178,7 +178,7 @@ td { font-size: 8.5pt; border-bottom: 1px solid #EBDADA; padding: 5px 8px; }
 <table>
   <thead><tr><th style='width:36px'>#</th><th>Ring #</th><th>Pigeon</th><th>Sex</th><th>Fancier</th><th>Arrival</th><th>Dist km</th><th>m/min</th><th>km/h</th><th>Cat</th></tr></thead>
   <tbody>{{#each results}}<tr class='{{#if (eq rank 1)}}gold{{else}}{{#if (eq rank 2)}}silver{{else}}{{#if (eq rank 3)}}bronze{{/if}}{{/if}}{{/if}}'>
-    <td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td>
+    <td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td>
   </tr>{{/each}}</tbody>
 </table>
 <div class='footer'>Printed {{printDate}} &bull; {{club.name}}</div>
@@ -210,8 +210,8 @@ td { border: 1px solid #E8DFC8; font-size: 9.5pt; }
 </div>
 <div class='ornament'>&#10022; &#10022; &#10022;</div>
 <table style='margin-top:10px'>
-  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon Name</th><th>Fancier</th><th>Arrival Time</th><th>Distance km</th><th>Velocity m/min</th><th>Category</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{velocityMperMin}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon Name</th><th>Fancier</th><th>Arrival Time</th><th>Distance km</th><th>Speed m/min</th><th>Category</th></tr></thead>
+  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{speedMperMin}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &mdash; {{race.releaseLocation}} &mdash; {{race.totalEntries}} entries &mdash; Printed {{printDate}}</div>
 </div></body></html>";
@@ -247,8 +247,8 @@ td { font-size: 8.5pt; color: #C8D8F0; padding: 6px 8px; }
   <div><strong>Release</strong>{{race.releaseTime}}</div>
 </div>
 <table>
-  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Fancier</th><th>Arrival</th><th>Distance km</th><th>Velocity m/min</th><th>km/h</th><th>Category</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Fancier</th><th>Arrival</th><th>Distance km</th><th>Speed m/min</th><th>km/h</th><th>Category</th></tr></thead>
+  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} Official Results &bull; Printed {{printDate}}</div>
 </body></html>";
@@ -283,7 +283,7 @@ tr:nth-child(3) .rank-cell { color: #CD7F32; }
 </div>
 <table>
   <thead><tr><th>#</th><th>Ring</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Dist</th><th>m/min</th><th>km/h</th><th>Cat</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &mdash; Printed {{printDate}}</div>
 </body></html>";
@@ -319,7 +319,7 @@ td { font-size: 8.5pt; font-family: Arial, sans-serif; padding: 5px 7px; border-
 </div>
 <table>
   <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Arrival</th><th>Distance</th><th>m/min</th><th>km/h</th><th>Cat</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYear}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYear}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='banner2'></div>
 </body></html>";
@@ -350,8 +350,8 @@ td { font-size: 9pt; border-bottom: 1px solid #E8E0F5; }
   <div><strong>Wind</strong>{{race.wind}}</div>
 </div>
 <table>
-  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Distance km</th><th>Velocity m/min</th><th>km/h</th><th>Category</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+  <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Distance km</th><th>Speed m/min</th><th>km/h</th><th>Category</th></tr></thead>
+  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} Official Results &bull; {{printDate}}</div>
 </body></html>";
@@ -392,7 +392,7 @@ td { font-size: 9pt; border-bottom: 1px solid #E0F4FA; padding: 5px 8px; }
 </div>
 <table>
   <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Fancier</th><th>Arrival</th><th>Dist km</th><th>m/min</th><th>km/h</th><th>Category</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+  <tbody>{{#each results}}<tr><td class='rank-cell'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel-cell'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'><span>{{club.name}} &mdash; {{race.releaseLocation}}</span><span>Printed {{printDate}}</span></div>
 </body></html>";
@@ -445,7 +445,7 @@ td {{ font-size: 9pt; border-bottom: 1px solid {accent}44; padding: 5px 8px; }}
 </div>
 <table>
   <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Dist km</th><th>m/min</th><th>km/h</th><th>Category</th></tr></thead>
-  <tbody>{{{{#each results}}}}<tr><td class='rank-cell'>{{{{rank}}}}</td><td>{{{{ringNumber}}}}</td><td>{{{{pigeonName}}}}</td><td>{{{{fancierName}}}}</td><td>{{{{arrivalTime}}}}</td><td>{{{{distanceKm}}}}</td><td class='vel-cell'>{{{{velocityMperMin}}}}</td><td>{{{{velocityKmH}}}}</td><td>{{{{categoryName}}}}</td></tr>{{{{/each}}}}</tbody>
+  <tbody>{{{{#each results}}}}<tr><td class='rank-cell'>{{{{rank}}}}</td><td>{{{{ringNumber}}}}</td><td>{{{{pigeonName}}}}</td><td>{{{{fancierName}}}}</td><td>{{{{arrivalTime}}}}</td><td>{{{{distanceKm}}}}</td><td class='vel-cell'>{{{{speedMperMin}}}}</td><td>{{{{speedKmH}}}}</td><td>{{{{categoryName}}}}</td></tr>{{{{/each}}}}</tbody>
 </table>
 <div class='footer'>{{{{club.name}}}} &mdash; Printed {{{{printDate}}}}</div>
 </body></html>";

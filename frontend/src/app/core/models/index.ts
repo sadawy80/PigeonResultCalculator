@@ -5,8 +5,8 @@ export enum RaceStatus { Draft = 1, Scheduled = 2, InProgress = 3, Completed = 4
 export enum ResultStatus { Pending = 1, Validated = 2, Published = 3, Rejected = 4 }
 export enum DataIngestionType { Manual = 1, ETSFile = 2, IoT = 3 }
 export enum NotificationStatus { Pending = 1, Sent = 2, Failed = 3, Read = 4 }
-export enum NotificationType { RaceResult = 1, ClubUpdate = 2, RaceAnnouncement = 3, SystemUpdate = 4, InvitationSent = 5, ErrorAlert = 6 }
-export enum CountryResultStatus { Draft = 1, Published = 2 }
+export enum NotificationType { RaceResult = 1, ClubUpdate = 2, RaceAnnouncement = 3, SystemUpdate = 4, InvitationSent = 5, ErrorAlert = 6, RoleRequest = 7 }
+export enum FederationResultStatus { Draft = 1, Published = 2 }
 export enum InvitationStatus { Pending = 1, Accepted = 2, Expired = 3, Revoked = 4 }
 
 export enum SiteTheme { Skyline = 1, Meadow = 2, Crimson = 3, Ivory = 4, Slate = 5 }
@@ -48,6 +48,13 @@ export interface AuthTokens {
   refreshToken: string;
   expiresAt: string;
   user: User;
+}
+
+export interface AdminAuthTokens {
+  token: string;
+  userId: string;
+  fullName: string;
+  expiresAt: string;
 }
 
 export interface Club {
@@ -115,8 +122,8 @@ export interface RaceResult {
   pigeonYearOfBirth?: number;
   arrivalTime: string;
   distanceKm: number;
-  velocityMperMin: number;
-  velocityKmH: number;
+  speedMperMin: number;
+  speedKmH: number;
   clubRank?: number;
   categoryRank?: number;
   status: ResultStatus;
@@ -133,22 +140,22 @@ export interface FederationResult {
   FederationName: string;
   name: string;
   description?: string;
-  status: CountryResultStatus;
+  status: FederationResultStatus;
   totalEntriesCount: number;
   totalClubsCount: number;
   publishedAt?: string;
   createdAt: string;
-  topEntries: CountryResultEntry[];
+  topEntries: FederationResultEntry[];
 }
 
-export interface CountryResultEntry {
+export interface FederationResultEntry {
   id: string;
   nationalRank: number;
   nationalCategoryRank?: number;
   ringNumber: string;
   fancierName?: string;
   clubName: string;
-  velocityMperMin: number;
+  speedMperMin: number;
   distanceKm: number;
 }
 

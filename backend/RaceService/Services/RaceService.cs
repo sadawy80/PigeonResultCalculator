@@ -138,7 +138,7 @@ public class RaceService : IRaceService
 
         await _db.SaveChangesAsync(ct);
 
-        // Notify all subscribers (FederationService caches these for country result aggregation)
+        // Notify all subscribers (FederationService caches these for federation result aggregation)
         var resultItems = resultEntities.Select(r => new RaceResultItem(
             r.Id, r.RingNumber, r.UserId, null,
             r.SpeedMperMin, r.DistanceKm, r.ArrivalTime)).ToList();
@@ -176,6 +176,8 @@ public class RaceService : IRaceService
         var q = _db.Races.Where(r => r.ClubId == clubId);
         if (!string.IsNullOrEmpty(paged.Search))
             q = q.Where(r => r.Name.Contains(paged.Search));
+        if (paged.Year.HasValue)
+            q = q.Where(r => r.ScheduledReleaseTime.HasValue && r.ScheduledReleaseTime.Value.Year == paged.Year.Value);
 
         var total = await q.CountAsync(ct);
         var items = await q

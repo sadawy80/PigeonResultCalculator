@@ -1,10 +1,10 @@
 // ── Append to src/app/core/models/index.ts ────────────────────────────────────
 
 export enum ScoringMethod {
-  AverageVelocity = 1,
+  AverageSpeed = 1,
   PointsByRank = 2,
-  PointsByVelocityPercentage = 3,
-  TotalVelocity = 4
+  PointsBySpeedPercentage = 3,
+  TotalSpeed = 4
 }
 
 export enum SuperAceQualification {
@@ -25,7 +25,7 @@ export interface RaceBreakdownItem {
   raceId: string;
   raceName: string;
   score: number;
-  velocity: number;
+  speed: number;
   clubRank: number;
   pigeonsEntered: number;
   dnf: boolean;
@@ -87,8 +87,8 @@ export interface BestLoftResult {
   averageScore: number;
   racesEntered: number;
   pigeonsEntered: number;
-  bestSingleVelocityMperMin: number;
-  averageVelocityMperMin: number;
+  bestSingleSpeedMperMin: number;
+  averageSpeedMperMin: number;
   raceBreakdown: RaceBreakdownItem[];
 }
 
@@ -109,8 +109,8 @@ export interface AcePigeonResult {
   racesEntered: number;
   racesInProgramme: number;
   participationRate: number;
-  bestVelocityMperMin: number;
-  averageVelocityMperMin: number;
+  bestSpeedMperMin: number;
+  averageSpeedMperMin: number;
   bestClubRank: number;
   raceBreakdown: RaceBreakdownItem[];
 }
@@ -132,8 +132,8 @@ export interface SuperAcePigeonResult {
   racesEntered: number;
   racesInProgramme: number;
   participationRate: number;
-  bestVelocityMperMin: number;
-  averageVelocityMperMin: number;
+  bestSpeedMperMin: number;
+  averageSpeedMperMin: number;
   bestClubRank: number;
   acePigeonResultId?: string;
   raceBreakdown: RaceBreakdownItem[];

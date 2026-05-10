@@ -8,7 +8,7 @@ public class PublicQueryService : IPublicQueryService
     private readonly IRequestClient<GetPublicClubBySlugRequest>         _clubClient;
     private readonly IRequestClient<ListPublishedClubsForPublicRequest> _clubListClient;
     private readonly IRequestClient<GetPublishedRacesForPublicRequest>  _racesClient;
-    private readonly IRequestClient<GetPublicFederationBySlugRequest>      _countryClient;
+    private readonly IRequestClient<GetPublicFederationBySlugRequest>      _federationClient;
     private readonly IRequestClient<GetPublicSubscriptionPlansRequest>  _plansClient;
     private readonly IRequestClient<GetUserNamesRequest>                _namesClient;
 
@@ -16,14 +16,14 @@ public class PublicQueryService : IPublicQueryService
         IRequestClient<GetPublicClubBySlugRequest>         clubClient,
         IRequestClient<ListPublishedClubsForPublicRequest> clubListClient,
         IRequestClient<GetPublishedRacesForPublicRequest>  racesClient,
-        IRequestClient<GetPublicFederationBySlugRequest>      countryClient,
+        IRequestClient<GetPublicFederationBySlugRequest>      federationClient,
         IRequestClient<GetPublicSubscriptionPlansRequest>  plansClient,
         IRequestClient<GetUserNamesRequest>                namesClient)
     {
         _clubClient     = clubClient;
         _clubListClient = clubListClient;
         _racesClient    = racesClient;
-        _countryClient  = countryClient;
+        _federationClient  = federationClient;
         _plansClient    = plansClient;
         _namesClient    = namesClient;
     }
@@ -62,7 +62,7 @@ public class PublicQueryService : IPublicQueryService
 
     public async Task<PublicFederationResult?> GetFederationBySlugAsync(string slug, CancellationToken ct = default)
     {
-        var resp = await _countryClient.GetResponse<PublicFederationResult>(
+        var resp = await _federationClient.GetResponse<PublicFederationResult>(
             new GetPublicFederationBySlugRequest(slug), ct);
         return resp.Message.Found ? resp.Message : null;
     }

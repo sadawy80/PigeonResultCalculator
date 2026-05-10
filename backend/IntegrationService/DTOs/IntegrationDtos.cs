@@ -31,8 +31,8 @@ public record IntegrationRaceResultDto(
     string ReleaseLocation,
     DateTime RaceDate,
     double DistanceKm,
-    double VelocityMperMin,
-    double VelocityKmH,
+    double SpeedMperMin,
+    double SpeedKmH,
     int? ClubRank,
     int? CategoryRank,
     string? CategoryName);
@@ -50,8 +50,8 @@ public record IntegrationAcePigeonDto(
     int RacesEntered,
     int RacesInProgramme,
     double ParticipationRate,
-    double BestVelocityMperMin,
-    double AverageVelocityMperMin,
+    double BestSpeedMperMin,
+    double AverageSpeedMperMin,
     int BestClubRank);
 
 public record IntegrationSuperAceDto(
@@ -67,8 +67,8 @@ public record IntegrationSuperAceDto(
     int RacesEntered,
     int RacesInProgramme,
     double ParticipationRate,
-    double BestVelocityMperMin,
-    double AverageVelocityMperMin,
+    double BestSpeedMperMin,
+    double AverageSpeedMperMin,
     int BestClubRank);
 
 public record IntegrationBestLoftDto(
@@ -79,8 +79,8 @@ public record IntegrationBestLoftDto(
     double AverageScore,
     int RacesEntered,
     int PigeonsEntered,
-    double BestSingleVelocityMperMin,
-    double AverageVelocityMperMin);
+    double BestSingleSpeedMperMin,
+    double AverageSpeedMperMin);
 
 public record IntegrationSummaryDto(
     int TotalRaceResults,

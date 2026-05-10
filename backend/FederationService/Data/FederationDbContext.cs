@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.FederationService.Models;
 
@@ -36,6 +37,7 @@ public class FederationDbContext : DbContext
         builder.Entity<FederationPage>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         builder.Entity<FederationResult>(e =>
@@ -51,6 +53,7 @@ public class FederationDbContext : DbContext
         builder.Entity<FederationResultRace>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasOne(x => x.FederationResult)
              .WithMany(x => x.IncludedRaces)
              .HasForeignKey(x => x.FederationResultId)
@@ -60,6 +63,7 @@ public class FederationDbContext : DbContext
         builder.Entity<FederationResultEntry>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasOne(x => x.FederationResult)
              .WithMany(x => x.Entries)
              .HasForeignKey(x => x.FederationResultId)
@@ -81,5 +85,9 @@ public class FederationDbContext : DbContext
              .HasForeignKey(x => x.RaceSnapshotCacheId)
              .OnDelete(DeleteBehavior.Cascade);
         });
+
+        builder.AddOutboxMessageEntity();
+        builder.AddOutboxStateEntity();
+        builder.AddInboxStateEntity();
     }
 }

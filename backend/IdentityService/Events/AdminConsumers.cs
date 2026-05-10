@@ -15,10 +15,14 @@ public class GetIdentityStatsConsumer : IConsumer<GetIdentityStatsRequest>
 
     public async Task Consume(ConsumeContext<GetIdentityStatsRequest> ctx)
     {
-        var total   = await _db.Users.CountAsync();
-        var pending = await _db.Users.CountAsync(u => u.Role == UserRole.Pending);
-        var active  = await _db.Users.CountAsync(u => u.IsActive && u.Role != UserRole.Pending);
-        await ctx.RespondAsync(new IdentityStatsResult(total, pending, active));
+        var yearStart        = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var total            = await _db.Users.CountAsync();
+        var pending          = await _db.Users.CountAsync(u => u.Role == UserRole.Pending);
+        var active           = await _db.Users.CountAsync(u => u.IsActive && u.Role != UserRole.Pending);
+        var fanciers         = await _db.Users.CountAsync(u => u.Role == UserRole.Fancier);
+        var usersThisYear    = await _db.Users.CountAsync(u => u.CreatedAt >= yearStart);
+        var fanciersThisYear = await _db.Users.CountAsync(u => u.Role == UserRole.Fancier && u.CreatedAt >= yearStart);
+        await ctx.RespondAsync(new IdentityStatsResult(total, pending, active, fanciers, usersThisYear, fanciersThisYear));
     }
 }
 
@@ -208,5 +212,48 @@ public class GetUserEmailsConsumer : IConsumer<GetUserEmailsRequest>
 
         var emails = users.ToDictionary(u => u.Id, u => u.Email!);
         await ctx.RespondAsync(new UserEmailsResult(emails));
+    }
+}
+
+public class DeleteUserConsumer : IConsumer<DeleteUserRequest>
+{
+    private readonly IdentityDbContext _db;
+    private readonly UserManager<ApplicationUser> _users;
+
+    public DeleteUserConsumer(IdentityDbContext db, UserManager<ApplicationUser> users)
+    {
+        _db    = db;
+        _users = users;
+    }
+
+    public async Task Consume(ConsumeContext<DeleteUserRequest> ctx)
+    {
+        var m    = ctx.Message;
+        var user = await _users.FindByIdAsync(m.UserId.ToString());
+        if (user is null)
+        {
+            await ctx.RespondAsync(new DeleteUserResult(false, "User not found."));
+            return;
+        }
+
+        if (user.Id == m.RequestingUserId)
+        {
+            await ctx.RespondAsync(new DeleteUserResult(false, "Cannot delete your own account."));
+            return;
+        }
+
+        await _db.UpgradeRequests
+            .Where(r => r.UserId == m.UserId)
+            .ExecuteDeleteAsync(ctx.CancellationToken);
+
+        var result = await _users.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            var error = string.Join("; ", result.Errors.Select(e => e.Description));
+            await ctx.RespondAsync(new DeleteUserResult(false, error));
+            return;
+        }
+
+        await ctx.RespondAsync(new DeleteUserResult(true, null));
     }
 }

@@ -157,15 +157,15 @@ import {
                           <span class="fi-kpi__label">{{ 'integ.bestRank' | translate }}</span>
                         </div>
                         <div class="fi-kpi">
-                          <span class="fi-kpi__val">{{ summary()!.bestEverVelocityMperMin | number:'1.0-0' }}</span>
+                          <span class="fi-kpi__val">{{ summary()!.bestEverSpeedMperMin | number:'1.0-0' }}</span>
                           <span class="fi-kpi__label">{{ 'integ.bestMpm' | translate }}</span>
                         </div>
                       </div>
 
-                      @if (summary()!.achievements.length > 0) {
+                      @if ((summary()!.achievements ?? []).length > 0) {
                         <h4 class="mt-4 mb-3">{{ 'fancierInteg.achievementsVisible' | translate }}</h4>
                         <div class="fi-ach-list">
-                          @for (a of summary()!.achievements; track a.description) {
+                          @for (a of (summary()!.achievements ?? []); track a.description) {
                             <div class="fi-ach" [class]="'fi-ach--' + a.category.toLowerCase()">
                               <span class="fi-ach__icon">{{ achIcon(a.category) }}</span>
                               <span class="fi-ach__text">{{ a.description }}</span>
@@ -210,7 +210,7 @@ import {
                                 {{ r.raceName }}
                                 <div class="text-muted" style="font-size:0.7rem">{{ r.raceDate | date:'dd MMM yyyy' }}</div>
                               </td>
-                              <td class="font-bold">{{ r.velocityMperMin | number:'1.4-4' }}</td>
+                              <td class="font-bold">{{ r.speedMperMin | number:'1.4-4' }}</td>
                               <td class="text-sm">{{ r.distanceKm | number:'1.0-0' }} km</td>
                               <td class="flex gap-1 flex-wrap">
                                 @if (r.isAcePigeon) {
@@ -263,7 +263,7 @@ import {
                             <td>{{ a.programmeYear }}</td>
                             <td class="font-bold">{{ a.totalScore | number:'1.2-2' }}</td>
                             <td>{{ a.racesEntered }}/{{ a.racesInProgramme }}</td>
-                            <td>{{ a.bestVelocityMperMin | number:'1.4-4' }}</td>
+                            <td>{{ a.bestSpeedMperMin | number:'1.4-4' }}</td>
                           </tr>
                         }
                       </tbody>
@@ -303,7 +303,7 @@ import {
                             <td>{{ a.programmeYear }}</td>
                             <td class="font-bold">{{ a.totalScore | number:'1.2-2' }}</td>
                             <td>{{ a.participationRate | number:'1.0-0' }}%</td>
-                            <td>{{ a.bestVelocityMperMin | number:'1.4-4' }}</td>
+                            <td>{{ a.bestSpeedMperMin | number:'1.4-4' }}</td>
                           </tr>
                         }
                       </tbody>
@@ -341,7 +341,7 @@ import {
                             <td class="font-bold">{{ b.totalScore | number:'1.2-2' }}</td>
                             <td>{{ b.racesEntered }}</td>
                             <td>{{ b.pigeonsEntered }}</td>
-                            <td>{{ b.bestSingleVelocityMperMin | number:'1.4-4' }}</td>
+                            <td>{{ b.bestSingleSpeedMperMin | number:'1.4-4' }}</td>
                           </tr>
                         }
                       </tbody>
@@ -505,12 +505,15 @@ export class FancierIntegrationsComponent implements OnInit {
   ];
 
   ngOnInit() {
-    this.api.getMyLinks().subscribe(links => {
-      this.links.set(links);
-      this.loading.set(false);
-      // Auto-load data for the first active link
-      const active = links.find(l => l.status === ExternalLinkStatus.Approved);
-      if (active) this.autoLoadActive(active);
+    this.api.getMyLinks().subscribe({
+      next: links => {
+        const safe = links ?? [];
+        this.links.set(safe);
+        this.loading.set(false);
+        const active = safe.find(l => l.status === ExternalLinkStatus.Approved);
+        if (active) this.autoLoadActive(active);
+      },
+      error: () => this.loading.set(false)
     });
   }
 

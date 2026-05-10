@@ -93,8 +93,8 @@ public class RenderService : IRenderService
                 fancierName,
                 arrivalTime     = r.ArrivalTime.ToString("HH:mm:ss"),
                 distanceKm      = Math.Round(r.DistanceKm, 3).ToString("F3"),
-                velocityMperMin = Math.Round(r.SpeedMperMin, 4).ToString("F4"),
-                velocityKmH     = Math.Round(r.SpeedMperMin * 60.0 / 1000.0, 3).ToString("F3"),
+                speedMperMin    = Math.Round(r.SpeedMperMin, 4).ToString("F4"),
+                speedKmH        = Math.Round(r.SpeedMperMin * 60.0 / 1000.0, 3).ToString("F3"),
                 categoryName    = r.CategoryName,
                 categoryRank    = r.CategoryRank ?? 0,
                 clubRank        = r.ClubRank ?? 0
@@ -165,8 +165,8 @@ public class RenderService : IRenderService
                 fancierName               = r.FancierName,
                 racesEntered              = r.RacesEntered,
                 pigeonsEntered            = r.PigeonsEntered,
-                bestSingleVelocityMperMin = Math.Round(r.BestSingleSpeedMperMin, 4).ToString("F4"),
-                averageVelocityMperMin    = Math.Round(r.AverageSpeedMperMin, 4).ToString("F4"),
+                bestSingleSpeedMperMin = Math.Round(r.BestSingleSpeedMperMin, 4).ToString("F4"),
+                averageSpeedMperMin    = Math.Round(r.AverageSpeedMperMin, 4).ToString("F4"),
                 totalScore                = Math.Round(r.TotalScore, 2).ToString("F2"),
                 averageScore              = Math.Round(r.AverageScore, 2).ToString("F2")
             }).ToList();
@@ -187,8 +187,8 @@ public class RenderService : IRenderService
                 racesEntered           = r.RacesEntered,
                 racesInProgramme       = r.RacesInProgramme,
                 participationRate      = Math.Round(r.ParticipationRate, 1).ToString("F1"),
-                bestVelocityMperMin    = Math.Round(r.BestSpeedMperMin, 4).ToString("F4"),
-                averageVelocityMperMin = Math.Round(r.AverageSpeedMperMin, 4).ToString("F4"),
+                bestSpeedMperMin    = Math.Round(r.BestSpeedMperMin, 4).ToString("F4"),
+                averageSpeedMperMin = Math.Round(r.AverageSpeedMperMin, 4).ToString("F4"),
                 totalScore             = Math.Round(r.TotalScore, 2).ToString("F2"),
                 averageScore           = Math.Round(r.AverageScore, 2).ToString("F2"),
                 bestClubRank           = r.BestClubRank
@@ -209,11 +209,11 @@ public class RenderService : IRenderService
             racesEntered           = r.RacesEntered,
             racesInProgramme       = r.RacesInProgramme,
             participationRate      = Math.Round(r.ParticipationRate, 1).ToString("F1"),
-            bestVelocityMperMin    = Math.Round(r.BestSpeedMperMin, 4).ToString("F4"),
-            averageVelocityMperMin = Math.Round(r.AverageSpeedMperMin, 4).ToString("F4"),
-            bestClubRank           = r.BestClubRank,
-            totalScore             = Math.Round(r.TotalScore, 2).ToString("F2"),
-            averageScore           = Math.Round(r.AverageScore, 2).ToString("F2")
+            bestSpeedMperMin    = Math.Round(r.BestSpeedMperMin, 4).ToString("F4"),
+            averageSpeedMperMin = Math.Round(r.AverageSpeedMperMin, 4).ToString("F4"),
+            bestClubRank        = r.BestClubRank,
+            totalScore          = Math.Round(r.TotalScore, 2).ToString("F2"),
+            averageScore        = Math.Round(r.AverageScore, 2).ToString("F2")
         }).ToList();
         var totalQualifiers = saResults.Count;
         return new { labels, programme, club, results = saResults, totalQualifiers, season, printDate };
@@ -248,13 +248,13 @@ public class RenderService : IRenderService
                         ringNumber      = rr.RingNumber,
                         pigeonName      = rr.PigeonName ?? "",
                         pigeonSex       = rr.PigeonSex ?? "",
-                        velocityMperMin = Math.Round(rr.SpeedMperMin, 4).ToString("F4"),
+                        speedMperMin    = Math.Round(rr.SpeedMperMin, 4).ToString("F4"),
                         distanceKm      = Math.Round(rr.DistanceKm, 3).ToString("F3"),
                         arrivalTime     = rr.ArrivalTime.ToString("HH:mm:ss"),
                         raceName        = rr.RaceName,
                         aceRank = 0, superAceRank = 0, loftRank = 0,
                         totalScore = "", racesEntered = 0, racesInProgramme = 0,
-                        pigeonsEntered = 0, bestVelocityMperMin = ""
+                        pigeonsEntered = 0, bestSpeedMperMin = ""
                     },
                     race = new
                     {
@@ -294,10 +294,10 @@ public class RenderService : IRenderService
                         rank            = req.CertificateRank ?? "",
                         achievement     = req.CertificateAchievement ?? "",
                         ringNumber = "", pigeonName = "", pigeonSex = "",
-                        velocityMperMin = "", distanceKm = "", arrivalTime = "", raceName = "",
+                        speedMperMin = "", distanceKm = "", arrivalTime = "", raceName = "",
                         aceRank = 0, superAceRank = 0, loftRank = 0,
                         totalScore = "", racesEntered = 0, racesInProgramme = 0,
-                        pigeonsEntered = 0, bestVelocityMperMin = ""
+                        pigeonsEntered = 0, bestSpeedMperMin = ""
                     },
                     race      = new { name = "", date = "", releaseLocation = "" },
                     programme = new { name = prog.Name, year = prog.Year, superAceQualification = prog.SuperAceQualification },

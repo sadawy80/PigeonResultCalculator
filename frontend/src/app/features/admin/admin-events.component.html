@@ -7,27 +7,39 @@
   <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
 }
 
-<div class="flex gap-4 mb-6">
-  <select class="pr-select" style="max-width:220px" [(ngModel)]="typeFilter" (change)="onFilter()">
-    <option value="">All Event Types</option>
-    <option value="RaceCreated">Race Created</option>
-    <option value="RaceStarted">Race Started</option>
-    <option value="RaceCompleted">Race Completed</option>
-    <option value="ResultProcessed">Result Processed</option>
-    <option value="ResultPublished">Result Published</option>
-    <option value="CountryResultPublished">Country Result Published</option>
-    <option value="UserInvited">User Invited</option>
-    <option value="UserLinked">User Linked</option>
-    <option value="SubscriptionChanged">Subscription Changed</option>
-  </select>
-  <select class="pr-select" style="max-width:180px" [(ngModel)]="aggregateFilter" (change)="onFilter()">
-    <option value="">All Aggregates</option>
-    <option value="Race">Race</option>
-    <option value="Club">Club</option>
-    <option value="Country">Country</option>
-    <option value="User">User</option>
-  </select>
-  <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="load()">↻ Refresh</button>
+<div class="pr-card mb-4">
+  <div class="flex flex-wrap gap-4 items-end">
+    <div class="pr-form-group" style="flex:2;min-width:200px">
+      <label class="pr-label">Action</label>
+      <select class="pr-select" [(ngModel)]="actionFilter" (change)="onFilter()">
+        <option value="">All Actions</option>
+        <option value="LOGIN">Login</option>
+        <option value="LOGIN_FAILED">Login Failed</option>
+        <option value="FEDERATION_CREATED">Federation Created</option>
+        <option value="FEDERATION_TOGGLED">Federation Toggled</option>
+        <option value="CLUB_SUSPENDED">Club Suspended</option>
+        <option value="USER_TOGGLED">User Toggled</option>
+        <option value="ROLE_ASSIGNED">Role Assigned</option>
+        <option value="UPGRADE_REQUEST_APPROVED">Upgrade Approved</option>
+        <option value="UPGRADE_REQUEST_REJECTED">Upgrade Rejected</option>
+        <option value="SUBSCRIPTION_CREATED">Subscription Created</option>
+        <option value="IMPERSONATION">Impersonation</option>
+      </select>
+    </div>
+    <div class="pr-form-group" style="flex:1;min-width:160px">
+      <label class="pr-label">Entity Type</label>
+      <select class="pr-select" [(ngModel)]="entityTypeFilter" (change)="onFilter()">
+        <option value="">All Types</option>
+        <option value="User">User</option>
+        <option value="Federation">Federation</option>
+        <option value="Club">Club</option>
+        <option value="Subscription">Subscription</option>
+        <option value="UpgradeRequest">Upgrade Request</option>
+      </select>
+    </div>
+    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="actionFilter=''; entityTypeFilter=''; onFilter()">Reset</button>
+    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="load()">↻ Refresh</button>
+  </div>
 </div>
 
 <div class="pr-card">
@@ -37,18 +49,18 @@
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
-          <tr><th>Event</th><th>Aggregate</th><th>Entity ID</th><th>Timestamp</th><th>Status</th></tr>
+          <tr><th>Event</th><th>Triggered By</th><th>Aggregate</th><th>Timestamp</th><th>Status</th></tr>
         </thead>
         <tbody>
           @for (ev of events(); track ev.id) {
             <tr>
-              <td><code class="event-type">{{ ev.eventType }}</code></td>
-              <td class="text-muted text-sm">{{ ev.aggregateType }}</td>
-              <td class="text-muted text-sm" style="font-family:monospace;font-size:0.75rem">{{ ev.aggregateId }}</td>
+              <td><code class="event-type">{{ ev.action }}</code></td>
+              <td class="text-muted text-sm">{{ ev.triggeredByName || '—' }}</td>
+              <td class="text-muted text-sm">{{ ev.entityType }}</td>
               <td class="text-muted text-sm">{{ ev.createdAt | date:'dd MMM HH:mm:ss' }}</td>
               <td>
-                <span [class]="ev.isProcessed ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--warning'">
-                  {{ ev.isProcessed ? 'Processed' : 'Pending' }}
+                <span [class]="'pr-badge ' + (ev.severity === 'Critical' ? 'pr-badge--error' : ev.severity === 'Warning' ? 'pr-badge--warning' : 'pr-badge--success')">
+                  {{ ev.severity }}
                 </span>
               </td>
             </tr>
@@ -58,8 +70,14 @@
     </div>
 
     <div class="flex justify-between items-center mt-4">
-      <span class="text-muted text-sm">Page {{ page }} of {{ totalPages }}</span>
-      <div class="flex gap-2">
+      <span class="text-muted text-sm">{{ total() }} events · page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-2 items-center">
+        <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="10">10 / page</option>
+          <option [ngValue]="25">25 / page</option>
+          <option [ngValue]="50">50 / page</option>
+          <option [ngValue]="100">100 / page</option>
+        </select>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
       </div>

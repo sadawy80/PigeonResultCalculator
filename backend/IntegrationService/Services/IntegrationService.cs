@@ -164,6 +164,20 @@ public class IntegrationService : IIntegrationService
         return Result.Success(items.Select(l => l.ToDto()).ToList());
     }
 
+    public async Task<Result<List<ExternalLinkDto>>> GetAllLinksAsync(
+        ExternalLinkStatus? status, int page, int pageSize, CancellationToken ct)
+    {
+        var q = _db.ExternalLinks.AsQueryable();
+        if (status.HasValue) q = q.Where(l => l.Status == status);
+
+        var items = await q
+            .OrderByDescending(l => l.RequestedAt)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .ToListAsync(ct);
+
+        return Result.Success(items.Select(l => l.ToDto()).ToList());
+    }
+
     public async Task<Result<(ExternalLink Link, string? Error)>> ValidateTokenAsync(
         string accessToken, CancellationToken ct)
     {

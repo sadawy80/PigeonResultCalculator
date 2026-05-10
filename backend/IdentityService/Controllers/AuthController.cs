@@ -45,6 +45,16 @@ public class AuthController : ControllerBase
         return FromResult(await _auth.GetCurrentUserAsync(id, ct));
     }
 
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest req, CancellationToken ct)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userId, out var id))
+            return Unauthorized();
+        return FromResult(await _auth.UpdateProfileAsync(id, req, ct));
+    }
+
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req, CancellationToken ct)

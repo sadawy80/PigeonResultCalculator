@@ -1,42 +1,33 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
-    <h1 class="pr-page-header__title">Countries</h1>
-    <p class="pr-page-header__subtitle">Manage national pigeon racing federations</p>
+    <h1 class="pr-page-header__title">Federations</h1>
+    <p class="pr-page-header__subtitle">{{ federations().length }} federations registered</p>
   </div>
-  <button class="pr-btn pr-btn--primary" (click)="showForm.set(true)">+ Add Country</button>
+  <button class="pr-btn pr-btn--primary" (click)="openAdd()">+ Add Federation</button>
 </div>
 
 @if (error()) {
   <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
 }
 
-@if (showForm()) {
-  <div class="pr-card mb-6" style="max-width:560px">
-    <h3 style="margin-bottom:20px">New Country</h3>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="pr-grid-2" style="gap:12px">
-        <div class="pr-form-group">
-          <label class="pr-label">Country Name</label>
-          <input class="pr-input" [(ngModel)]="newCountry.name" placeholder="Belgium">
-        </div>
-        <div class="pr-form-group">
-          <label class="pr-label">Code (ISO)</label>
-          <input class="pr-input" [(ngModel)]="newCountry.code" placeholder="BE" style="text-transform:uppercase" maxlength="3">
-        </div>
-      </div>
-      <div class="pr-form-group">
-        <label class="pr-label">Slug</label>
-        <input class="pr-input" [(ngModel)]="newCountry.slug" placeholder="belgium">
-      </div>
-      <div class="flex gap-3">
-        <button class="pr-btn pr-btn--primary" [disabled]="saving()" (click)="saveCountry()">
-          {{ saving() ? 'Saving...' : 'Save' }}
-        </button>
-        <button class="pr-btn pr-btn--ghost" (click)="showForm.set(false)">Cancel</button>
-      </div>
+<div class="pr-card mb-4">
+  <div class="flex flex-wrap gap-4 items-end">
+    <div class="pr-form-group" style="flex:2;min-width:180px">
+      <label class="pr-label">Search</label>
+      <input class="pr-input" [(ngModel)]="listSearch" placeholder="Name, country code, manager email…" (keyup.enter)="onListSearch()">
     </div>
+    <div class="pr-form-group" style="flex:1;min-width:140px">
+      <label class="pr-label">Status</label>
+      <select class="pr-select" [(ngModel)]="listStatus" (change)="onListSearch()">
+        <option value="">All</option>
+        <option value="true">Active</option>
+        <option value="false">Inactive</option>
+      </select>
+    </div>
+    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="onListSearch()">Search</button>
+    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="listSearch = ''; listStatus = ''; onListSearch()">Reset</button>
   </div>
-}
+</div>
 
 <div class="pr-card">
   @if (loading()) {
@@ -45,25 +36,186 @@
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
-          <tr><th>Country</th><th>Code</th><th>Slug</th><th>Clubs</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Federation</th><th>Code</th><th>Slug</th><th>Manager</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody>
-          @for (c of countries(); track c.id) {
+          @if (listPaged().length === 0) {
+            <tr><td colspan="6" class="text-center py-6 text-muted">No federations found.</td></tr>
+          }
+          @for (c of listPaged(); track c.id) {
             <tr>
               <td class="font-bold">{{ c.name }}</td>
               <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 8px;border-radius:4px">{{ c.code }}</code></td>
               <td class="text-muted text-sm">{{ c.slug }}</td>
-              <td>{{ c.clubCount }}</td>
-              <td><span [class]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">{{ c.isActive ? 'Active' : 'Inactive' }}</span></td>
+              <td class="text-sm">{{ c.managerEmail ?? '—' }}</td>
+              <td><span [ngClass]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">{{ c.isActive ? 'Active' : 'Inactive' }}</span></td>
               <td>
-                <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleCountry(c.id)">
-                  {{ c.isActive ? 'Deactivate' : 'Activate' }}
-                </button>
+                <div class="row-actions">
+                  <button class="pr-btn pr-btn--outline pr-btn--sm" (click)="openManager(c)">
+                    {{ c.managerEmail ? 'Change Manager' : 'Assign Manager' }}
+                  </button>
+                  <button class="pr-btn pr-btn--sm" [class]="c.isActive ? 'pr-btn--danger' : 'pr-btn--primary'" (click)="toggleFederation(c.id)">
+                    {{ c.isActive ? 'Deactivate' : 'Activate' }}
+                  </button>
+                  @if (!c.isActive) {
+                    <button class="pr-btn pr-btn--danger pr-btn--sm btn-icon-only" title="Delete federation" (click)="openDelete(c)">✕</button>
+                  }
+                </div>
               </td>
             </tr>
           }
         </tbody>
       </table>
     </div>
+
+    <div class="pagination-row">
+      <span class="text-muted text-sm">{{ listFiltered().length }} federations · page {{ listPage() }} of {{ listTotalPages() }}</span>
+      <div class="flex gap-2 items-center">
+        <select class="pr-select" style="width:auto" [ngModel]="listSize()" (ngModelChange)="listSize.set($event); onListSizeChange()">
+          <option [ngValue]="10">10 / page</option>
+          <option [ngValue]="25">25 / page</option>
+          <option [ngValue]="50">50 / page</option>
+          <option [ngValue]="100">100 / page</option>
+        </select>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="listPage() === 1" (click)="listPage.set(listPage() - 1)">Prev</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="listPage() >= listTotalPages()" (click)="listPage.set(listPage() + 1)">Next</button>
+      </div>
+    </div>
   }
 </div>
+
+<!-- ── Add Federation Modal ──────────────────────────────────────── -->
+@if (showAddModal()) {
+  <div class="modal-backdrop" (click)="closeAdd()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">New Federation</h2>
+        <button class="modal-close" (click)="closeAdd()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="pr-form-group">
+          <label class="pr-label">Country <span class="req">*</span></label>
+          <div class="country-combo">
+            <input class="pr-input"
+              [value]="fedDisplay()"
+              (input)="onFedSearch($any($event.target).value)"
+              (focus)="fedDropOpen.set(true)"
+              (blur)="onFedBlur()"
+              placeholder="Search country…"
+              autocomplete="off">
+            @if (selectedFed()) {
+              <span class="country-flag">{{ selectedFed()!.flag }}</span>
+            }
+            @if (fedDropOpen()) {
+              <div class="country-dropdown">
+                @if (filteredFeds().length === 0) {
+                  <div class="country-option country-option--empty">No countries found</div>
+                }
+                @for (c of filteredFeds(); track c.code) {
+                  <button type="button" class="country-option"
+                    [class.country-option--active]="selectedFed()?.code === c.code"
+                    (mousedown)="selectFed(c)">
+                    <span style="margin-right:6px">{{ c.flag }}</span>{{ c.name }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="pr-form-group">
+          <label class="pr-label">Federation Name <span class="req">*</span></label>
+          <input class="pr-input" [(ngModel)]="newFed.name" placeholder="e.g. Belgium">
+        </div>
+        <div class="form-row">
+          <div class="pr-form-group">
+            <label class="pr-label">Code (ISO) <span class="req">*</span></label>
+            <input class="pr-input" [(ngModel)]="newFed.code" placeholder="BE" maxlength="3" style="text-transform:uppercase">
+          </div>
+          <div class="pr-form-group">
+            <label class="pr-label">Slug <span class="req">*</span></label>
+            <input class="pr-input" [(ngModel)]="newFed.slug" placeholder="belgium">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeAdd()">Cancel</button>
+        <button class="pr-btn pr-btn--primary" [disabled]="saving() || !newFed.name || !newFed.code || !newFed.slug" (click)="saveFederation()">
+          {{ saving() ? 'Saving…' : 'Create Federation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Delete Confirmation Modal ─────────────────────────────────── -->
+@if (showDeleteModal()) {
+  <div class="modal-backdrop" (click)="closeDelete()">
+    <div class="modal-card modal-card--danger" (click)="$event.stopPropagation()">
+      <div class="modal-header modal-header--danger">
+        <h2 class="modal-title">Delete Federation</h2>
+        <button class="modal-close" (click)="closeDelete()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">This action is <strong>permanent and irreversible</strong>. All data associated with this federation — including results, pages, and linked records — will be permanently deleted.</p>
+        <p class="delete-target-name">{{ deleteTarget()?.name }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeDelete()">No, Keep It</button>
+        <button class="pr-btn pr-btn--danger" [disabled]="deleting()" (click)="confirmDelete()">
+          {{ deleting() ? 'Deleting…' : 'Yes, Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Assign Manager Modal ──────────────────────────────────────── -->
+@if (showManagerModal()) {
+  <div class="modal-backdrop" (click)="closeManager()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ managerTarget()?.managerEmail ? 'Change Federation Manager' : 'Assign Federation Manager' }}</h2>
+        <button class="modal-close" (click)="closeManager()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Federation: <strong>{{ managerTarget()?.name }}</strong></p>
+        @if (managerTarget()?.managerEmail) {
+          <p style="font-size:0.85rem;color:var(--pr-text-muted);background:var(--pr-surface-2);border-radius:6px;padding:8px 12px;margin-bottom:12px">
+            Current manager: <strong>{{ managerTarget()?.managerEmail }}</strong>
+          </p>
+        }
+
+        <div class="pr-form-group">
+          <label class="pr-label">User Email</label>
+          <div class="input-row">
+            <input class="pr-input" type="email" [(ngModel)]="managerEmail" placeholder="user@example.com"
+              (keyup.enter)="lookupUser()">
+            <button class="pr-btn pr-btn--outline pr-btn--sm" [disabled]="!managerEmail || managerLooking()" (click)="lookupUser()">
+              {{ managerLooking() ? 'Looking…' : 'Look Up' }}
+            </button>
+          </div>
+        </div>
+
+        @if (managerLookupErr()) {
+          <div class="pr-alert pr-alert--error" style="margin-top:8px">{{ managerLookupErr() }}</div>
+        }
+
+        @if (managerLookup()) {
+          <div class="lookup-card">
+            <div class="lookup-card__name">{{ managerLookup().firstName }} {{ managerLookup().lastName }}</div>
+            <div class="lookup-card__meta">{{ managerLookup().email }}</div>
+            <div class="lookup-card__role">Current role: <strong>{{ roleName(managerLookup().role) }}</strong></div>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeManager()">Cancel</button>
+        <button class="pr-btn pr-btn--primary"
+          [disabled]="!managerLookup() || managerSaving()"
+          (click)="assignManager()">
+          {{ managerSaving() ? 'Saving…' : (managerTarget()?.managerEmail ? 'Change Manager' : 'Assign as Manager') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

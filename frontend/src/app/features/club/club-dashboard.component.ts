@@ -1,7 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
+import { ProgrammeApiService } from '../../core/services/programme-api.service';
 import { AuthService } from '../../core/services/services';
 import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
 
@@ -10,24 +11,59 @@ import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
 @Component({
   selector: 'app-club-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe, NgClass],
+  imports: [RouterLink, DatePipe],
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>
         <h1 class="pr-page-header__title">{{ club()?.name ?? 'Club Dashboard' }}</h1>
         <p class="pr-page-header__subtitle">{{ club()?.city }} · {{ club()?.code }}</p>
       </div>
-      <a routerLink="/club/races/new" class="pr-btn pr-btn--primary">+ New Race</a>
     </div>
 
-    <!-- Stats -->
-    <div class="pr-grid-4 mb-6">
-      @for (s of stats(); track s.label) {
-        <div class="pr-card pr-card--flat pr-stat">
-          <div class="pr-stat__value">{{ s.value }}</div>
-          <div class="pr-stat__label">{{ s.label }}</div>
+    <!-- Activity stats -->
+    <div class="kpi-section-label">Activity</div>
+    <div class="kpi-grid mb-2">
+      <div class="pr-card pr-card--flat kpi-card">
+        <div class="kpi-icon">📋</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activityStats().totalProgrammes ?? '—' }}</div>
+          <div class="kpi-label">Programmes</div>
         </div>
-      }
+        <a routerLink="/club/programmes" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
+      </div>
+      <div class="pr-card pr-card--flat kpi-card">
+        <div class="kpi-icon">🏁</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activityStats().totalRaces ?? '—' }}</div>
+          <div class="kpi-label">Races</div>
+        </div>
+        <a routerLink="/club/races" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
+      </div>
+      <div class="pr-card pr-card--flat kpi-card">
+        <div class="kpi-icon">👥</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activityStats().totalMembers ?? '—' }}</div>
+          <div class="kpi-label">Members</div>
+        </div>
+        <a routerLink="/club/members" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
+      </div>
+    </div>
+    <div class="kpi-section-label kpi-section-label--sub">↳ This Year ({{ thisYear }})</div>
+    <div class="kpi-grid mb-6">
+      <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
+        <div class="kpi-icon">📋</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activityStats().programmesThisYear ?? '—' }}</div>
+          <div class="kpi-label">Programmes This Year</div>
+        </div>
+      </div>
+      <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
+        <div class="kpi-icon">🏁</div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activityStats().racesThisYear ?? '—' }}</div>
+          <div class="kpi-label">Races This Year</div>
+        </div>
+      </div>
     </div>
 
     <!-- Live races -->
@@ -97,16 +133,50 @@ import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
       background:var(--pr-surface-2); transition:background var(--t-fast);
     }
     .live-race-item:hover { background:var(--pr-border); }
+
+    .kpi-section-label {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--pr-text-muted);
+      margin-bottom: 6px;
+    }
+    .kpi-section-label--sub {
+      font-size: 0.63rem; margin-top: 4px; margin-left: 8px;
+      letter-spacing: 0.06em; opacity: 0.75;
+    }
+    .kpi-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .kpi-grid > * {
+      flex: 1 1 calc((100% - 7 * 8px) / 8);
+      min-width: 120px;
+    }
+    .kpi-card { display:flex; align-items:center; gap:8px; padding:8px 10px !important; }
+    .kpi-card--sub { opacity: 0.85; }
+    .kpi-icon  { font-size:1.2rem; flex-shrink:0; }
+    .kpi-body  { flex:1; min-width:0; }
+    .kpi-value { font-size:1.05rem; font-weight:700; line-height:1.2; }
+    .kpi-label { font-size:0.65rem; color:var(--pr-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .kpi-link  { flex-shrink:0; padding:2px 6px !important; font-size:0.75rem !important; }
+    .mb-2 { margin-bottom:8px; }
   `]
 })
 export class ClubDashboardComponent implements OnInit {
-  private api = inject(ApiService);
-  private auth = inject(AuthService);
+  private api     = inject(ApiService);
+  private progApi = inject(ProgrammeApiService);
+  private auth    = inject(AuthService);
 
-  club         = signal<Club | null>(null);
-  liveRaces    = signal<RaceSummary[]>([]);
-  recentRaces  = signal<RaceSummary[]>([]);
-  stats        = signal<{ label: string; value: string | number }[]>([]);
+  club          = signal<Club | null>(null);
+  liveRaces     = signal<RaceSummary[]>([]);
+  recentRaces   = signal<RaceSummary[]>([]);
+  activityStats = signal<{
+    totalRaces: number | null; racesThisYear: number | null;
+    totalProgrammes: number | null; programmesThisYear: number | null;
+    totalMembers: number | null;
+  }>({ totalRaces: null, racesThisYear: null, totalProgrammes: null, programmesThisYear: null, totalMembers: null });
+
+  readonly thisYear = new Date().getFullYear();
 
   ngOnInit() {
     const clubId = this.auth.clubId();
@@ -115,19 +185,26 @@ export class ClubDashboardComponent implements OnInit {
   }
 
   loadDashboard(clubId: string) {
-    this.api.getClub(clubId).subscribe(c => {
-      this.club.set(c);
-      this.stats.set([
-        { label: 'Members',      value: c.memberCount },
-        { label: 'Total Races',  value: '—' },
-        { label: 'Active Season',value: new Date().getFullYear() },
-        { label: 'Subscription', value: 'Active' },
-      ]);
-    });
-
+    this.api.getClub(clubId).subscribe(c => this.club.set(c));
     this.api.getLiveRaces(clubId).subscribe(r => this.liveRaces.set(r));
-
     this.api.getClubRaces(clubId, 1, 10).subscribe(p => this.recentRaces.set(p.items as RaceSummary[]));
+
+    // Activity stats: total races + this-year races in parallel
+    this.api.getClubRaces(clubId, 1, 1).subscribe(p =>
+      this.activityStats.update(s => ({ ...s, totalRaces: p.totalCount })));
+
+    this.api.getClubRaces(clubId, 1, 1, undefined, this.thisYear).subscribe(p =>
+      this.activityStats.update(s => ({ ...s, racesThisYear: p.totalCount })));
+
+    // Club stats endpoint (totalProgrammes, programmesThisYear, totalMembers)
+    this.api.getClubStats(clubId).subscribe(s => {
+      this.activityStats.update(prev => ({
+        ...prev,
+        totalProgrammes:    s.totalProgrammes,
+        programmesThisYear: s.programmesThisYear,
+        totalMembers:       s.totalMembers
+      }));
+    });
   }
 
   statusBadge(s: RaceStatus) {
@@ -152,7 +229,7 @@ export class ClubDashboardComponent implements OnInit {
 @Component({
   selector: 'app-race-list',
   standalone: true,
-  imports: [RouterLink, DatePipe, NgClass],
+  imports: [RouterLink, DatePipe],
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>

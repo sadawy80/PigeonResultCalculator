@@ -23,6 +23,9 @@ public interface IIntegrationService
 
     Task<Result<List<ExternalLinkDto>>> GetMyLinksAsync(Guid userId, CancellationToken ct);
 
+    Task<Result<List<ExternalLinkDto>>> GetAllLinksAsync(
+        ExternalLinkStatus? status, int page, int pageSize, CancellationToken ct);
+
     // Data endpoints (token-authenticated — for PLM)
     Task<Result<(ExternalLink Link, string? Error)>> ValidateTokenAsync(
         string accessToken, CancellationToken ct);

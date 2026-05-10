@@ -43,7 +43,7 @@ import { RaceResult, ResultStatus } from '../../core/models';
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
-              <tr><th>Race</th><th>Pigeon</th><th>Rank</th><th>Velocity</th><th>Distance</th><th>Date</th></tr>
+              <tr><th>Race</th><th>Pigeon</th><th>Rank</th><th>Speed</th><th>Distance</th><th>Date</th></tr>
             </thead>
             <tbody>
               @for (r of recentResults(); track r.id) {
@@ -53,7 +53,7 @@ import { RaceResult, ResultStatus } from '../../core/models';
                   <td>
                     <span [class]="'pr-rank ' + rankClass(r.clubRank)">{{ r.clubRank ?? '—' }}</span>
                   </td>
-                  <td>{{ r.velocityMperMin | number:'1.0-1' }} m/min</td>
+                  <td>{{ r.speedMperMin | number:'1.0-1' }} m/min</td>
                   <td>{{ r.distanceKm | number:'1.1-1' }} km</td>
                   <td class="text-muted text-sm">{{ r.arrivalTime | date:'dd MMM yyyy' }}</td>
                 </tr>
@@ -73,7 +73,7 @@ export class FancierDashboardComponent implements OnInit {
   stats = signal<{ label: string; value: string | number }[]>([
     { label: 'Total Races',  value: '—' },
     { label: 'Best Rank',    value: '—' },
-    { label: 'Avg Velocity', value: '—' },
+    { label: 'Avg Speed', value: '—' },
     { label: 'Pigeons',      value: '—' },
   ]);
 
@@ -85,11 +85,11 @@ export class FancierDashboardComponent implements OnInit {
       this.recentResults.set(items);
       if (items.length > 0) {
         const bestRank = Math.min(...items.filter(r => r.clubRank).map(r => r.clubRank!));
-        const avgVel = items.reduce((a, b) => a + b.velocityMperMin, 0) / items.length;
+        const avgVel = items.reduce((a, b) => a + b.speedMperMin, 0) / items.length;
         this.stats.set([
           { label: 'Total Races',  value: p.totalCount },
           { label: 'Best Rank',    value: `#${bestRank}` },
-          { label: 'Avg Velocity', value: `${avgVel.toFixed(0)} m/min` },
+          { label: 'Avg Speed', value: `${avgVel.toFixed(0)} m/min` },
           { label: 'Pigeons',      value: new Set(items.map(r => r.ringNumber)).size },
         ]);
       }
@@ -131,7 +131,7 @@ export class FancierDashboardComponent implements OnInit {
             <thead>
               <tr>
                 <th>Race</th><th>Ring #</th><th>Pigeon</th>
-                <th>Club Rank</th><th>Velocity</th><th>Distance</th>
+                <th>Club Rank</th><th>Speed</th><th>Distance</th>
                 <th>Arrival</th>
               </tr>
             </thead>
@@ -142,7 +142,7 @@ export class FancierDashboardComponent implements OnInit {
                   <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 6px;border-radius:4px">{{ r.ringNumber }}</code></td>
                   <td>{{ r.pigeonName ?? '—' }}</td>
                   <td><span [class]="'pr-rank ' + rankClass(r.clubRank)">{{ r.clubRank ?? '—' }}</span></td>
-                  <td>{{ r.velocityMperMin | number:'1.2-2' }} m/min</td>
+                  <td>{{ r.speedMperMin | number:'1.2-2' }} m/min</td>
                   <td>{{ r.distanceKm | number:'1.3-3' }} km</td>
                   <td class="text-muted text-sm">{{ r.arrivalTime | date:'dd MMM yyyy HH:mm' }}</td>
                 </tr>

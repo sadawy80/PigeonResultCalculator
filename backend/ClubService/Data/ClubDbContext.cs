@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PRC.ClubService.Models;
 
@@ -27,7 +28,7 @@ public class ClubDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasQueryFilter(x => !x.IsDeleted);
-            e.HasIndex(x => new { x.FederationId, x.Code }).IsUnique();
+            e.HasIndex(x => new { x.FederationId, x.Code });
             e.Property(x => x.Name).HasMaxLength(200).IsRequired();
             e.Property(x => x.Code).HasMaxLength(20).IsRequired();
             e.HasOne(x => x.ClubPage)
@@ -39,6 +40,7 @@ public class ClubDbContext : DbContext
         builder.Entity<ClubMembership>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasIndex(x => new { x.ClubId, x.UserId }).IsUnique();
             e.HasOne(x => x.Club)
              .WithMany(x => x.Memberships)
@@ -49,12 +51,14 @@ public class ClubDbContext : DbContext
         builder.Entity<ClubPage>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasIndex(x => x.Slug).IsUnique();
         });
 
         builder.Entity<Invitation>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasIndex(x => x.Token).IsUnique();
             e.Property(x => x.Email).HasMaxLength(256).IsRequired();
             e.HasOne(x => x.Club)
@@ -71,6 +75,7 @@ public class ClubDbContext : DbContext
         builder.Entity<PigeonLink>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasIndex(x => new { x.MembershipId, x.RingNumber }).IsUnique();
             e.HasOne(x => x.Membership)
              .WithMany(x => x.PigeonLinks)
@@ -85,12 +90,14 @@ public class ClubDbContext : DbContext
             e.HasOne(x => x.Club)
              .WithMany(x => x.Programmes)
              .HasForeignKey(x => x.ClubId)
-             .OnDelete(DeleteBehavior.Cascade);
+             .IsRequired(false)
+             .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<ProgrammeRace>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasIndex(x => new { x.ProgrammeId, x.RaceId }).IsUnique();
             e.HasOne(x => x.Programme)
              .WithMany(x => x.ProgrammeRaces)
@@ -101,6 +108,7 @@ public class ClubDbContext : DbContext
         builder.Entity<BestLoftResult>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasOne(x => x.Programme)
              .WithMany(x => x.BestLoftResults)
              .HasForeignKey(x => x.ProgrammeId)
@@ -110,6 +118,7 @@ public class ClubDbContext : DbContext
         builder.Entity<AcePigeonResult>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasOne(x => x.Programme)
              .WithMany(x => x.AcePigeonResults)
              .HasForeignKey(x => x.ProgrammeId)
@@ -119,10 +128,15 @@ public class ClubDbContext : DbContext
         builder.Entity<SuperAcePigeonResult>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasOne(x => x.Programme)
              .WithMany(x => x.SuperAcePigeonResults)
              .HasForeignKey(x => x.ProgrammeId)
              .OnDelete(DeleteBehavior.Cascade);
         });
+
+        builder.AddOutboxMessageEntity();
+        builder.AddOutboxStateEntity();
+        builder.AddInboxStateEntity();
     }
 }

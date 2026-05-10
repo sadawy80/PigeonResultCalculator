@@ -63,6 +63,7 @@ public record ResendVerificationRequest(string Email);
 public record SubmitUpgradeRequestBody(
     UserRole RequestedRole,
     Guid? FederationId,
+    string? ClubName,
     string? Notes);
 
 public record UpgradeRequestDto(
@@ -79,3 +80,7 @@ public record UpgradeRequestDto(
     DateTime? ReviewedAt);
 
 public record RejectUpgradeRequestBody(string? Reason);
+
+public record UpdateProfileRequest(
+    string FirstName,
+    string LastName);

@@ -50,7 +50,7 @@ tbody tr:nth-child(even){{background:{accent}11}} td{{font-size:8.5pt;border-bot
 <div class='h'><h1>{{{{race.name}}}}</h1><div class='s'>{{{{club.name}}}} &bull; {label}</div></div>
 <div class='m'><div><strong>Location</strong>{{{{race.releaseLocation}}}}</div><div><strong>Date</strong>{{{{race.date}}}}</div><div><strong>Distance</strong>{{{{race.distance}}}} km</div><div><strong>Entries</strong>{{{{race.totalEntries}}}}</div><div><strong>Wind</strong>{{{{race.wind}}}}</div><div><strong>Season</strong>{{{{season}}}}</div></div>
 <table><thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Dist</th><th>m/min</th><th>km/h</th><th>Cat</th></tr></thead>
-<tbody>{{{{#each results}}}}<tr><td class='r'>{{{{rank}}}}</td><td>{{{{ringNumber}}}}</td><td>{{{{pigeonName}}}}</td><td>{{{{fancierName}}}}</td><td>{{{{arrivalTime}}}}</td><td>{{{{distanceKm}}}}</td><td class='v'>{{{{velocityMperMin}}}}</td><td>{{{{velocityKmH}}}}</td><td>{{{{categoryName}}}}</td></tr>{{{{/each}}}}</tbody>
+<tbody>{{{{#each results}}}}<tr><td class='r'>{{{{rank}}}}</td><td>{{{{ringNumber}}}}</td><td>{{{{pigeonName}}}}</td><td>{{{{fancierName}}}}</td><td>{{{{arrivalTime}}}}</td><td>{{{{distanceKm}}}}</td><td class='v'>{{{{speedMperMin}}}}</td><td>{{{{speedKmH}}}}</td><td>{{{{categoryName}}}}</td></tr>{{{{/each}}}}</tbody>
 </table><div class='f'>{{{{club.name}}}} &mdash; Printed {{{{printDate}}}}</div></body></html>";
 
     private static string BuildRRLandscape(string label, string primary, string accent, string bg) => $@"
@@ -69,7 +69,7 @@ tbody tr:nth-child(even){{background:{accent}11}} td{{font-size:8pt;border-botto
 <div class='h'><h1>{{{{race.name}}}}</h1><div class='s'>{{{{club.name}}}}<br>{{{{race.date}}}} &bull; {label}</div></div>
 <div class='m'><div><strong>Release</strong>{{{{race.releaseLocation}}}}</div><div><strong>Date</strong>{{{{race.date}}}}</div><div><strong>Time</strong>{{{{race.releaseTime}}}}</div><div><strong>Distance</strong>{{{{race.distance}}}} km</div><div><strong>Entries</strong>{{{{race.totalEntries}}}}</div><div><strong>Wind</strong>{{{{race.wind}}}}</div><div><strong>Temp</strong>{{{{race.temperature}}}}</div><div><strong>Season</strong>{{{{season}}}}</div></div>
 <table><thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Arrival</th><th>Dist km</th><th>m/min</th><th>km/h</th><th>Cat</th></tr></thead>
-<tbody>{{{{#each results}}}}<tr><td class='r'>{{{{rank}}}}</td><td>{{{{ringNumber}}}}</td><td>{{{{pigeonName}}}}</td><td>{{{{pigeonSex}}}}</td><td>{{{{pigeonYear}}}}</td><td>{{{{fancierName}}}}</td><td>{{{{arrivalTime}}}}</td><td>{{{{distanceKm}}}}</td><td class='v'>{{{{velocityMperMin}}}}</td><td>{{{{velocityKmH}}}}</td><td>{{{{categoryName}}}}</td></tr>{{{{/each}}}}</tbody>
+<tbody>{{{{#each results}}}}<tr><td class='r'>{{{{rank}}}}</td><td>{{{{ringNumber}}}}</td><td>{{{{pigeonName}}}}</td><td>{{{{pigeonSex}}}}</td><td>{{{{pigeonYear}}}}</td><td>{{{{fancierName}}}}</td><td>{{{{arrivalTime}}}}</td><td>{{{{distanceKm}}}}</td><td class='v'>{{{{speedMperMin}}}}</td><td>{{{{speedKmH}}}}</td><td>{{{{categoryName}}}}</td></tr>{{{{/each}}}}</tbody>
 </table><div class='f'>{{{{club.name}}}} &mdash; Printed {{{{printDate}}}}</div></body></html>";
 
     private static string BuildRRBranded(bool landscape) => @"
@@ -89,7 +89,7 @@ tbody tr:nth-child(even){background:{{club.secondaryColour}}11} td{font-size:9pt
 <div class='h'><div><h1>{{race.name}}</h1><div class='s'>{{club.name}} &bull; Branded</div></div><img class='logo' src='{{club.logoUrl}}' onerror=""this.style.display='none'""></div>
 <div class='m'><div><strong>Location</strong>{{race.releaseLocation}}</div><div><strong>Date</strong>{{race.date}}</div><div><strong>Distance</strong>{{race.distance}} km</div><div><strong>Entries</strong>{{race.totalEntries}}</div><div><strong>Wind</strong>{{race.wind}}</div><div><strong>Season</strong>{{season}}</div></div>
 <table><thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Dist km</th><th>m/min</th><th>km/h</th><th>Cat</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='r'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='v'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='r'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='v'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table><div class='f'>{{club.name}} Official Results &bull; Printed {{printDate}}</div></body></html>";
 
     private static string BuildRRTop10() => @"<!DOCTYPE html><html><head><meta charset='utf-8'><style>
@@ -122,14 +122,14 @@ td{font-size:10pt;border-bottom:1px solid #E8EDF2;padding:6px 10px}
 </div>
 {{#if results.[0]}}
 <div class='podium'>
-  <div class='pod pod-2'><span class='medal'>🥈</span><div class='ring'>{{results.[1].ringNumber}}</div><div class='name'>{{results.[1].fancierName}}</div><div class='vel'>{{results.[1].velocityMperMin}}</div><div style='font-size:8pt;color:#777'>m/min</div></div>
-  <div class='pod pod-1'><span class='medal'>🥇</span><div class='ring'>{{results.[0].ringNumber}}</div><div class='name'>{{results.[0].fancierName}}</div><div class='vel'>{{results.[0].velocityMperMin}}</div><div style='font-size:8pt;color:#777'>m/min</div></div>
-  <div class='pod pod-3'><span class='medal'>🥉</span><div class='ring'>{{results.[2].ringNumber}}</div><div class='name'>{{results.[2].fancierName}}</div><div class='vel'>{{results.[2].velocityMperMin}}</div><div style='font-size:8pt;color:#777'>m/min</div></div>
+  <div class='pod pod-2'><span class='medal'>🥈</span><div class='ring'>{{results.[1].ringNumber}}</div><div class='name'>{{results.[1].fancierName}}</div><div class='vel'>{{results.[1].speedMperMin}}</div><div style='font-size:8pt;color:#777'>m/min</div></div>
+  <div class='pod pod-1'><span class='medal'>🥇</span><div class='ring'>{{results.[0].ringNumber}}</div><div class='name'>{{results.[0].fancierName}}</div><div class='vel'>{{results.[0].speedMperMin}}</div><div style='font-size:8pt;color:#777'>m/min</div></div>
+  <div class='pod pod-3'><span class='medal'>🥉</span><div class='ring'>{{results.[2].ringNumber}}</div><div class='name'>{{results.[2].fancierName}}</div><div class='vel'>{{results.[2].speedMperMin}}</div><div style='font-size:8pt;color:#777'>m/min</div></div>
 </div>
 {{/if}}
 <div class='rest'><table>
   <thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Distance km</th><th>m/min</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td style='font-weight:700'>{{velocityMperMin}}</td></tr>{{/each}}</tbody>
+  <tbody>{{#each results}}<tr><td class='rank'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td style='font-weight:700'>{{speedMperMin}}</td></tr>{{/each}}</tbody>
 </table></div>
 <div class='footer'>{{club.name}} &bull; {{printDate}}</div></body></html>";
 
@@ -150,7 +150,7 @@ tbody tr:nth-child(even){background:#F5F8FC} td{font-size:8.5pt;border-bottom:1p
 {{#each categories}}
 <div class='cat-header'>{{name}} ({{count}} entries)</div>
 <table><thead><tr><th>Cat#</th><th>Club#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Dist</th><th>m/min</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{categoryRank}}</td><td style='color:#666'>{{clubRank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel'>{{velocityMperMin}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{categoryRank}}</td><td style='color:#666'>{{clubRank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='vel'>{{speedMperMin}}</td></tr>{{/each}}</tbody>
 </table>{{/each}}
 <div class='footer'>{{club.name}} &bull; Printed {{printDate}}</div></body></html>";
 
@@ -167,7 +167,7 @@ tbody tr:nth-child(even){background:#F8F8F8} td{font-size:7.5pt;border-bottom:1p
 <div class='h'><h1>{{race.name}}</h1><div class='s'>{{club.name}}<br>{{race.date}} &bull; {{race.distance}} km &bull; {{race.totalEntries}} entries</div></div>
 <div class='m'><span>Release: {{race.releaseLocation}}</span><span>Time: {{race.releaseTime}}</span><span>Wind: {{race.wind}}</span><span>Season {{season}}</span></div>
 <table><thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Fancier</th><th>Arrival</th><th>Dist</th><th>m/min</th><th>km/h</th><th>Cat</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='r'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='v'>{{velocityMperMin}}</td><td>{{velocityKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='r'>{{rank}}</td><td>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{fancierName}}</td><td>{{arrivalTime}}</td><td>{{distanceKm}}</td><td class='v'>{{speedMperMin}}</td><td>{{speedKmH}}</td><td>{{categoryName}}</td></tr>{{/each}}</tbody>
 </table></body></html>";
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -227,14 +227,14 @@ td{{font-size:9.5pt;border-bottom:1px solid {accent}44;padding:6px 9px}}
   <div><strong>Races</strong>{{{{programme.raceCount}}}}</div>
   <div><strong>Fanciers</strong>{{{{totalLofts}}}}</div>
 </div>
-<table><thead><tr><th>#</th><th>Fancier / Loft</th><th>Races Entered</th><th>Pigeons Entered</th><th>Best Velocity</th><th>Avg Velocity</th><th>Total Score</th><th>Avg Score</th></tr></thead>
+<table><thead><tr><th>#</th><th>Fancier / Loft</th><th>Races Entered</th><th>Pigeons Entered</th><th>Best Speed</th><th>Avg Speed</th><th>Total Score</th><th>Avg Score</th></tr></thead>
 <tbody>{{{{#each results}}}}<tr>
   <td class='rank'>{{{{loftRank}}}}</td>
   <td><strong>{{{{fancierName}}}}</strong></td>
   <td>{{{{racesEntered}}}}</td>
   <td>{{{{pigeonsEntered}}}}</td>
-  <td>{{{{bestSingleVelocityMperMin}}}} m/min</td>
-  <td>{{{{averageVelocityMperMin}}}} m/min</td>
+  <td>{{{{bestSingleSpeedMperMin}}}} m/min</td>
+  <td>{{{{averageSpeedMperMin}}}} m/min</td>
   <td class='score'>{{{{totalScore}}}}</td>
   <td>{{{{averageScore}}}}</td>
 </tr>{{{{/each}}}}</tbody></table>
@@ -261,7 +261,7 @@ tbody tr:nth-child(even){background:#FBF7EC} td{border:1px solid #E8DFC8;font-si
 <div class='orn'>&#8730; &mdash; &#8730;</div>
 <table style='margin-top:10px'>
   <thead><tr><th>#</th><th>Fancier</th><th>Races</th><th>Pigeons</th><th>Best Vel.</th><th>Avg Vel.</th><th>Total Score</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank'>{{loftRank}}</td><td>{{fancierName}}</td><td>{{racesEntered}}</td><td>{{pigeonsEntered}}</td><td>{{bestSingleVelocityMperMin}}</td><td>{{averageVelocityMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
+  <tbody>{{#each results}}<tr><td class='rank'>{{loftRank}}</td><td>{{fancierName}}</td><td>{{racesEntered}}</td><td>{{pigeonsEntered}}</td><td>{{bestSingleSpeedMperMin}}</td><td>{{averageSpeedMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &mdash; {{programme.name}} &mdash; Printed {{printDate}}</div>
 </div></body></html>";
@@ -290,7 +290,7 @@ tr:nth-child(1) .rank{color:#D4A017} tr:nth-child(2) .rank{color:#888} tr:nth-ch
 </div>
 <table>
   <thead><tr><th>#</th><th>Fancier</th><th>Races</th><th>Pigeons</th><th>Best m/min</th><th>Avg m/min</th><th>Total Score</th><th>Avg Score</th></tr></thead>
-  <tbody>{{#each results}}<tr><td class='rank'>{{loftRank}}</td><td>{{fancierName}}</td><td>{{racesEntered}}</td><td>{{pigeonsEntered}}</td><td>{{bestSingleVelocityMperMin}}</td><td>{{averageVelocityMperMin}}</td><td class='score'>{{totalScore}}</td><td>{{averageScore}}</td></tr>{{/each}}</tbody>
+  <tbody>{{#each results}}<tr><td class='rank'>{{loftRank}}</td><td>{{fancierName}}</td><td>{{racesEntered}}</td><td>{{pigeonsEntered}}</td><td>{{bestSingleSpeedMperMin}}</td><td>{{averageSpeedMperMin}}</td><td class='score'>{{totalScore}}</td><td>{{averageScore}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &bull; Printed {{printDate}}</div>
 </body></html>";
@@ -312,7 +312,7 @@ tbody tr:nth-child(even){background:{{club.secondaryColour}}11} td{font-size:9.5
 <div class='header'><div><h1>🏠 Best Loft Results</h1><div class='sub'>{{programme.name}} &bull; Branded</div></div><img class='logo' src='{{club.logoUrl}}' onerror=""this.style.display='none'""></div>
 <div class='meta'><div><strong>Programme</strong>{{programme.name}}</div><div><strong>Season</strong>{{programme.year}}</div><div><strong>Scoring</strong>{{programme.scoringMethod}}</div><div><strong>Races</strong>{{programme.raceCount}}</div><div><strong>Club</strong>{{club.name}}</div></div>
 <table><thead><tr><th>#</th><th>Fancier</th><th>Races</th><th>Pigeons</th><th>Best m/min</th><th>Avg m/min</th><th>Total Score</th><th>Avg Score</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{loftRank}}</td><td>{{fancierName}}</td><td>{{racesEntered}}</td><td>{{pigeonsEntered}}</td><td>{{bestSingleVelocityMperMin}}</td><td>{{averageVelocityMperMin}}</td><td class='score'>{{totalScore}}</td><td>{{averageScore}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{loftRank}}</td><td>{{fancierName}}</td><td>{{racesEntered}}</td><td>{{pigeonsEntered}}</td><td>{{bestSingleSpeedMperMin}}</td><td>{{averageSpeedMperMin}}</td><td class='score'>{{totalScore}}</td><td>{{averageScore}}</td></tr>{{/each}}</tbody>
 </table><div class='footer'>{{club.name}} Best Loft {{programme.year}} &bull; Printed {{printDate}}</div></body></html>";
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -383,8 +383,8 @@ td{{font-size:9.5pt;border-bottom:1px solid {accent}44;padding:6px 9px}}
   <td>{{{{fancierName}}}}</td>
   <td>{{{{racesEntered}}}}/{{{{racesInProgramme}}}}</td>
   <td>{{{{participationRate}}}}%</td>
-  <td>{{{{bestVelocityMperMin}}}}</td>
-  <td>{{{{averageVelocityMperMin}}}}</td>
+  <td>{{{{bestSpeedMperMin}}}}</td>
+  <td>{{{{averageSpeedMperMin}}}}</td>
   <td class='score'>{{{{totalScore}}}}</td>
 </tr>{{{{/each}}}}</tbody></table>
 <div class='footer'>{{{{club.name}}}} &bull; Ace Pigeon {{{{programme.year}}}} &bull; Printed {{{{printDate}}}}</div>
@@ -411,7 +411,7 @@ tbody tr:nth-child(even){background:#FBF7EC} td{border:1px solid #E8DFC8;font-si
 <div class='orn'>&#8730; &mdash; &#8730;</div>
 <table style='margin-top:10px'>
 <thead><tr><th>#</th><th>Ring</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Races</th><th>Best m/min</th><th>Score</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{aceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{bestVelocityMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{aceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{bestSpeedMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &mdash; Ace Pigeon {{programme.year}} &mdash; Printed {{printDate}}</div>
 </div></body></html>";
@@ -440,7 +440,7 @@ tr:nth-child(1) .rank{color:#D4A017} tr:nth-child(2) .rank{color:#888} tr:nth-ch
 </div>
 <table>
 <thead><tr><th>#</th><th>Ring</th><th>Pigeon</th><th>Sex</th><th>Yr</th><th>Fancier</th><th>Races</th><th>Part%</th><th>Best m/min</th><th>Avg m/min</th><th>Score</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{aceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{participationRate}}%</td><td>{{bestVelocityMperMin}}</td><td>{{averageVelocityMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{aceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{participationRate}}%</td><td>{{bestSpeedMperMin}}</td><td>{{averageSpeedMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
 </table>
 <div class='footer'>{{club.name}} &bull; Printed {{printDate}}</div>
 </body></html>";
@@ -463,6 +463,6 @@ tbody tr:nth-child(even){background:{{club.secondaryColour}}11} td{font-size:9.5
 <div class='header'><div><h1>🕊️ Ace Pigeon Results</h1><div class='sub'>{{programme.name}} &bull; Branded</div></div><img class='logo' src='{{club.logoUrl}}' onerror=""this.style.display='none'""></div>
 <div class='meta'><div><strong>Programme</strong>{{programme.name}}</div><div><strong>Season</strong>{{programme.year}}</div><div><strong>Scoring</strong>{{programme.scoringMethod}}</div><div><strong>Races</strong>{{programme.raceCount}}</div><div><strong>Club</strong>{{club.name}}</div></div>
 <table><thead><tr><th>#</th><th>Ring Number</th><th>Pigeon</th><th>Sex</th><th>Year</th><th>Fancier</th><th>Races</th><th>Part%</th><th>Best m/min</th><th>Score</th></tr></thead>
-<tbody>{{#each results}}<tr><td class='rank'>{{aceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{participationRate}}%</td><td>{{bestVelocityMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
+<tbody>{{#each results}}<tr><td class='rank'>{{aceRank}}</td><td class='ring'>{{ringNumber}}</td><td>{{pigeonName}}</td><td>{{pigeonSex}}</td><td>{{pigeonYearOfBirth}}</td><td>{{fancierName}}</td><td>{{racesEntered}}/{{racesInProgramme}}</td><td>{{participationRate}}%</td><td>{{bestSpeedMperMin}}</td><td class='score'>{{totalScore}}</td></tr>{{/each}}</tbody>
 </table><div class='footer'>{{club.name}} Ace Pigeon {{programme.year}} &bull; Printed {{printDate}}</div></body></html>";
 }

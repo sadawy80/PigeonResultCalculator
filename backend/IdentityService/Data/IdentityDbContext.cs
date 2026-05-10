@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -61,10 +62,15 @@ public class IdentityDbContext : IdentityDbContext<ApplicationUser, IdentityRole
              .WithMany()
              .HasForeignKey(x => x.UserId)
              .OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.ClubName).HasMaxLength(200);
             e.Property(x => x.Notes).HasMaxLength(500);
             e.Property(x => x.RejectionReason).HasMaxLength(500);
             e.HasIndex(x => new { x.UserId, x.Status });
             e.HasIndex(x => new { x.FederationId, x.Status });
         });
+
+        builder.AddOutboxMessageEntity();
+        builder.AddOutboxStateEntity();
+        builder.AddInboxStateEntity();
     }
 }

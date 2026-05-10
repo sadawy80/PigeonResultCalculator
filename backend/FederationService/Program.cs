@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PRC.Common.Consul;
 using PRC.FederationService.Data;
 using PRC.FederationService.Events;
 using PRC.FederationService.Hubs;
@@ -61,8 +62,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(opts =>
     opts.AddPolicy("Gateway", p => p
         .WithOrigins(
-            builder.Configuration["App:GatewayUrl"] ?? "http://localhost:9500",
-            builder.Configuration["App:AngularUrl"]  ?? "http://localhost:4300")
+            builder.Configuration["App:GatewayUrl"]   ?? "http://localhost:9500",
+            builder.Configuration["App:FrontendUrl"] ?? "http://localhost:4300")
         .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 // ── MassTransit ───────────────────────────────────────────────────────────────
@@ -73,8 +74,15 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<GetFederationsConsumer>();
     x.AddConsumer<CreateFederationConsumer>();
     x.AddConsumer<ToggleFederationActiveConsumer>();
+    x.AddConsumer<AdminDeleteFederationConsumer>();
     x.AddConsumer<GetPublicFederationBySlugConsumer>();
     x.AddConsumer<FederationManagerAssignedConsumer>();
+
+    x.AddEntityFrameworkOutbox<FederationDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
@@ -113,6 +121,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "federation-service", 9504);
+
 var app = builder.Build();
 
 app.UseSerilogRequestLogging(opts =>
@@ -141,7 +151,13 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Fede
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FederationDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try { await db.Database.MigrateAsync(); break; }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("FederationService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
+    await PRC.FederationService.Data.DemoSeeder.SeedAsync(db);
 }
 
 app.Run();
