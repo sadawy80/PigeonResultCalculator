@@ -14,9 +14,13 @@ x-svc-env: &svc-env
   RabbitMQ__Username: ${RABBITMQ_USER:-guest}
   RabbitMQ__Password: ${RABBITMQ_PASS:-guest}
   Seq__ServerUrl: http://seq:5341
+  Serilog__SeqUrl: http://seq:5341
   Jwt__Key: ${JWT_KEY:-CHANGE_THIS_TO_A_STRONG_SECRET_KEY_MIN_32_CHARS}
   Jwt__Issuer: PRC
   Jwt__Audience: PRC
+  Consul__Address: http://consul:8500
+  Serilog__MinimumLevel__Override__MassTransit: Warning
+  App__FrontendUrl: https://localhost:4300
 
 x-logging: &default-logging
   driver: json-file
@@ -35,7 +39,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-      - "15692:15692"   # Prometheus metrics
+      - "15692:15692" # Prometheus metrics
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
@@ -45,11 +49,11 @@ services:
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
       interval: 15s
       timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 45s
     logging: *default-logging
 
   sqlserver:
@@ -67,12 +71,25 @@ services:
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa",
-             "-P", "${SQL_PASSWORD:-Str0ngP@ssword!}", "-Q", "SELECT 1", "-No"]
+      test: [ "CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${SQL_PASSWORD:-Str0ngP@ssword!}", "-Q", "SELECT 1", "-No" ]
       interval: 20s
       timeout: 10s
       retries: 10
       start_period: 60s
+    logging: *default-logging
+
+  adminer:
+    image: adminer:4-standalone
+    container_name: prc-adminer
+    restart: unless-stopped
+    ports:
+      - "7080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: sqlserver
+    depends_on:
+      sqlserver: { condition: service_healthy }
+    networks:
+      - internal
     logging: *default-logging
 
   redis:
@@ -86,7 +103,7 @@ services:
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -94,18 +111,37 @@ services:
     logging: *default-logging
 
   seq:
-    image: datalust/seq:latest
+    image: datalust/seq:2024.3
     container_name: prc-seq
     restart: unless-stopped
     ports:
       - "5342:80"
-      - "5341:5341"
+      - "5541:5341"
     environment:
       ACCEPT_EULA: Y
     volumes:
       - seq_data:/data
     networks:
       - internal
+    logging: *default-logging
+
+  consul:
+    image: hashicorp/consul:1.19
+    container_name: prc-consul
+    restart: unless-stopped
+    ports:
+      - "7500:8500"   # Consul UI
+    command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -data-dir=/consul/data"
+    volumes:
+      - consul_data:/consul/data
+    networks:
+      - internal
+    healthcheck:
+      test: [ "CMD", "consul", "members" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     logging: *default-logging
 
   # ── Application Services ─────────────────────────────────────────────────────
@@ -121,16 +157,17 @@ services:
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9500
-      App__FrontendUrl: ${FRONTEND_URL:-http://localhost:4300}
+      App__FrontendUrl: ${FRONTEND_URL:-https://localhost:4300}
     depends_on:
       rabbitmq: { condition: service_healthy }
+      consul: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: api-gateway
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9500/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9500'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -151,14 +188,14 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Identity;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: identity-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9501/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9501'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -179,14 +216,14 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Club;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: club-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9502/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9502'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -207,14 +244,14 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Race;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: race-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9503/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9503'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -235,14 +272,14 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Federation;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: federation-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9504/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9504'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -263,14 +300,14 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Rendering;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: rendering-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9505/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9505'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -291,14 +328,14 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Integration;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: integration-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9506/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9506'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -317,16 +354,19 @@ services:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9507
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Admin;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
+      Jwt__AdminKey: ${ADMIN_JWT_KEY:-CHANGE_THIS_ADMIN_SECRET_KEY_MIN_32_CHARS}
+      Jwt__AdminIssuer: PRC.AdminService
+      Jwt__AdminAudience: PRC.Admin
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: admin-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9507/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9507'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -347,14 +387,55 @@ services:
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Subscription;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
     depends_on:
       sqlserver: { condition: service_healthy }
-      rabbitmq:  { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
     networks:
       - internal
     labels:
       logging: promtail
       service: subscription-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9509/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9509'" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  backup-service:
+    build:
+      context: backend
+      dockerfile: BackupService/Dockerfile
+    container_name: prc-backups
+    restart: unless-stopped
+    ports:
+      - "9510:9510"
+    environment:
+      <<: *svc-env
+      ASPNETCORE_URLS: http://+:9510
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Backup;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
+      ConnectionStrings__MasterConnection: "Server=sqlserver,1433;Database=master;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
+      Minio__Endpoint: minio:9000
+      Minio__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      Minio__Bucket: prc-backups
+      PCloud__AccessToken: ${PCLOUD_TOKEN:-}
+      Backup__StagingPath: /sqldata/backup
+      Backup__RetentionDays: "30"
+      Jwt__AdminKey: ${ADMIN_JWT_KEY:-CHANGE_THIS_ADMIN_SECRET_KEY_MIN_32_CHARS}
+      Jwt__AdminIssuer: PRC.AdminService
+      Jwt__AdminAudience: PRC.Admin
+    volumes:
+      - sqlserver_data:/sqldata
+    depends_on:
+      sqlserver: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    networks:
+      - internal
+    labels:
+      logging: promtail
+      service: backup-service
+    healthcheck:
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9510'" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -394,7 +475,7 @@ services:
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9508
-      App__FrontendUrl: ${FRONTEND_URL:-http://localhost:4300}
+      App__FrontendUrl: ${FRONTEND_URL:-https://localhost:4300}
     depends_on:
       rabbitmq: { condition: service_healthy }
     networks:
@@ -403,28 +484,34 @@ services:
       logging: promtail
       service: public-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9508/health"]
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9508'" ]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 20s
     logging: *default-logging
 
-  ui:
-    build:
-      context: frontend
-      dockerfile: Dockerfile
-    container_name: prc-ui
+  minio:
+    image: minio/minio:RELEASE.2024-10-02T17-50-41Z
+    container_name: prc-minio
     restart: unless-stopped
     ports:
-      - "4300:80"
-    depends_on:
-      api-gateway: { condition: service_healthy }
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
     networks:
       - internal
-    labels:
-      logging: promtail
-      service: ui
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     logging: *default-logging
 
   # ── Observability ────────────────────────────────────────────────────────────
@@ -461,6 +548,7 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/01-platform-overview.json
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/placeholder/placeholder/placeholder}
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -502,6 +590,14 @@ services:
     restart: unless-stopped
     ports:
       - "9093:9093"
+    environment:
+      SMTP_SMARTHOST: ${SMTP_SMARTHOST:-smtp.gmail.com:587}
+      SMTP_FROM: ${SMTP_FROM:-alerts@pigeonresultcalculator.com}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      ALERT_EMAIL: ${ALERT_EMAIL:-ops@pigeonresultcalculator.com}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      PAGERDUTY_KEY: ${PAGERDUTY_KEY:-}
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
@@ -566,6 +662,7 @@ services:
     restart: unless-stopped
     ports:
       - "9399:9399"
+    command: --config.file=/etc/sql_exporter/sql_exporter.yml
     environment:
       SQL_PASSWORD: ${SQL_PASSWORD:-Str0ngP@ssword!}
     volumes:
@@ -587,6 +684,8 @@ volumes:
   sqlserver_data:
   redis_data:
   seq_data:
+  consul_data:
   prometheus_data:
   grafana_data:
   loki_data:
+  minio_data:

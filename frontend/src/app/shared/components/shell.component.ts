@@ -345,6 +345,7 @@ export class ShellComponent implements OnInit, OnDestroy {
         { icon: '🎖️', label: 'nav.bestLoft',         path: '/admin/results/best-loft' },
         { icon: '📋', label: 'nav.eventLog',         path: '/admin/events' },
         { icon: '🔔', label: 'nav.notifications',    path: '/admin/notifications' },
+        { icon: '💾', label: 'nav.backups',           path: '/admin/backups' },
       ],
       [UserRole.FederationManager]: [
         { icon: '📊', label: 'nav.dashboard',        path: '/federation/dashboard' },

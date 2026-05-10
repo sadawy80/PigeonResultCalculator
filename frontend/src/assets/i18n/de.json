@@ -30,7 +30,8 @@
         "superAce": "Super-Ass",
         "bestLoft": "Bester Schlag",
         "templates": "Vorlagen",
-        "integrations": "Integrationen"
+        "integrations": "Integrationen",
+        "backups": "Sicherungen"
     },
     "common": {
         "save": "Speichern",
