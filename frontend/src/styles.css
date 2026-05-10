@@ -124,6 +124,8 @@ p:last-child { margin-bottom: 0; }
 .pr-btn--sm { padding: var(--sp-2) var(--sp-3); font-size: 0.8rem; }
 .pr-btn--lg { padding: var(--sp-4) var(--sp-8); font-size: 1rem; }
 .pr-btn--icon { padding: var(--sp-2); border-radius: 50%; }
+/* Matches height of .pr-input / .pr-select exactly */
+.pr-btn--field { padding: var(--sp-3) var(--sp-4); font-size: 0.95rem; line-height: inherit; }
 
 /* Form controls */
 .pr-form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -247,7 +249,7 @@ p:last-child { margin-bottom: 0; }
 .flex { display: flex; } .items-center { align-items: center; } .justify-between { justify-content: space-between; }
 .gap-2 { gap: var(--sp-2); } .gap-4 { gap: var(--sp-4); } .gap-6 { gap: var(--sp-6); }
 .mt-4 { margin-top: var(--sp-4); } .mt-6 { margin-top: var(--sp-6); } .mt-8 { margin-top: var(--sp-8); }
-.mb-4 { margin-bottom: var(--sp-4); } .mb-6 { margin-bottom: var(--sp-6); }
+.mb-4 { margin-bottom: var(--sp-4); } .mb-6 { margin-bottom: var(--sp-6); } .mb-8 { margin-bottom: var(--sp-8); }
 .text-muted { color: var(--pr-text-muted); } .text-sm { font-size: 0.875rem; }
 .text-right { text-align: right; } .font-bold { font-weight: 700; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -358,6 +360,12 @@ p:last-child { margin-bottom: 0; }
   letter-spacing: 0;  /* Arabic doesn't use letter spacing */
 }
 
+/* Persian font — Vazirmatn is ideal; fall back to standard Persian-capable fonts */
+[data-locale="fa"] body {
+  font-family: 'Vazirmatn', 'B Nazanin', 'Segoe UI', 'Tahoma', Arial, sans-serif;
+  letter-spacing: 0;
+}
+
 /* Chinese font stack */
 [data-locale="zh"] body {
   font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC',
@@ -439,3 +447,130 @@ p:last-child { margin-bottom: 0; }
   text-align: right;
 }
 [dir="rtl"] .pb-item { flex-direction: row-reverse; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shared Modal System  (pr-modal-backdrop / pr-modal)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pr-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+.pr-modal {
+  background: var(--pr-surface);
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius-lg, var(--pr-radius));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(30, 144, 255, 0.08);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px;
+  animation: slideUp 0.18s ease;
+}
+
+.pr-modal--sm  { max-width: 360px; }
+.pr-modal--md  { max-width: 480px; }
+.pr-modal--lg  { max-width: 680px; }
+.pr-modal--xl  { max-width: 860px; }
+
+.pr-modal__title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--pr-text);
+  margin: 0 0 4px;
+}
+
+.pr-modal__subtitle {
+  font-size: 0.8rem;
+  color: var(--pr-text-muted);
+  margin: 0 0 20px;
+}
+
+.pr-modal__divider {
+  border: none;
+  border-top: 1px solid var(--pr-border);
+  margin: 20px 0;
+}
+
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Shared pagination row ───────────────────────────────────────────────── */
+.pagination-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Hint text ───────────────────────────────────────────────────────────── */
+.pr-hint { font-size: 0.8rem; color: var(--pr-text-muted); margin-top: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive — Mobile (≤ 767px) & Tablet (768–1023px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Shared modal system — full-screen on mobile */
+@media (max-width: 767px) {
+  .pr-modal-backdrop { padding: 0; align-items: flex-end; }
+  .pr-modal {
+    max-width: 100%;
+    max-height: 92dvh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: 20px 16px;
+  }
+
+  /* Component-level modal classes (admin pages) */
+  .modal-backdrop { padding: 0 !important; align-items: flex-end !important; }
+  .modal-card {
+    max-width: 100% !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  /* Page headers — stack vertically */
+  .pr-page-header.flex.justify-between { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .pr-page-header.flex.justify-between > button { align-self: stretch; }
+
+  /* Filter bars — already flex-wrap, but reduce gaps */
+  .flex.flex-wrap.gap-4.items-end { gap: 12px; }
+  .flex.flex-wrap.gap-4.items-end > .pr-form-group { min-width: 100% !important; flex: 1 1 100% !important; }
+  .flex.flex-wrap.gap-4.items-end > .pr-btn { width: 100%; justify-content: center; }
+
+  /* Row actions — wrap buttons */
+  .row-actions { flex-wrap: wrap; gap: 4px; }
+
+  /* Pagination — stack */
+  .pagination-row { flex-direction: column; align-items: stretch; text-align: center; }
+  .pagination-row .flex { justify-content: center; }
+
+  /* Cards — reduce padding */
+  .pr-card { padding: 16px; }
+
+  /* Stat grid — 2 columns on mobile */
+  .pr-grid-4 { grid-template-columns: repeat(2, 1fr); }
+
+  /* Font size adjustments */
+  .pr-page-header__title { font-size: 1.5rem; }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pr-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .main { padding: 24px 20px; }
+}

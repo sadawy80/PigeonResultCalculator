@@ -1,24 +1,45 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { NgClass, NgIf } from '@angular/common';
-import { AuthService, ThemeService } from '../../core/services/services';
-import { UserRole, SiteTheme } from '../../core/models';
-import { TranslationService, TranslatePipe, LanguageSwitcherComponent } from '../../core/i18n';
+import { AuthService } from '../../core/services/services';
+import { UserRole } from '../../core/models';
+import { TranslationService, TranslatePipe } from '../../core/i18n';
 import { IntegrationBadgeService } from '../../core/services/integration-badge.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, NgClass, NgIf, TranslatePipe, LanguageSwitcherComponent],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe],
   template: `
     <div class="shell" [class.shell--collapsed]="sidebarCollapsed()" [attr.dir]="i18n.dir()">
 
+      <!-- Mobile top bar -->
+      <header class="mobile-topbar">
+        <button class="mobile-topbar__hamburger" (click)="mobileNavOpen.set(true)" aria-label="Open navigation">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="sidebar__logo">
+          <span class="sidebar__logo-icon">🕊️</span>
+          <span class="mobile-topbar__title">PRC</span>
+        </div>
+        <div style="width:40px"></div>
+      </header>
+
+      <!-- Mobile overlay backdrop -->
+      @if (mobileNavOpen()) {
+        <div class="mobile-overlay" (click)="mobileNavOpen.set(false)"></div>
+      }
+
       <!-- Sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" [class.sidebar--mobile-open]="mobileNavOpen()">
         <div class="sidebar__header">
           <div class="sidebar__logo">
             <span class="sidebar__logo-icon">🕊️</span>
-            <span class="sidebar__logo-text">PRC Platform</span>
+            <span class="sidebar__logo-text">
+              <span>Pigeon</span>
+              <span>Result</span>
+              <span>Calculator</span>
+            </span>
           </div>
           <button class="sidebar__toggle pr-btn pr-btn--ghost pr-btn--icon"
                   (click)="sidebarCollapsed.set(!sidebarCollapsed())"
@@ -33,45 +54,29 @@ import { IntegrationBadgeService } from '../../core/services/integration-badge.s
           @for (item of navItems(); track item.label) {
             <a class="sidebar__link"
                [routerLink]="item.path"
-               routerLinkActive="sidebar__link--active">
+               routerLinkActive="sidebar__link--active"
+               (click)="mobileNavOpen.set(false)">
               <span class="sidebar__link-icon">{{ item.icon }}</span>
               <span class="sidebar__link-label">{{ item.label | translate }}</span>
               @if (item.path.includes('integrations') && badge.pendingCount() > 0) {
                 <span class="sidebar__badge">{{ badge.pendingCount() }}</span>
+              }
+              @if (item.path.includes('notifications') && notifSvc.unreadCount() > 0) {
+                <span class="sidebar__badge">{{ notifSvc.unreadCount() > 99 ? '99+' : notifSvc.unreadCount() }}</span>
               }
             </a>
           }
 
           <div class="sidebar__section-label" style="margin-top: 24px">{{ 'common.select' | translate }}</div>
 
-          <a class="sidebar__link" routerLink="settings" routerLinkActive="sidebar__link--active">
+          <a class="sidebar__link" routerLink="/settings" routerLinkActive="sidebar__link--active"
+             (click)="mobileNavOpen.set(false)">
             <span class="sidebar__link-icon">⚙️</span>
             <span class="sidebar__link-label">Settings</span>
           </a>
 
         </nav>
 
-        <!-- Language + Theme — outside the scrollable nav so dropdowns aren't clipped -->
-        <div class="sidebar__controls">
-          <div class="sidebar__lang">
-            <div class="sidebar__section-label">Language / اللغة</div>
-            <app-language-switcher></app-language-switcher>
-          </div>
-          <div class="sidebar__themes">
-            <div class="sidebar__section-label">Theme</div>
-            <div class="theme-swatches">
-              @for (t of themes; track t.id) {
-                <button
-                  class="theme-swatch"
-                  [title]="t.name"
-                  [class.theme-swatch--active]="themeService.activeTheme() === t.id"
-                  [style.background]="t.primaryColor"
-                  (click)="themeService.applyTheme(t.id)">
-                </button>
-              }
-            </div>
-          </div>
-        </div>
 
         <div class="sidebar__footer">
           <div class="sidebar__user">
@@ -123,12 +128,14 @@ import { IntegrationBadgeService } from '../../core/services/integration-badge.s
     .sidebar__logo-icon { font-size: 1.4rem; flex-shrink: 0; }
     .sidebar__logo-text {
       font-family: var(--font-display);
-      font-weight: 800; font-size: 1rem;
-      white-space: nowrap; overflow: hidden;
+      font-weight: 800; font-size: 0.82rem;
+      white-space: normal; display: flex; flex-direction: column; align-items: flex-start;
+      line-height: 1.25; overflow: hidden;
       transition: opacity var(--t-base), max-width var(--t-base);
-      max-width: 160px;
+      max-width: 110px;
     }
     .shell--collapsed .sidebar__logo-text { opacity: 0; max-width: 0; }
+    .sidebar__logo-text span { display: block; }
 
     .sidebar__nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 8px; }
     .sidebar__section-label {
@@ -224,19 +231,77 @@ import { IntegrationBadgeService } from '../../core/services/integration-badge.s
       bottom: calc(100% + 6px);
     }
 
+    /* ── Mobile top bar (hidden on desktop) ── */
+    .mobile-topbar {
+      display: none;
+      align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      height: 56px;
+      background: var(--pr-surface);
+      border-bottom: 1px solid var(--pr-border);
+      position: sticky; top: 0; z-index: 200;
+      flex-shrink: 0;
+    }
+    .mobile-topbar__hamburger {
+      width: 40px; height: 40px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      background: transparent; border: none; cursor: pointer; padding: 6px;
+      border-radius: var(--pr-radius);
+    }
+    .mobile-topbar__hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--pr-text); border-radius: 2px;
+      transition: all var(--t-fast);
+    }
+    .mobile-topbar__hamburger:hover { background: var(--pr-surface-2); }
+    .mobile-topbar__title { font-family: var(--font-display); font-weight: 800; font-size: 1rem; }
+
+    /* ── Mobile overlay backdrop ── */
+    .mobile-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 290;
+      background: rgba(0,0,0,0.55);
+    }
+
     @media (max-width: 768px) {
-      .shell { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
+      .shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: 56px 1fr;
+      }
+      .mobile-topbar { display: flex; }
+      .mobile-overlay { display: block; }
+
+      .sidebar {
+        position: fixed; inset-block: 0; inset-inline-start: -260px;
+        width: 260px; z-index: 300;
+        transition: inset-inline-start var(--t-slow);
+        box-shadow: none;
+      }
+      .sidebar--mobile-open {
+        inset-inline-start: 0;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .main { padding: 20px 16px; }
     }
   `]
 })
-export class ShellComponent {
-  auth  = inject(AuthService);
-  theme = inject(ThemeService);
-  i18n  = inject(TranslationService);
-  badge = inject(IntegrationBadgeService);
-  themeService = inject(ThemeService);
+export class ShellComponent implements OnInit, OnDestroy {
+  auth      = inject(AuthService);
+  i18n      = inject(TranslationService);
+  badge     = inject(IntegrationBadgeService);
+  notifSvc  = inject(NotificationService);
   sidebarCollapsed = signal(false);
+  mobileNavOpen    = signal(false);
+
+  ngOnInit() {
+    // Admin sessions use a separate JWT that is not accepted by the notification
+    // service (club-service), so skip polling to avoid spurious 401s.
+    if (this.auth.currentUser()?.role !== UserRole.SuperAdmin) {
+      this.notifSvc.startPolling();
+    }
+  }
+  ngOnDestroy() { this.notifSvc.stopPolling(); }
 
   toggleIcon = computed(() => {
     const collapsed = this.sidebarCollapsed();
@@ -245,14 +310,6 @@ export class ShellComponent {
     if (rtl) return collapsed ? '←' : '→';
     return collapsed ? '→' : '←';
   });
-
-  themes = [
-    { id: SiteTheme.Skyline, name: 'Skyline', primaryColor: '#1E90FF' },
-    { id: SiteTheme.Meadow,  name: 'Meadow',  primaryColor: '#2D6A4F' },
-    { id: SiteTheme.Crimson, name: 'Crimson', primaryColor: '#C1121F' },
-    { id: SiteTheme.Ivory,   name: 'Ivory',   primaryColor: '#B8860B' },
-    { id: SiteTheme.Slate,   name: 'Slate',   primaryColor: '#4A5568' },
-  ];
 
   initials = computed(() => {
     const u = this.auth.currentUser();
@@ -275,9 +332,19 @@ export class ShellComponent {
         { icon: '🌍', label: 'nav.federations',      path: '/admin/federations' },
         { icon: '🏟️', label: 'nav.clubs',            path: '/admin/clubs' },
         { icon: '👥', label: 'nav.users',            path: '/admin/users' },
+        { icon: '🕊️', label: 'nav.fanciers',         path: '/admin/fanciers' },
+        { icon: '🐦', label: 'nav.pigeons',          path: '/admin/pigeons' },
+        { icon: '📋', label: 'nav.plans',            path: '/admin/plans' },
         { icon: '💳', label: 'nav.subscriptions',    path: '/admin/subscriptions' },
         { icon: '⬆️', label: 'nav.upgradeRequests',  path: '/admin/upgrade-requests' },
-        { icon: '📋', label: 'nav.results',          path: '/admin/events' },
+        { icon: '🔗', label: 'nav.linkRequests',     path: '/admin/link-requests' },
+        { icon: '📋', label: 'nav.programmes',       path: '/admin/programmes' },
+        { icon: '🏁', label: 'nav.races',            path: '/admin/races' },
+        { icon: '🥇', label: 'nav.aceResults',       path: '/admin/results/ace' },
+        { icon: '🏆', label: 'nav.superAce',         path: '/admin/results/super-ace' },
+        { icon: '🎖️', label: 'nav.bestLoft',         path: '/admin/results/best-loft' },
+        { icon: '📋', label: 'nav.eventLog',         path: '/admin/events' },
+        { icon: '🔔', label: 'nav.notifications',    path: '/admin/notifications' },
       ],
       [UserRole.FederationManager]: [
         { icon: '📊', label: 'nav.dashboard',        path: '/federation/dashboard' },
@@ -287,17 +354,17 @@ export class ShellComponent {
         { icon: '👥', label: 'nav.members',          path: '/federation/members' },
         { icon: '⬆️', label: 'nav.upgradeRequests',  path: '/federation/upgrade-requests' },
         { icon: '🎨', label: 'nav.clubPage',         path: '/federation/page' },
+        { icon: '🔔', label: 'nav.notifications',    path: '/federation/notifications' },
       ],
       [UserRole.ClubManager]: [
         { icon: '📊', label: 'nav.dashboard',    path: '/club/dashboard' },
-        { icon: '🏁', label: 'nav.races',        path: '/club/races' },
         { icon: '🏆', label: 'nav.programmes',   path: '/club/programmes' },
+        { icon: '🏁', label: 'nav.races',        path: '/club/races' },
         { icon: '🖨️', label: 'nav.printPdf',     path: '/club/templates' },
-        { icon: '🔗', label: 'nav.integrations',  path: '/club/integrations' },
+        { icon: '🔗', label: 'nav.integrations', path: '/club/integrations' },
         { icon: '📥', label: 'nav.results',      path: '/club/ingest' },
         { icon: '👥', label: 'nav.members',      path: '/club/members' },
         { icon: '🎨', label: 'nav.clubPage',     path: '/club/page' },
-        { icon: '🔗', label: 'nav.integrations', path: '/club/integrations' },
         { icon: '🔔', label: 'nav.notifications',path: '/club/notifications' },
       ],
       [UserRole.Fancier]: [
@@ -305,7 +372,7 @@ export class ShellComponent {
         { icon: '🕊️', label: 'nav.myPigeons',    path: '/fancier/pigeons' },
         { icon: '🏁', label: 'nav.myResults',    path: '/fancier/results' },
         { icon: '🔔', label: 'nav.notifications',path: '/fancier/notifications' },
-        { icon: '🔗', label: 'nav.integrations',  path: '/fancier/integrations' },
+        { icon: '🔗', label: 'nav.integrations', path: '/fancier/integrations' },
       ],
     };
     return base[role ?? -1] ?? [];

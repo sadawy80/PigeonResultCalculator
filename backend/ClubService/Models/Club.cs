@@ -4,7 +4,7 @@ namespace PRC.ClubService.Models;
 
 public class Club : AuditableEntity
 {
-    public Guid FederationId { get; set; }
+    public Guid? FederationId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -20,6 +20,7 @@ public class Club : AuditableEntity
     public string? PrimaryColor { get; set; }
     public string? SecondaryColor { get; set; }
     public bool IsActive { get; set; } = true;
+    public DateTime? SubscriptionExpiresAt { get; set; }
 
     // FederationName is cached here to avoid cross-service calls on every DTO projection
     public string? FederationName { get; set; }

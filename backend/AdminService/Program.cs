@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PRC.Common.Consul;
 using PRC.AdminService.Data;
+using PRC.AdminService.Events;
 using PRC.AdminService.Middleware;
 using PRC.AdminService.Services;
 using PRC.Common.Messages;
@@ -33,7 +35,7 @@ builder.Host.UseSerilog();
 
 // ── Database ──────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<AdminDbContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ── JWT Authentication — Admin key (separate from IdentityService) ────────────
 var adminKey = builder.Configuration["Jwt:AdminKey"]
@@ -79,17 +81,50 @@ builder.Services.AddMassTransit(x =>
     x.AddRequestClient<ToggleUserActiveRequest>();
     x.AddRequestClient<AssignRoleRequest>();
     x.AddRequestClient<SetUserLimitsRequest>();
+    x.AddRequestClient<DeleteUserRequest>();
     x.AddRequestClient<GetAllClubsRequest>();
     x.AddRequestClient<ToggleClubActiveRequest>();
+    x.AddRequestClient<AdminCreateClubRequest>();
+    x.AddRequestClient<AdminAssignClubManagerRequest>();
+    x.AddRequestClient<AdminDeleteClubRequest>();
+    x.AddRequestClient<SetClubSubscriptionExpiryRequest>();
     x.AddRequestClient<GetFederationsRequest>();
     x.AddRequestClient<CreateFederationRequest>();
     x.AddRequestClient<ToggleFederationActiveRequest>();
+    x.AddRequestClient<AdminDeleteFederationRequest>();
     x.AddRequestClient<GetSubscriptionPlansRequest>();
+    x.AddRequestClient<UpdateSubscriptionPlanBusRequest>();
     x.AddRequestClient<GetFederationSubscriptionsRequest>();
     x.AddRequestClient<CreateFederationSubscriptionRequest>();
     x.AddRequestClient<GetActiveSubscriptionCountRequest>();
     x.AddRequestClient<GetUpgradeRequestsRequest>();
     x.AddRequestClient<ReviewUpgradeRequestRequest>();
+    x.AddRequestClient<RevokeUpgradeRequestRequest>();
+    x.AddRequestClient<GetAdminRacesRequest>();
+    x.AddRequestClient<AdminDeleteRaceRequest>();
+    x.AddRequestClient<GetAdminProgrammesRequest>();
+    x.AddRequestClient<GetAdminAcePigeonResultsRequest>();
+    x.AddRequestClient<GetAdminSuperAceResultsRequest>();
+    x.AddRequestClient<GetAdminBestLoftResultsRequest>();
+    x.AddRequestClient<NotifyClubManagersRequest>();
+    x.AddRequestClient<GetAdminPigeonsRequest>();
+    x.AddRequestClient<AdminUpdatePigeonRequest>();
+    x.AddRequestClient<AdminDeletePigeonRequest>();
+    x.AddRequestClient<GetAdminFanciersRequest>();
+    x.AddRequestClient<LinkFancierToUserRequest>();
+    x.AddRequestClient<UnlinkFancierRequest>();
+    x.AddRequestClient<AdminDeleteProgrammeRequest>();
+    x.AddRequestClient<GetAdminExternalLinksRequest>();
+    x.AddRequestClient<AdminApproveLinkBusRequest>();
+    x.AddRequestClient<AdminRejectLinkBusRequest>();
+    x.AddRequestClient<AdminRevokeLinkBusRequest>();
+    x.AddRequestClient<GetAdminNotificationsRequest>();
+    x.AddRequestClient<AdminSendNotificationBusRequest>();
+    x.AddRequestClient<AdminCreateSubscriptionPlanBusRequest>();
+    x.AddRequestClient<AdminDeleteSubscriptionPlanBusRequest>();
+
+    x.AddConsumer<UpgradeRequestSubmittedConsumer>();
+    x.AddConsumer<ExternalLinkRequestedConsumer>();
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
@@ -104,6 +139,8 @@ builder.Services.AddMassTransit(x =>
 });
 
 // ── Services ──────────────────────────────────────────────────────────────────
+builder.Services.AddHttpClient("GeoIp");
+builder.Services.AddSingleton<IGeoIpService, GeoIpService>();
 builder.Services.AddScoped<IBusAdminClient, BusAdminClient>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAdminTokenService, AdminTokenService>();
@@ -128,6 +165,8 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "admin-service", 9507);
 
 var app = builder.Build();
 
@@ -157,7 +196,12 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Admi
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try { await db.Database.MigrateAsync(); break; }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("AdminService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
 }
 
 app.Run();

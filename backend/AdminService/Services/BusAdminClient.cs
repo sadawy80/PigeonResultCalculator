@@ -23,6 +23,7 @@ public interface IBusAdminClient
 
     // Clubs
     Task<AllClubsResult?> GetAllClubsAsync(string? search, Guid? federationId, int page, int pageSize, CancellationToken ct = default);
+    Task<SetClubSubscriptionExpiryResult?> SetClubSubscriptionExpiryAsync(Guid clubId, DateTime? expiresAt, CancellationToken ct = default);
     Task<ToggleClubActiveResult?> ToggleClubActiveAsync(Guid clubId, CancellationToken ct = default);
     Task<AdminCreateClubResult?> AdminCreateClubAsync(Guid? federationId, string name, string code, string? city, Guid createdBy, CancellationToken ct = default);
     Task<AdminAssignClubManagerResult?> AdminAssignClubManagerAsync(Guid clubId, Guid userId, string fullName, string email, bool force, CancellationToken ct = default);
@@ -101,6 +102,7 @@ public class BusAdminClient : IBusAdminClient
     private readonly IRequestClient<AdminCreateClubRequest>          _adminCreateClub;
     private readonly IRequestClient<AdminAssignClubManagerRequest>   _adminAssignClubManager;
     private readonly IRequestClient<AdminDeleteClubRequest>          _deleteClub;
+    private readonly IRequestClient<SetClubSubscriptionExpiryRequest> _setClubExpiry;
     private readonly IRequestClient<GetFederationsRequest>             _getFederations;
     private readonly IRequestClient<CreateFederationRequest>            _createFederation;
     private readonly IRequestClient<ToggleFederationActiveRequest>      _toggleFederation;
@@ -154,6 +156,7 @@ public class BusAdminClient : IBusAdminClient
         IRequestClient<AdminCreateClubRequest> adminCreateClub,
         IRequestClient<AdminAssignClubManagerRequest> adminAssignClubManager,
         IRequestClient<AdminDeleteClubRequest> deleteClub,
+        IRequestClient<SetClubSubscriptionExpiryRequest> setClubExpiry,
         IRequestClient<GetFederationsRequest> getFederations,
         IRequestClient<CreateFederationRequest> createFederation,
         IRequestClient<ToggleFederationActiveRequest> toggleFederation,
@@ -206,6 +209,7 @@ public class BusAdminClient : IBusAdminClient
         _adminCreateClub       = adminCreateClub;
         _adminAssignClubManager = adminAssignClubManager;
         _deleteClub             = deleteClub;
+        _setClubExpiry          = setClubExpiry;
         _getUpgradeRequests   = getUpgradeRequests;
         _reviewUpgradeRequest = reviewUpgradeRequest;
         _revokeUpgradeRequest = revokeUpgradeRequest;
@@ -298,6 +302,9 @@ public class BusAdminClient : IBusAdminClient
 
     public Task<AllClubsResult?> GetAllClubsAsync(string? search, Guid? federationId, int page, int pageSize, CancellationToken ct = default)
         => Ask<GetAllClubsRequest, AllClubsResult>(_getClubs, new(search, federationId, page, pageSize), ct);
+
+    public Task<SetClubSubscriptionExpiryResult?> SetClubSubscriptionExpiryAsync(Guid clubId, DateTime? expiresAt, CancellationToken ct = default)
+        => Ask<SetClubSubscriptionExpiryRequest, SetClubSubscriptionExpiryResult>(_setClubExpiry, new(clubId, expiresAt), ct);
 
     public Task<ToggleClubActiveResult?> ToggleClubActiveAsync(Guid clubId, CancellationToken ct = default)
         => Ask<ToggleClubActiveRequest, ToggleClubActiveResult>(_toggleClub, new(clubId), ct);

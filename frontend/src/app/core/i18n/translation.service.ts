@@ -20,6 +20,8 @@ export const SUPPORTED_LOCALES: LocaleConfig[] = [
   { code: 'fr',    name: 'Français',             flag: '🇫🇷', dir: 'ltr', file: 'fr.json'    },
   { code: 'nl-BE', name: 'Belgisch (Vlaams)',    flag: '🇧🇪', dir: 'ltr', file: 'nl-BE.json' },
   { code: 'ar',    name: 'العربية',              flag: '🇸🇦', dir: 'rtl', file: 'ar.json'    },
+  { code: 'fa',    name: 'فارسی',               flag: '🇮🇷', dir: 'rtl', file: 'fa.json'    },
+  { code: 'de',    name: 'Deutsch',              flag: '🇩🇪', dir: 'ltr', file: 'de.json'    },
   { code: 'zh',    name: '中文（简体）',           flag: '🇨🇳', dir: 'ltr', file: 'zh.json'    },
   { code: 'es',    name: 'Español',              flag: '🇪🇸', dir: 'ltr', file: 'es.json'    },
 ];
@@ -141,7 +143,7 @@ export class TranslationService {
    * @example
    *   t('nav.dashboard')           → 'Dashboard'
    *   t('errors.minLength', {min: 8}) → 'Minimum 8 characters required'
-   *   t('result.velocity')         → 'Velocity'
+   *   t('result.speed')             → 'Velocity'
    */
   t(key: string, params?: Record<string, string | number>): string {
     const keys  = key.split('.');

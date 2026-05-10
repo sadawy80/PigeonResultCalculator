@@ -136,7 +136,11 @@ public record AdminClubItem(
     Guid? FederationId,
     string? FederationName,
     bool IsActive,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    DateTime? SubscriptionExpiresAt = null);
+
+public record SetClubSubscriptionExpiryRequest(Guid ClubId, DateTime? ExpiresAt);
+public record SetClubSubscriptionExpiryResult(bool Success, string? Error);
 
 public record ToggleClubActiveRequest(Guid ClubId);
 public record ToggleClubActiveResult(Guid Id, bool IsActive, string? Error);

@@ -30,7 +30,7 @@ public record AdminUserDto(
 
 public record AdminClubDto(
     Guid Id, string Name, string Code, string? City,
-    bool IsActive, Guid FederationId, string? FederationName,
+    bool IsActive, Guid? FederationId, string? FederationName,
     DateTime CreatedAt);
 
 // ── Audit Events ───────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ public record AuditEventDto(
     string Severity, string? Details,
     Guid? TriggeredByUserId, string? TriggeredByName,
     string? CorrelationId, string ServiceName,
-    string? IpAddress, DateTime CreatedAt);
+    string? IpAddress, string? Country, DateTime CreatedAt);
 
 // ── HTTP request bodies (controller [FromBody] params) ────────────────────────
 
@@ -62,3 +62,40 @@ public record AdminLoginRequest(string Email, string Password);
 public record ImpersonateRequest(Guid TargetUserId, string Reason);
 
 public record RejectUpgradeBody(string? Reason);
+
+public record UpdatePigeonBody(string? Name, string? Sex, int? YearOfBirth, string? Color);
+
+public record AssignManagerBody(string Email);
+public record CreateClubAdminBody(Guid? FederationId, string Name, string Code, string? City);
+public record AssignClubManagerBody(string Email, bool? Force);
+public record SetClubExpiryBody(DateTime? ExpiresAt);
+
+public record LinkFancierBody(Guid UserId, string UserName, string UserEmail);
+
+public record UpdatePlanBody(
+    string Name,
+    string? Description,
+    decimal Price,
+    int MaxClubs,
+    int MaxResultsPerClub,
+    bool IsActive,
+    bool IsHighlighted,
+    int SortOrder,
+    string? Features);
+
+public record CreateSubscriptionPlanBody(
+    string Name,
+    string? Description,
+    string Type,
+    string BillingCycle,
+    decimal Price,
+    string? Currency,
+    int MaxClubs,
+    int MaxResultsPerClub,
+    bool IsHighlighted,
+    int SortOrder,
+    string? Features);
+
+public record SendNotificationBody(Guid ClubId, string Title, string Message);
+
+public record RejectLinkBody(string? Reason);

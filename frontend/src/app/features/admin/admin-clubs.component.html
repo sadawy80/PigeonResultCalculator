@@ -1,44 +1,87 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
     <h1 class="pr-page-header__title">All Clubs</h1>
-    <p class="pr-page-header__subtitle">{{ total() }} clubs across all countries</p>
+    <p class="pr-page-header__subtitle">{{ total() }} clubs across all federations</p>
   </div>
+  <button class="pr-btn pr-btn--primary" (click)="openAdd()">+ Add Club</button>
 </div>
 
 @if (error()) {
   <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
 }
 
-<div class="flex gap-4 mb-6">
-  <input class="pr-input" style="max-width:300px" placeholder="Search clubs..."
-    [(ngModel)]="search" (keyup.enter)="onSearch()">
-  <input class="pr-input" style="max-width:200px" placeholder="Country ID (filter)"
-    [(ngModel)]="countryFilter" (keyup.enter)="onSearch()">
-  <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="onSearch()">Search</button>
+<div class="pr-card mb-4">
+  <div class="flex flex-wrap gap-4 items-end">
+    <div class="pr-form-group" style="flex:2;min-width:180px">
+      <label class="pr-label">Search</label>
+      <input class="pr-input" [(ngModel)]="search" placeholder="Club name, code…" (keyup.enter)="onSearch()">
+    </div>
+    <div class="pr-form-group" style="flex:1;min-width:160px">
+      <label class="pr-label">Federation</label>
+      <select class="pr-select" [(ngModel)]="federationFilter" (change)="onSearch()">
+        <option value="">All federations</option>
+        @for (f of federations(); track f.id) {
+          <option [value]="f.id">{{ f.name }}</option>
+        }
+      </select>
+    </div>
+    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="onSearch()">Search</button>
+    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="search=''; federationFilter=''; onSearch()">Reset</button>
+  </div>
 </div>
 
 <div class="pr-card">
   @if (loading()) {
-    <div class="text-center py-8 text-muted">Loading...</div>
+    <div class="text-center py-8 text-muted">Loading…</div>
   } @else {
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
-          <tr><th>Club</th><th>Code</th><th>Country</th><th>City</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+          <tr>
+            <th>Club</th>
+            <th>Code</th>
+            <th>Federation</th>
+            <th>City</th>
+            <th>Manager</th>
+            <th>Subscription</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
           @for (c of clubs(); track c.id) {
             <tr>
               <td class="font-bold">{{ c.name }}</td>
-              <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 8px;border-radius:4px">{{ c.code }}</code></td>
-              <td>{{ c.FederationName }} <span class="text-muted text-sm">({{ c.FederationCode }})</span></td>
+              <td><code class="code-chip">{{ c.code }}</code></td>
+              <td>{{ c.federationName ?? fedName(c.federationId) }} <span class="text-muted text-sm">{{ c.federationCode ? '(' + c.federationCode + ')' : '' }}</span></td>
               <td class="text-muted text-sm">{{ c.city ?? '—' }}</td>
-              <td><span [class]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ c.isActive ? 'Active' : 'Suspended' }}</span></td>
-              <td class="text-muted text-sm">{{ c.createdAt | date:'dd MMM yyyy' }}</td>
+              <td class="text-sm">{{ c.managerEmail ?? '—' }}</td>
               <td>
-                <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleClub(c.id)">
-                  {{ c.isActive ? 'Suspend' : 'Activate' }}
-                </button>
+                @switch (expiryStatus(c)) {
+                  @case ('none') { <span class="pr-badge pr-badge--muted">No expiry</span> }
+                  @case ('active') { <span class="pr-badge pr-badge--success" [title]="c.subscriptionExpiresAt | date:'mediumDate'">{{ c.subscriptionExpiresAt | date:'dd MMM yyyy' }}</span> }
+                  @case ('expiring') { <span class="pr-badge pr-badge--warning" [title]="c.subscriptionExpiresAt | date:'mediumDate'">Expiring {{ c.subscriptionExpiresAt | date:'dd MMM' }}</span> }
+                  @case ('expired') { <span class="pr-badge pr-badge--error">Expired</span> }
+                }
+              </td>
+              <td><span [class]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ c.isActive ? 'Active' : 'Suspended' }}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="pr-btn pr-btn--outline pr-btn--sm" (click)="openManager(c)">
+                    {{ c.managerEmail ? 'Change Manager' : 'Assign Manager' }}
+                  </button>
+                  <button class="pr-btn pr-btn--outline pr-btn--sm" (click)="openExpiry(c)" title="Set subscription expiry">
+                    Set Expiry
+                  </button>
+                  <button class="pr-btn pr-btn--sm"
+                    [class]="c.isActive ? 'pr-btn--danger' : 'pr-btn--primary'"
+                    (click)="toggleClub(c.id)">
+                    {{ c.isActive ? 'Suspend' : 'Activate' }}
+                  </button>
+                  @if (!c.isActive) {
+                    <button class="pr-btn pr-btn--danger pr-btn--sm btn-icon-only" title="Delete club" (click)="openDelete(c)">✕</button>
+                  }
+                </div>
               </td>
             </tr>
           }
@@ -46,12 +89,224 @@
       </table>
     </div>
 
-    <div class="flex justify-between items-center mt-4">
-      <span class="text-muted text-sm">Page {{ page }} of {{ totalPages }}</span>
-      <div class="flex gap-2">
+    <div class="pagination-row">
+      <span class="text-muted text-sm">{{ total() }} clubs · page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-2 items-center">
+        <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="10">10 / page</option>
+          <option [ngValue]="25">25 / page</option>
+          <option [ngValue]="50">50 / page</option>
+          <option [ngValue]="100">100 / page</option>
+        </select>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
         <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
       </div>
     </div>
   }
 </div>
+
+<!-- ── Add Club Modal ─────────────────────────────────────────────── -->
+@if (showAddModal()) {
+  <div class="modal-backdrop" (click)="closeAdd()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">New Club</h2>
+        <button class="modal-close" (click)="closeAdd()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="pr-form-group">
+          <label class="pr-label">Country <span class="req">*</span></label>
+          <div class="country-combo">
+            <input class="pr-input"
+              [value]="fedDisplay()"
+              (input)="onFedSearch($any($event.target).value)"
+              (focus)="fedDropOpen.set(true)"
+              (blur)="onFedBlur()"
+              placeholder="Search country…"
+              autocomplete="off">
+            @if (selectedFed()) {
+              <span class="country-flag">{{ selectedFed()!.flag }}</span>
+            }
+            @if (fedDropOpen()) {
+              <div class="country-dropdown">
+                @if (filteredFeds().length === 0) {
+                  <div class="country-option country-option--empty">No countries found</div>
+                }
+                @for (c of filteredFeds(); track c.code) {
+                  <button type="button" class="country-option"
+                    [class.country-option--active]="selectedFed()?.code === c.code"
+                    (mousedown)="selectFed(c)">
+                    <span style="margin-right:6px">{{ c.flag }}</span>{{ c.name }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="pr-form-group">
+          <label class="pr-label">Federation <span class="text-muted" style="font-weight:400">(optional)</span></label>
+          <select class="pr-input" [(ngModel)]="newClub.federationId">
+            <option value="">— no federation —</option>
+            @for (f of federations(); track f.id) {
+              <option [value]="f.id">{{ f.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="pr-form-group">
+          <label class="pr-label">Club Name <span class="req">*</span></label>
+          <input class="pr-input" [(ngModel)]="newClub.name" placeholder="e.g. Brussels Racing Club">
+        </div>
+        <div class="form-row">
+          <div class="pr-form-group">
+            <label class="pr-label">Code <span class="req">*</span></label>
+            <input class="pr-input" [(ngModel)]="newClub.code" placeholder="BE" maxlength="10"
+              style="text-transform:uppercase">
+          </div>
+          <div class="pr-form-group">
+            <label class="pr-label">City <span class="text-muted" style="font-weight:400">(optional)</span></label>
+            <input class="pr-input" [(ngModel)]="newClub.city" placeholder="Brussels">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeAdd()">Cancel</button>
+        <button class="pr-btn pr-btn--primary"
+          [disabled]="addSaving() || !newClub.name || !newClub.code"
+          (click)="saveClub()">
+          {{ addSaving() ? 'Saving…' : 'Create Club' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Delete Confirmation Modal ─────────────────────────────────── -->
+@if (showDeleteModal()) {
+  <div class="modal-backdrop" (click)="closeDelete()">
+    <div class="modal-card modal-card--danger" (click)="$event.stopPropagation()">
+      <div class="modal-header modal-header--danger">
+        <h2 class="modal-title">Delete Club</h2>
+        <button class="modal-close" (click)="closeDelete()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">This action is <strong>permanent and irreversible</strong>. All data associated with this club — members, pigeons, programmes, race results, and all related records — will be permanently deleted.</p>
+        <p class="delete-target-name">{{ deleteTarget()?.name }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeDelete()">No, Keep It</button>
+        <button class="pr-btn pr-btn--danger" [disabled]="deleting()" (click)="confirmDelete()">
+          {{ deleting() ? 'Deleting…' : 'Yes, Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Subscription Expiry Modal ──────────────────────────────────── -->
+@if (showExpiryModal()) {
+  <div class="modal-backdrop" (click)="closeExpiry()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Set Subscription Expiry</h2>
+        <button class="modal-close" (click)="closeExpiry()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Club: <strong>{{ expiryTarget()?.name }}</strong></p>
+        @if (expiryError()) {
+          <div class="pr-alert pr-alert--error mb-4">{{ expiryError() }}</div>
+        }
+        <div class="pr-form-group">
+          <label class="pr-label">Expiry Date</label>
+          <input class="pr-input" type="date" [(ngModel)]="expiryDate">
+          <p class="pr-hint">Leave empty to remove the expiry date (subscription never expires).</p>
+        </div>
+        @if (expiryDate) {
+          @switch (expiryStatus({ subscriptionExpiresAt: expiryDate })) {
+            @case ('active') { <div class="pr-alert pr-alert--success">Active until {{ expiryDate | date:'dd MMM yyyy' }}</div> }
+            @case ('expiring') { <div class="pr-alert pr-alert--warning">Expires soon — {{ expiryDate | date:'dd MMM yyyy' }}</div> }
+            @case ('expired') { <div class="pr-alert pr-alert--error">This date is in the past — club will be suspended immediately.</div> }
+          }
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="pr-btn pr-btn--ghost" (click)="closeExpiry()">Cancel</button>
+        <button class="pr-btn pr-btn--primary" [disabled]="expirySaving()" (click)="saveExpiry()">
+          {{ expirySaving() ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Assign / Change Manager Modal ─────────────────────────────── -->
+@if (showManagerModal()) {
+  <div class="modal-backdrop" (click)="closeManager()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ managerTarget()?.managerEmail ? 'Change Club Manager' : 'Assign Club Manager' }}</h2>
+        <button class="modal-close" (click)="closeManager()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Club: <strong>{{ managerTarget()?.name }}</strong></p>
+
+        @if (managerTarget()?.managerEmail) {
+          <p class="current-manager-note">Current manager: <strong>{{ managerTarget()?.managerEmail }}</strong></p>
+        }
+
+        <!-- ── Conflict confirmation ─────────────────────────────── -->
+        @if (conflict()) {
+          <div class="conflict-card">
+            <p class="conflict-title">User already manages another club</p>
+            <p class="conflict-body">
+              <strong>{{ conflict()!.fullName }}</strong> ({{ conflict()!.email }}) is already the manager of
+              <strong>{{ conflict()!.clubName }}</strong>.
+            </p>
+            <p class="conflict-question">Replace their current assignment and make them manager of <strong>{{ managerTarget()?.name }}</strong>?</p>
+            <div class="conflict-actions">
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="conflict.set(null)">Cancel</button>
+              <button class="pr-btn pr-btn--danger pr-btn--sm" [disabled]="managerSaving()" (click)="assignManager(true)">
+                {{ managerSaving() ? 'Replacing…' : 'Yes, Replace' }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="pr-form-group">
+            <label class="pr-label">User Email</label>
+            <div class="input-row">
+              <input class="pr-input" type="email" [(ngModel)]="managerEmail"
+                placeholder="user@example.com" (keyup.enter)="lookupUser()">
+              <button class="pr-btn pr-btn--outline pr-btn--sm"
+                [disabled]="!managerEmail || managerLooking()"
+                (click)="lookupUser()">
+                {{ managerLooking() ? 'Looking…' : 'Look Up' }}
+              </button>
+            </div>
+          </div>
+
+          @if (managerLookupErr()) {
+            <div class="pr-alert pr-alert--error" style="margin-top:8px">{{ managerLookupErr() }}</div>
+          }
+
+          @if (managerLookup()) {
+            <div class="lookup-card">
+              <div class="lookup-card__name">{{ managerLookup().firstName }} {{ managerLookup().lastName }}</div>
+              <div class="lookup-card__meta">{{ managerLookup().email }}</div>
+              <div class="lookup-card__role">Current role: <strong>{{ roleName(managerLookup().role) }}</strong></div>
+            </div>
+          }
+        }
+      </div>
+
+      @if (!conflict()) {
+        <div class="modal-footer">
+          <button class="pr-btn pr-btn--ghost" (click)="closeManager()">Cancel</button>
+          <button class="pr-btn pr-btn--primary"
+            [disabled]="!managerLookup() || managerSaving()"
+            (click)="assignManager()">
+            {{ managerSaving() ? 'Assigning…' : (managerTarget()?.managerEmail ? 'Change Manager' : 'Assign as Manager') }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

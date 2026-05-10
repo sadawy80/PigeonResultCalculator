@@ -311,6 +311,20 @@ public class AdminController : AdminControllerBase
         return Ok(ApiResponse<object>.Ok(result));
     }
 
+    [HttpPut("clubs/{clubId:guid}/subscription-expiry")]
+    public async Task<IActionResult> SetClubSubscriptionExpiry(Guid clubId, [FromBody] SetClubExpiryBody req, CancellationToken ct)
+    {
+        var result = await _bus.SetClubSubscriptionExpiryAsync(clubId, req.ExpiresAt, ct);
+        if (result is null) return StatusCode(503, ApiResponse<object?>.Fail("ClubService unavailable."));
+        if (!result.Success) return BadRequest(ApiResponse<object?>.Fail(result.Error ?? "Failed."));
+
+        await _audit.LogAsync("CLUB_EXPIRY_SET", "Club", clubId, AuditSeverity.Info,
+            $"Club {clubId} subscription expiry set to {req.ExpiresAt:yyyy-MM-dd} by {CurrentUserName}",
+            CurrentUserId, CurrentUserName, CorrelationId, ClientIp, ct);
+
+        return Ok(ApiResponse<object>.Ok(new { clubId, expiresAt = req.ExpiresAt }));
+    }
+
     [HttpDelete("clubs/{clubId:guid}")]
     public async Task<IActionResult> DeleteClub(Guid clubId, CancellationToken ct)
     {

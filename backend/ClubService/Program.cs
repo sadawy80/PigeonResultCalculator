@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PRC.Common.Consul;
 using PRC.ClubService.Data;
 using PRC.ClubService.Events;
 using PRC.ClubService.Services;
@@ -33,7 +34,7 @@ builder.Host.UseSerilog();
 
 // ── Database ──────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<ClubDbContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ── JWT Authentication ────────────────────────────────────────────────────────
 var jwtKey = builder.Configuration["Jwt:Key"]
@@ -78,6 +79,19 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<GetPublicClubBySlugConsumer>();
     x.AddConsumer<ListPublishedClubsForPublicConsumer>();
     x.AddConsumer<GetActiveClubCountForFederationConsumer>();
+    x.AddConsumer<CreateInAppNotificationConsumer>();
+    x.AddConsumer<GetAdminProgrammesConsumer>();
+    x.AddConsumer<GetAdminAcePigeonResultsConsumer>();
+    x.AddConsumer<GetAdminSuperAceResultsConsumer>();
+    x.AddConsumer<GetAdminBestLoftResultsConsumer>();
+    x.AddConsumer<NotifyClubManagersConsumer>();
+    x.AddConsumer<AdminDeleteProgrammeConsumer>();
+    x.AddConsumer<AdminCreateClubConsumer>();
+    x.AddConsumer<AdminDeleteClubConsumer>();
+    x.AddConsumer<AdminAssignClubManagerConsumer>();
+    x.AddConsumer<SetClubSubscriptionExpiryConsumer>();
+    x.AddConsumer<GetAdminNotificationsConsumer>();
+    x.AddConsumer<AdminSendNotificationConsumer>();
 
     x.AddRequestClient<GetRaceSnapshotRequest>();
     x.AddRequestClient<GetPublishedResultsForProgrammeRequest>();
@@ -96,6 +110,7 @@ builder.Services.AddMassTransit(x =>
 });
 
 // ── Services ──────────────────────────────────────────────────────────────────
+builder.Services.AddHostedService<PRC.ClubService.BackgroundServices.ClubExpiryJob>();
 builder.Services.AddScoped<IClubService, ClubService>();
 builder.Services.AddScoped<IProgrammeService, ProgrammeService>();
 builder.Services.AddScoped<IEmailService, NoOpEmailService>();
@@ -121,6 +136,8 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+builder.Services.AddConsulServiceRegistration(builder.Configuration, "club-service", 9502);
 
 var app = builder.Build();
 
@@ -150,7 +167,13 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Club
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ClubDbContext>();
-    await db.Database.MigrateAsync();
+    for (var attempt = 1; ; attempt++)
+    {
+        try { await db.Database.MigrateAsync(); break; }
+        catch (Exception ex) when (attempt < 6)
+        { Log.Warning("ClubService DB init attempt {Attempt} failed, retrying in 5s: {Error}", attempt, ex.Message); await Task.Delay(5000); }
+    }
+    await PRC.ClubService.Data.DemoSeeder.SeedAsync(db);
 }
 
 app.Run();

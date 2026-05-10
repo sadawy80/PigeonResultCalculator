@@ -73,6 +73,15 @@
   }
 }
 
+@media (max-width: 767px) {
+  .sub-filters { flex-direction: column; gap: 8px; }
+  .sub-filter-search,
+  .sub-filter-group { min-width: 100%; width: 100%; }
+  .date-range-picker { flex-direction: column; }
+  .date-range-picker input[type="date"] { min-width: 100%; width: 100%; }
+  .date-range-sep { border: none; border-top: 1px solid var(--pr-border); border-bottom: 1px solid var(--pr-border); padding: 4px 10px; }
+}
+
 .cycle-toggle {
   display: flex;
   gap: 4px;
