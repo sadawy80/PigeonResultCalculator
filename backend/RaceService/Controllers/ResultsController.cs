@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRC.Common;
+using PRC.Common.Authorization;
 using PRC.RaceService.DTOs;
 using PRC.RaceService.Services;
 
@@ -41,6 +42,7 @@ public class ResultsController : RaceControllerBase
 
     [HttpPost("{raceId:guid}/process")]
     [Authorize(Roles = "ClubManager,FederationManager,SuperAdmin")]
+    [RequiresPlan]
     public async Task<IActionResult> Process(Guid raceId, CancellationToken ct)
         => FromResult(await _results.ProcessAsync(raceId, ct));
 

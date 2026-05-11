@@ -5,18 +5,20 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.IdentityModel.Tokens;
 using MassTransit;
 using Prometheus;
+using PRC.Common.Logging;
 using Serilog;
 using System.Text;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using PRC.Common.Messages;
 using PRC.RenderingService.Data;
-using PRC.RenderingService.Middleware;
 using PRC.RenderingService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .Destructure.With<PiiDestructuringPolicy>()
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341")
@@ -62,9 +64,13 @@ builder.Services.AddMassTransit(x =>
             h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
             h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
+        cfg.UseCorrelationIdFilters(ctx);
         cfg.ConfigureEndpoints(ctx);
     });
 });
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
 
 builder.Services.AddScoped<ITemplateService, TemplateService>();
 builder.Services.AddScoped<IRenderService, RenderService>();
@@ -99,7 +105,7 @@ using (var scope = app.Services.CreateScope())
     await TemplateSeeder.SeedAsync(db);
 }
 
-app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseCorrelationId();
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())

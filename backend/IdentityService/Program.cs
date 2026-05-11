@@ -6,12 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using PRC.Common.Messages;
 using PRC.IdentityService.Data;
 using PRC.IdentityService.Events;
 using PRC.IdentityService.Models;
 using PRC.IdentityService.Services;
 using Prometheus;
+using PRC.Common.Logging;
 using Serilog;
 using Serilog.Events;
 
@@ -27,6 +29,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Conditional(
         _ => !string.IsNullOrEmpty(seqUrl),
         wt => wt.Seq(seqUrl ?? "http://localhost:5341", restrictedToMinimumLevel: LogEventLevel.Information))
+    .Destructure.With<PiiDestructuringPolicy>()
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithEnvironmentName()
@@ -114,6 +117,7 @@ builder.Services.AddMassTransit(x =>
                 h.Username(builder.Configuration["RabbitMq:Username"] ?? "guest");
                 h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
             });
+        cfg.UseCorrelationIdFilters(ctx);
         cfg.ConfigureEndpoints(ctx);
     });
 });
@@ -124,6 +128,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailService, BusEmailService>();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
@@ -148,7 +153,7 @@ builder.Services.AddConsulServiceRegistration(builder.Configuration, "identity-s
 
 var app = builder.Build();
 
-app.UseMiddleware<PRC.IdentityService.Middleware.CorrelationIdMiddleware>();
+app.UseCorrelationId();
 app.UseSerilogRequestLogging(opts =>
     opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} {StatusCode} in {Elapsed:0.0000}ms");
 

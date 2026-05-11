@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MassTransit;
 using Prometheus;
+using PRC.Common.Logging;
 using Serilog;
 using System.Text;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using PRC.Common.Messages;
 using PRC.IntegrationService.Data;
 using PRC.IntegrationService.Services;
@@ -14,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .Destructure.With<PiiDestructuringPolicy>()
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341")
@@ -67,11 +70,16 @@ builder.Services.AddMassTransit(x =>
             h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
             h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
+        cfg.UseCorrelationIdFilters(ctx);
         cfg.ConfigureEndpoints(ctx);
     });
 });
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
+
 builder.Services.AddHttpClient("PlatformCallback")
+    .AddHttpMessageHandler<CorrelationIdHandler>()
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         var handler = new HttpClientHandler();
@@ -105,6 +113,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseCorrelationId();
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())

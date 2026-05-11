@@ -5,12 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using PRC.Common.Tenancy;
 using PRC.SubscriptionService.Data;
 using PRC.SubscriptionService.Events;
-using PRC.SubscriptionService.Middleware;
 using PRC.SubscriptionService.Services;
 using Prometheus;
+using PRC.Common.Logging;
 using Serilog;
 using Serilog.Events;
 
@@ -26,6 +27,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Conditional(
         _ => !string.IsNullOrEmpty(seqUrl),
         wt => wt.Seq(seqUrl ?? "http://localhost:5341", restrictedToMinimumLevel: LogEventLevel.Information))
+    .Destructure.With<PiiDestructuringPolicy>()
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithEnvironmentName()
@@ -120,6 +122,7 @@ builder.Services.AddMassTransit(x =>
             h.Password(password);
         });
 
+        cfg.UseCorrelationIdFilters(ctx);
         cfg.ConfigureEndpoints(ctx);
     });
 });
@@ -128,6 +131,7 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
 builder.Services.AddScoped<ITenantContext, HttpTenantContext>();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
@@ -153,7 +157,7 @@ builder.Services.AddConsulServiceRegistration(builder.Configuration, "subscripti
 
 var app = builder.Build();
 
-app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseCorrelationId();
 app.UseSerilogRequestLogging(opts =>
     opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} {StatusCode} in {Elapsed:0.0000}ms");
 

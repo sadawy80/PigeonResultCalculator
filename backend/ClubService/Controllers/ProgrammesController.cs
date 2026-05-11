@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRC.Common;
+using PRC.Common.Authorization;
 using PRC.ClubService.DTOs;
 using PRC.ClubService.Services;
 
@@ -50,10 +51,12 @@ public class ProgrammesController : ClubControllerBase
         => FromResult(await _programmes.RemoveRaceAsync(programmeId, raceId, ct));
 
     [HttpPost("{programmeId:guid}/calculate")]
+    [RequiresPlan]
     public async Task<IActionResult> Calculate(Guid programmeId, CancellationToken ct)
         => FromResult(await _programmes.CalculateAsync(programmeId, ct));
 
     [HttpPost("{programmeId:guid}/publish")]
+    [RequiresPlan]
     public async Task<IActionResult> Publish(Guid programmeId, CancellationToken ct)
         => FromResult(await _programmes.PublishAsync(programmeId, _user.UserId.GetValueOrDefault(), ct));
 }

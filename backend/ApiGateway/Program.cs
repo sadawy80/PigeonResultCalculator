@@ -3,6 +3,7 @@ using Consul;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using PRC.ApiGateway.Consul;
+using PRC.Common.Correlation;
 using Prometheus;
 using Serilog;
 using Yarp.ReverseProxy.Configuration;
@@ -58,6 +59,7 @@ builder.Services.AddReverseProxy();
 
 var app = builder.Build();
 
+app.UseCorrelationId();
 app.UseCors("FrontendCors");
 app.UseHttpMetrics();
 app.UseAuthentication();

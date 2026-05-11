@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRC.Common;
+using PRC.Common.Authorization;
 using PRC.RaceService.DTOs;
 using PRC.RaceService.Services;
 
@@ -41,6 +42,7 @@ public class RacesController : RaceControllerBase
 
     [HttpPost("{raceId:guid}/publish")]
     [Authorize(Roles = "ClubManager,FederationManager,SuperAdmin")]
+    [RequiresPlan]
     public async Task<IActionResult> Publish(Guid raceId, CancellationToken ct)
         => FromResult(await _races.PublishAsync(raceId, ct));
 

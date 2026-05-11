@@ -5,12 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using PRC.Common.Tenancy;
 using PRC.FederationService.Data;
 using PRC.FederationService.Events;
 using PRC.FederationService.Hubs;
 using PRC.FederationService.Services;
 using Prometheus;
+using PRC.Common.Logging;
 using Serilog;
 using Serilog.Events;
 
@@ -26,6 +28,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Conditional(
         _ => !string.IsNullOrEmpty(seqUrl),
         wt => wt.Seq(seqUrl ?? "http://localhost:5341", restrictedToMinimumLevel: LogEventLevel.Information))
+    .Destructure.With<PiiDestructuringPolicy>()
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithEnvironmentName()
@@ -93,6 +96,7 @@ builder.Services.AddMassTransit(x =>
                 h.Username(builder.Configuration["RabbitMq:Username"] ?? "guest");
                 h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
             });
+        cfg.UseCorrelationIdFilters(ctx);
         cfg.ConfigureEndpoints(ctx);
     });
 });
@@ -103,6 +107,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
 builder.Services.AddScoped<ITenantContext, HttpTenantContext>();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
@@ -128,6 +133,7 @@ builder.Services.AddConsulServiceRegistration(builder.Configuration, "federation
 
 var app = builder.Build();
 
+app.UseCorrelationId();
 app.UseSerilogRequestLogging(opts =>
     opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} {StatusCode} in {Elapsed:0.0000}ms");
 

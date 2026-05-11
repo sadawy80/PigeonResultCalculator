@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Prometheus;
 using Serilog;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using PRC.Common.Messages;
 using PRC.PublicService.Services;
 
@@ -54,11 +55,14 @@ builder.Services.AddMassTransit(x =>
             h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
             h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
+        cfg.UseCorrelationIdFilters(ctx);
         cfg.ConfigureEndpoints(ctx);
     });
 });
 
 // ── Services ──────────────────────────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
 builder.Services.AddScoped<IPublicQueryService, PublicQueryService>();
 
 // ── Controllers / OpenAPI ─────────────────────────────────────────────────────
@@ -75,6 +79,8 @@ builder.Services.AddCors(opts => opts.AddPolicy("FrontendCors",
 builder.Services.AddConsulServiceRegistration(builder.Configuration, "public-service", 9508);
 
 var app = builder.Build();
+
+app.UseCorrelationId();
 
 if (app.Environment.IsDevelopment())
 {

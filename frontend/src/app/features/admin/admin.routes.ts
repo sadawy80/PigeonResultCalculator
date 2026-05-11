@@ -23,6 +23,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'link-requests',  loadComponent: () => import('./admin-link-requests.component').then(m => m.AdminLinkRequestsComponent) },
       { path: 'programmes',     loadComponent: () => import('./admin-programmes.component').then(m => m.AdminProgrammesComponent) },
       { path: 'notifications',  loadComponent: () => import('./admin-notifications.component').then(m => m.AdminNotificationsComponent) },
+      { path: 'contact',        loadComponent: () => import('./admin-contact.component').then(m => m.AdminContactComponent) },
       { path: 'backups',        loadComponent: () => import('./admin-backups.component').then(m => m.AdminBackupsComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

@@ -570,4 +570,30 @@ export class ApiService {
   adminDeletePigeon(pigeonId: string): Observable<any> {
     return this.delete<any>(`/admin/pigeons/${pigeonId}`);
   }
+
+  // ── Contact Us ────────────────────────────────────────────────────────────
+
+  submitContactMessage(body: { name: string; email: string; phone?: string; subject: string; body: string }): Observable<{ id: string }> {
+    return this.post<{ id: string }>('/contact', body);
+  }
+
+  adminListContactMessages(params: { status?: string; search?: string; page?: number; pageSize?: number }): Observable<any> {
+    return this.get<any>('/admin/contact', params);
+  }
+
+  adminGetContactMessage(id: string): Observable<any> {
+    return this.get<any>(`/admin/contact/${id}`);
+  }
+
+  adminReplyContactMessage(id: string, reply: string): Observable<any> {
+    return this.post<any>(`/admin/contact/${id}/reply`, { reply });
+  }
+
+  adminCloseContactMessage(id: string): Observable<any> {
+    return this.post<any>(`/admin/contact/${id}/close`, {});
+  }
+
+  adminDeleteContactMessage(id: string): Observable<any> {
+    return this.delete<any>(`/admin/contact/${id}`);
+  }
 }

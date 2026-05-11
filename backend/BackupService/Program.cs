@@ -6,10 +6,11 @@ using Microsoft.OpenApi.Models;
 using Minio;
 using PRC.BackupService.BackgroundServices;
 using PRC.BackupService.Data;
-using PRC.BackupService.Middleware;
 using PRC.BackupService.Services;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using Prometheus;
+using PRC.Common.Logging;
 using Serilog;
 using Serilog.Events;
 
@@ -25,6 +26,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Conditional(
         _ => !string.IsNullOrEmpty(seqUrl),
         wt => wt.Seq(seqUrl ?? "http://localhost:5341", restrictedToMinimumLevel: LogEventLevel.Information))
+    .Destructure.With<PiiDestructuringPolicy>()
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithEnvironmentName()
@@ -95,13 +97,14 @@ builder.Services.AddMinio(cfg => cfg
     .Build());
 
 // ── Application services ──────────────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<MinioStorageService>();
 builder.Services.AddScoped<PCloudStorageService>();
 builder.Services.AddScoped<BackupOrchestrator>();
 builder.Services.AddHostedService<BackupJob>();
 
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
@@ -126,7 +129,7 @@ builder.Services.AddConsulServiceRegistration(builder.Configuration, "backup-ser
 
 var app = builder.Build();
 
-app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseCorrelationId();
 app.UseSerilogRequestLogging(opts =>
     opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} {StatusCode} in {Elapsed:0.0000}ms");
 

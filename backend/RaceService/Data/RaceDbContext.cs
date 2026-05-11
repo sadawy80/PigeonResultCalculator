@@ -30,7 +30,7 @@ public class RaceDbContext : DbContext
         b.Entity<Race>().HasQueryFilter(e => !e.IsDeleted && (_tenantId == null || e.FederationId == _tenantId));
         b.Entity<RaceResult>().HasQueryFilter(e => !e.IsDeleted);
         b.Entity<Pigeon>().HasQueryFilter(e => !e.IsDeleted && (_tenantId == null || e.FederationId == _tenantId));
-        b.Entity<Fancier>().HasQueryFilter(e => !e.IsDeleted && (_tenantId == null || e.FederationId == _tenantId));
+        b.Entity<Fancier>().HasQueryFilter(e => _tenantId == null || e.FederationId == _tenantId);
 
         b.Entity<Race>().HasIndex(r => r.ClubId);
         b.Entity<Race>().HasIndex(r => r.Status);

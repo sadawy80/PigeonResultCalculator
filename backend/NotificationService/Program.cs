@@ -1,8 +1,12 @@
 using MassTransit;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using PRC.Common.Correlation;
 using PRC.Common.Messages;
 using PRC.NotificationService.Events;
 using PRC.NotificationService.Services;
+using PRC.Common.Logging;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -15,6 +19,7 @@ try
 
     builder.Services.AddSerilog((sp, lc) => lc
         .ReadFrom.Configuration(builder.Configuration)
+        .Destructure.With<PiiDestructuringPolicy>()
         .Enrich.FromLogContext()
         .WriteTo.Console()
         .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341"));
@@ -47,9 +52,13 @@ try
                 h.Username(rabbitUser);
                 h.Password(rabbitPass);
             });
+            cfg.UseCorrelationIdFilters(ctx);
             cfg.ConfigureEndpoints(ctx);
         });
     });
+
+    // No-op HttpContextAccessor so MassTransit CorrelationIdFilters can resolve.
+    builder.Services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
     builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 

@@ -26,7 +26,7 @@ public class SubscriptionsController : SubscriptionControllerBase
     public async Task<IActionResult> GetFederationSubscriptions(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
-        var result = await _svc.GetFederationSubscriptionsAsync(page, pageSize, ct);
+        var result = await _svc.GetFederationSubscriptionsAsync(page, pageSize, ct: ct);
         return FromResult(result);
     }
 

@@ -5,12 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PRC.Common.Consul;
+using PRC.Common.Correlation;
 using PRC.AdminService.Data;
 using PRC.AdminService.Events;
-using PRC.AdminService.Middleware;
 using PRC.AdminService.Services;
 using PRC.Common.Messages;
 using Prometheus;
+using PRC.Common.Logging;
 using Serilog;
 using Serilog.Events;
 
@@ -26,6 +27,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Conditional(
         _ => !string.IsNullOrEmpty(seqUrl),
         wt => wt.Seq(seqUrl ?? "http://localhost:5341", restrictedToMinimumLevel: LogEventLevel.Information))
+    .Destructure.With<PiiDestructuringPolicy>()
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithEnvironmentName()
@@ -135,18 +137,20 @@ builder.Services.AddMassTransit(x =>
                 h.Username(builder.Configuration["RabbitMq:Username"] ?? "guest");
                 h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
             });
+        cfg.UseCorrelationIdFilters(ctx);
         cfg.ConfigureEndpoints(ctx);
     });
 });
 
 // ── Services ──────────────────────────────────────────────────────────────────
-builder.Services.AddHttpClient("GeoIp");
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCorrelationIdHandler();
+builder.Services.AddHttpClient("GeoIp").AddHttpMessageHandler<CorrelationIdHandler>();
 builder.Services.AddSingleton<IGeoIpService, GeoIpService>();
 builder.Services.AddScoped<IBusAdminClient, BusAdminClient>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAdminTokenService, AdminTokenService>();
 
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
@@ -172,7 +176,7 @@ builder.Services.AddConsulServiceRegistration(builder.Configuration, "admin-serv
 
 var app = builder.Build();
 
-app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseCorrelationId();
 app.UseSerilogRequestLogging(opts =>
     opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} {StatusCode} in {Elapsed:0.0000}ms");
 

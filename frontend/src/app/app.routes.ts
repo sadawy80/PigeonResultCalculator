@@ -51,6 +51,10 @@ export const routes: Routes = [
 
   // Public pages
   {
+    path: 'contact',
+    loadComponent: () => import('./features/public/contact.component').then(m => m.ContactComponent)
+  },
+  {
     path: 'p/:slug',
     loadComponent: () => import('./features/public/public-club-page.component').then(m => m.PublicClubPageComponent)
   },
