@@ -294,7 +294,8 @@ All monitoring components are fully implemented in `monitoring/`.
 | Multi-tenant architecture | ✅ | Tenant isolation by `ClubId`/`CountryId` on all data. No shared state between tenants. |
 | Real-time data processing | ✅ | SignalR hub for live results. |
 | Strong data integrity (no loss) | ✅ | Durable queues, retry policies, audit log. |
-| Modular and scalable services | ✅ | 11 independently deployable services; each scales horizontally. |
+| Modular and scalable services | ✅ | 12 independently deployable services (FileService added for object storage); each scales horizontally. |
+| Single object-store owner | ✅ | Only `FileService` talks to MinIO. BackupService, ClubService, and FederationService go through `IFileServiceClient` over HTTP (shared `X-Service-Key`). |
 
 ---
 

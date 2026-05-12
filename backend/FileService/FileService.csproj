@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PRC.FileService</RootNamespace>
+    <AssemblyName>PRC.FileService</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
+    <PackageReference Include="Serilog.AspNetCore"           Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq"            Version="9.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore"       Version="7.3.1" />
+    <PackageReference Include="prometheus-net.AspNetCore"    Version="8.2.1" />
+    <PackageReference Include="Minio"                        Version="6.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
+  </ItemGroup>
+
+</Project>

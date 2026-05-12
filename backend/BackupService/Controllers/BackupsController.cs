@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PRC.BackupService.Data;
 using PRC.BackupService.Models;
 using PRC.BackupService.Services;
+using PRC.Common.Services;
 
 namespace PRC.BackupService.Controllers;
 
@@ -15,18 +16,18 @@ public class BackupsController : ControllerBase
 {
     private readonly BackupDbContext      _db;
     private readonly BackupOrchestrator   _orchestrator;
-    private readonly MinioStorageService  _minio;
+    private readonly IFileServiceClient   _files;
     private readonly ILogger<BackupsController> _log;
 
     public BackupsController(
         BackupDbContext db,
         BackupOrchestrator orchestrator,
-        MinioStorageService minio,
+        IFileServiceClient files,
         ILogger<BackupsController> log)
     {
         _db           = db;
         _orchestrator = orchestrator;
-        _minio        = minio;
+        _files        = files;
         _log          = log;
     }
 
@@ -92,7 +93,7 @@ public class BackupsController : ControllerBase
         if (!entry.UploadedToMinIO || string.IsNullOrEmpty(entry.ObjectKey))
             return BadRequest(new { error = "Backup file not available in MinIO." });
 
-        var url = await _minio.GetPresignedUrlAsync(entry.ObjectKey, TimeSpan.FromMinutes(15), ct);
+        var url = await _files.GetPresignedUrlAsync(entry.ObjectKey, TimeSpan.FromMinutes(15), ct);
         return Ok(new { url, expiresInMinutes = 15 });
     }
 
@@ -104,8 +105,8 @@ public class BackupsController : ControllerBase
 
         if (entry.UploadedToMinIO && !string.IsNullOrEmpty(entry.ObjectKey))
         {
-            try { await _minio.DeleteAsync(entry.ObjectKey, ct); }
-            catch (Exception ex) { _log.LogWarning(ex, "MinIO delete failed for {Key}", entry.ObjectKey); }
+            try { await _files.DeletePrivateAsync(entry.ObjectKey, ct); }
+            catch (Exception ex) { _log.LogWarning(ex, "File-service delete failed for {Key}", entry.ObjectKey); }
         }
 
         _db.Backups.Remove(entry);

@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubscriptionService", "Subs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackupService", "BackupService\BackupService.csproj", "{E2A1F3C9-7B4D-4E8A-9C12-D5F6A3B0E7C8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileService", "FileService\FileService.csproj", "{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -195,6 +197,18 @@ Global
 		{E2A1F3C9-7B4D-4E8A-9C12-D5F6A3B0E7C8}.Release|x64.Build.0 = Release|Any CPU
 		{E2A1F3C9-7B4D-4E8A-9C12-D5F6A3B0E7C8}.Release|x86.ActiveCfg = Release|Any CPU
 		{E2A1F3C9-7B4D-4E8A-9C12-D5F6A3B0E7C8}.Release|x86.Build.0 = Release|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Debug|x64.Build.0 = Debug|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Debug|x86.Build.0 = Debug|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Release|x64.ActiveCfg = Release|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Release|x64.Build.0 = Release|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Release|x86.ActiveCfg = Release|Any CPU
+		{1ED32231-EB39-4E52-A5C7-30BAE00E71C7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -12,13 +12,13 @@ namespace PRC.ClubService.Controllers;
 [Authorize]
 public class ImageUploadController : ClubControllerBase
 {
-    private readonly IFileStorageService _storage;
+    private readonly IFileServiceClient _files;
     private readonly ClubDbContext _db;
 
-    public ImageUploadController(IFileStorageService storage, ClubDbContext db)
+    public ImageUploadController(IFileServiceClient files, ClubDbContext db)
     {
-        _storage = storage;
-        _db = db;
+        _files = files;
+        _db    = db;
     }
 
     [HttpPost("club/{clubId:guid}/logo")]
@@ -41,31 +41,13 @@ public class ImageUploadController : ClubControllerBase
             "image/gif"  => ".gif",
             _            => ".webp"
         };
-        var path = await _storage.UploadAsync(file.OpenReadStream(), $"logo{ext}", mime!, "clubs", ct);
-        var url  = _storage.GetAccessUrl(path);
+
+        await using var stream = file.OpenReadStream();
+        var url = await _files.UploadPublicAsync($"logo{ext}", mime!, stream, file.Length, ct);
 
         club.LogoUrl = url;
         await _db.SaveChangesAsync(ct);
 
         return Ok(ApiResponse<object>.Ok(new { url }));
-    }
-
-    [HttpGet("files/{*path}")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Download(string path, CancellationToken ct)
-    {
-        var stream = await _storage.DownloadAsync(path, ct);
-        if (stream is null) return NotFound();
-
-        var ext = Path.GetExtension(path).ToLowerInvariant();
-        var mime = ext switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png"            => "image/png",
-            ".gif"            => "image/gif",
-            ".webp"           => "image/webp",
-            _                 => "application/octet-stream"
-        };
-        return File(stream, mime);
     }
 }

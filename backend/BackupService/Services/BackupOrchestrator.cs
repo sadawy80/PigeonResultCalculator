@@ -3,13 +3,14 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PRC.BackupService.Data;
 using PRC.BackupService.Models;
+using PRC.Common.Services;
 
 namespace PRC.BackupService.Services;
 
 public class BackupOrchestrator
 {
     private readonly BackupDbContext    _db;
-    private readonly MinioStorageService  _minio;
+    private readonly IFileServiceClient   _files;
     private readonly PCloudStorageService _pCloud;
     private readonly IConfiguration     _config;
     private readonly ILogger<BackupOrchestrator> _log;
@@ -22,13 +23,13 @@ public class BackupOrchestrator
 
     public BackupOrchestrator(
         BackupDbContext db,
-        MinioStorageService minio,
+        IFileServiceClient files,
         PCloudStorageService pCloud,
         IConfiguration config,
         ILogger<BackupOrchestrator> log)
     {
         _db     = db;
-        _minio  = minio;
+        _files  = files;
         _pCloud = pCloud;
         _config = config;
         _log    = log;
@@ -74,7 +75,7 @@ public class BackupOrchestrator
             var objectKey = $"{databaseName}/{ts}.bak.gz";
 
             await using (var fs = fi.OpenRead())
-                await _minio.UploadAsync(objectKey, fs, fi.Length, ct);
+                await _files.UploadKeyedAsync(objectKey, "application/gzip", fs, fi.Length, ct);
 
             entry.UploadedToMinIO = true;
             entry.ObjectKey       = objectKey;
@@ -138,7 +139,7 @@ public class BackupOrchestrator
             try
             {
                 if (!string.IsNullOrEmpty(e.ObjectKey))
-                    await _minio.DeleteAsync(e.ObjectKey, ct);
+                    await _files.DeletePrivateAsync(e.ObjectKey, ct);
                 _db.Backups.Remove(e);
             }
             catch (Exception ex)

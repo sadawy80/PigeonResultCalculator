@@ -213,6 +213,16 @@ pigeon-racing/
 | GET | /api/ace-pigeon/programme/:id |
 | GET | /api/super-ace-pigeon/programme/:id |
 
+### File storage (FileService → MinIO)
+| Method | Endpoint | Notes |
+|--------|----------|-------|
+| POST   | /api/files/upload                          | Multipart image upload (10 MB cap, JPEG/PNG/WebP/GIF). Returns public URL. JWT. |
+| DELETE | /api/files?objectKey=…                     | Delete a public-bucket object. JWT. |
+| PUT    | /api/files/internal/{**objectKey}          | Service-to-service keyed upload (private bucket). `X-Service-Key`. |
+| GET    | /api/files/internal/presigned-url?objectKey=… | Short-lived presigned download URL for a private object. `X-Service-Key`. |
+
+All other services that need object storage talk to FileService through `IFileServiceClient` (typed HttpClient in Common). BackupService stores `.bak.gz` blobs in the private bucket and hands admins presigned URLs on demand. ClubService uploads logos and FederationService uploads flags into the public bucket; both persist the returned URL on the entity.
+
 ### Printing — Certificates & Results
 | Method | Endpoint | Returns |
 |--------|----------|---------|

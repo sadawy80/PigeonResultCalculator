@@ -131,7 +131,7 @@ builder.Services.AddScoped<IEmailService, NoOpEmailService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ISubscriptionChecker, ClubSubscriptionChecker>();
 builder.Services.AddScoped<RequiresPlanFilter>();
-builder.Services.AddSingleton<IFileStorageService, LocalDiskFileStorageService>();
+builder.Services.AddFileServiceClient(builder.Configuration);
 builder.Services.AddScoped<IRaceServiceClient, BusRaceServiceClient>();
 
 builder.Services.AddHttpContextAccessor();

@@ -214,6 +214,8 @@ services:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9502
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Club;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
+      FileService__BaseUrl: http://file-service:9512
+      ServiceConfig__InternalApiKey: ${INTERNAL_API_KEY:-CHANGE_THIS_INTERNAL_SERVICE_KEY}
     depends_on:
       sqlserver: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -270,6 +272,8 @@ services:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9504
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Federation;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
+      FileService__BaseUrl: http://file-service:9512
+      ServiceConfig__InternalApiKey: ${INTERNAL_API_KEY:-CHANGE_THIS_INTERNAL_SERVICE_KEY}
     depends_on:
       sqlserver: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -414,10 +418,8 @@ services:
       ASPNETCORE_URLS: http://+:9510
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PRC_Backup;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
       ConnectionStrings__MasterConnection: "Server=sqlserver,1433;Database=master;User Id=sa;Password=${SQL_PASSWORD:-Str0ngP@ssword!};TrustServerCertificate=True;"
-      Minio__Endpoint: minio:9000
-      Minio__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
-      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      Minio__Bucket: prc-backups
+      FileService__BaseUrl: http://file-service:9512
+      ServiceConfig__InternalApiKey: ${INTERNAL_API_KEY:-CHANGE_THIS_INTERNAL_SERVICE_KEY}
       PCloud__AccessToken: ${PCLOUD_TOKEN:-}
       Backup__StagingPath: /sqldata/backup
       Backup__RetentionDays: "30"
@@ -428,7 +430,7 @@ services:
       - sqlserver_data:/sqldata
     depends_on:
       sqlserver: { condition: service_healthy }
-      minio: { condition: service_healthy }
+      file-service: { condition: service_healthy }
     networks:
       - internal
     labels:
@@ -436,6 +438,40 @@ services:
       service: backup-service
     healthcheck:
       test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9510'" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  file-service:
+    build:
+      context: backend
+      dockerfile: FileService/Dockerfile
+    container_name: prc-files
+    restart: unless-stopped
+    ports:
+      - "9512:9512"
+    environment:
+      <<: *svc-env
+      ASPNETCORE_URLS: http://+:9512
+      Minio__Endpoint: minio:9000
+      Minio__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      Minio__Bucket: pigeon-files
+      Minio__PrivateBucket: pigeon-private
+      Minio__UseSsl: "false"
+      Minio__PublicUrl: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      ServiceConfig__InternalApiKey: ${INTERNAL_API_KEY:-CHANGE_THIS_INTERNAL_SERVICE_KEY}
+    depends_on:
+      minio: { condition: service_healthy }
+    networks:
+      - internal
+    labels:
+      logging: promtail
+      service: file-service
+    healthcheck:
+      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9512'" ]
       interval: 15s
       timeout: 5s
       retries: 5

@@ -236,6 +236,7 @@ from the monolith (`backend/`) to its new home in the microservices (`services/`
 
 | Monolith class (`backend/Infrastructure/Services/`) | Microservice | New location |
 |---|---|---|
+| `MinIO storage`        | **FileService** | `FileService/Services/MinioFileStorageService.cs` — owns the public + private buckets. Other services call it via `IFileServiceClient` in Common. |
 | `VelocityCalculator` | RaceService | `Services/SpeedCalculator.cs` — renamed `SpeedCalculator`; same Haversine formula |
 | `RedisCacheService` | Common | `Common/Services/ICacheService.cs` — `RedisCacheService` |
 | `MemoryCacheService` | Common | `Common/Services/ICacheService.cs` — `MemoryCacheService` |
