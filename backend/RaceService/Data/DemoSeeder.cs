@@ -46,11 +46,21 @@ public static class DemoSeeder
         if (!await db.Races.AnyAsync(r => r.Id == Race1Id))
         {
             SeedPigeons(db);
+            SeedFanciers(db);
             SeedRaces2025(db);
             SeedRaces2026(db);
             await db.SaveChangesAsync();
-            Log.Information("DemoSeeder (Race): seeded 3 pigeons and 10 demo races with results");
+            Log.Information("DemoSeeder (Race): seeded 3 pigeons, 5 fanciers and 10 demo races with results");
             return;
+        }
+
+        // Backfill fanciers for installs that were seeded before this seeder
+        // gained the SeedFanciers call. Safe to run repeatedly thanks to AnyAsync.
+        if (!await db.Fanciers.AnyAsync())
+        {
+            SeedFanciers(db);
+            await db.SaveChangesAsync();
+            Log.Information("DemoSeeder (Race): backfilled 5 demo fanciers");
         }
 
         // Patch ProgrammeId/ProgrammeName on already-seeded races if missing
@@ -75,6 +85,37 @@ public static class DemoSeeder
                     .SetProperty(r => r.ProgrammeName, "2026 Season Programme"));
             Log.Information("DemoSeeder (Race): patched ProgrammeId on existing demo races");
         }
+    }
+
+    // Pre-populated fanciers so the admin "Fanciers" page is not empty out of
+    // the box. Ids are deterministic and match the user IDs used in
+    // RaceResult.UserId so already-published results stay coherent. "Demo
+    // Fancier" is wired to the real demo fancier login; the four "Fancier N"
+    // rows are unlinked so the admin can exercise the link/unlink flow.
+    private static void SeedFanciers(RaceDbContext db)
+    {
+        var now = DateTime.UtcNow;
+        db.Fanciers.AddRange(
+            new Fancier
+            {
+                Id              = FancierId,
+                Name            = "Demo Fancier",
+                ClubId          = ClubId,
+                ClubName        = "Demo Racing Club",
+                FederationId    = FederationId,
+                FederationName  = "United Kingdom",
+                Country         = "United Kingdom",
+                LinkedUserId    = FancierId,
+                LinkedUserName  = "Demo Fancier",
+                LinkedUserEmail = "fancier@demo.local",
+                LinkedAt        = now,
+                CreatedAt       = now
+            },
+            new Fancier { Id = OtherF1Id, Name = "Fancier 1", ClubId = ClubId, ClubName = "Demo Racing Club", FederationId = FederationId, FederationName = "United Kingdom", Country = "United Kingdom", CreatedAt = now },
+            new Fancier { Id = OtherF2Id, Name = "Fancier 2", ClubId = ClubId, ClubName = "Demo Racing Club", FederationId = FederationId, FederationName = "United Kingdom", Country = "United Kingdom", CreatedAt = now },
+            new Fancier { Id = OtherF3Id, Name = "Fancier 3", ClubId = ClubId, ClubName = "Demo Racing Club", FederationId = FederationId, FederationName = "United Kingdom", Country = "United Kingdom", CreatedAt = now },
+            new Fancier { Id = OtherF4Id, Name = "Fancier 4", ClubId = ClubId, ClubName = "Demo Racing Club", FederationId = FederationId, FederationName = "United Kingdom", Country = "United Kingdom", CreatedAt = now }
+        );
     }
 
     private static void SeedPigeons(RaceDbContext db)

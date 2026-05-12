@@ -2,14 +2,16 @@ import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd, NavigationError } from '@angular/router';
 import { ThemeService } from './core/services/services';
 import { LoggerService } from './core/services/logger.service';
+import { ToasterComponent } from './shared/components/toaster.component';
+import { ModalHostComponent } from './shared/components/modal-host.component';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
-  template: `<router-outlet />`,
+  imports: [RouterOutlet, ToasterComponent, ModalHostComponent],
+  template: `<router-outlet /><app-toaster /><app-modal-host />`,
   styles: [`
     :host { display: block; min-height: 100vh; background: var(--pr-bg); color: var(--pr-text); }
   `]
