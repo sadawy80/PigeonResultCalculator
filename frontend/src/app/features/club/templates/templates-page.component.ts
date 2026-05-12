@@ -1,83 +1,52 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { TemplateApiService } from '../../../core/services/template-api.service';
-import { AuthService } from '../../../core/services/services';
-import { TemplateBrowserComponent } from './template-browser.component';
-import { PrintJob, TemplateCategory, PrintJobStatus } from '../../../core/models/template.models';
+import { DesignPickerComponent } from './design-picker.component';
+import { TemplateCategory } from '../../../core/models/template.models';
 
 @Component({
   selector: 'app-templates-page',
   standalone: true,
-  imports: [DatePipe, TemplateBrowserComponent],
+  imports: [DesignPickerComponent],
   templateUrl: './templates-page.component.html',
   styleUrls: ['./templates-page.component.scss']
 })
 export class TemplatesPageComponent implements OnInit {
-  private templateApi = inject(TemplateApiService);
-  private auth        = inject(AuthService);
-  private route       = inject(ActivatedRoute);
+  private route = inject(ActivatedRoute);
 
-  PrintJobStatus = PrintJobStatus;
-
-  totalTemplates = signal(160);
-  printJobs      = signal<PrintJob[]>([]);
-  loadingJobs    = signal(true);
-  showBrowser    = signal(false);
-  activeCategory = signal<TemplateCategory | undefined>(undefined);
+  showPicker     = signal(false);
+  activeCategory = signal<TemplateCategory>(TemplateCategory.RaceResults);
 
   queryRaceId?: string;
   queryProgrammeId?: string;
+  queryRaceResultId?: string;
 
+  // The 4 result tables plus the 4 cert sub-types. Picker opens with the right
+  // context and the backend builds the data from entity IDs.
   quickCategories = [
-    { value: TemplateCategory.RaceResults,    icon: '🏁', label: 'Race Results',    count: 50, desc: 'Per-race result sheets in portrait or landscape' },
-    { value: TemplateCategory.BestLoft,       icon: '🏠', label: 'Best Loft',       count: 20, desc: 'Fancier leaderboards across all programme races' },
-    { value: TemplateCategory.AcePigeon,      icon: '🕊️', label: 'Ace Pigeon',      count: 20, desc: 'Individual pigeon performance rankings' },
-    { value: TemplateCategory.SuperAcePigeon, icon: '⭐', label: 'Super Ace',       count: 20, desc: 'Elite pigeons meeting strict qualification criteria' },
-    { value: TemplateCategory.Certificate,    icon: '🏅', label: 'Certificates',    count: 50, desc: 'Award certificates for winners and participants' },
+    { cat: TemplateCategory.RaceResults,    icon: '🏁', label: 'Race Result Tables',   desc: 'Multi-page A4 portrait result sheet for a single race.' },
+    { cat: TemplateCategory.AcePigeon,      icon: '🕊️', label: 'Ace Pigeon Tables',     desc: 'Season ranking of ace pigeons across a programme.' },
+    { cat: TemplateCategory.SuperAcePigeon, icon: '⭐', label: 'Super Ace Tables',      desc: 'Elite-tier ranking with multi-race aggregation.' },
+    { cat: TemplateCategory.BestLoft,       icon: '🏠', label: 'Best Loft Tables',     desc: 'Fancier leaderboard across all programme races.' },
+    { cat: TemplateCategory.Certificate,    icon: '🏅', label: 'Award Certificates',   desc: 'Single-page A4 certificate, portrait or landscape.' },
   ];
 
   ngOnInit() {
-    this.queryRaceId      = this.route.snapshot.queryParamMap.get('raceId') ?? undefined;
-    this.queryProgrammeId = this.route.snapshot.queryParamMap.get('programmeId') ?? undefined;
+    const p = this.route.snapshot.queryParamMap;
+    this.queryRaceId        = p.get('raceId') ?? undefined;
+    this.queryProgrammeId   = p.get('programmeId') ?? undefined;
+    this.queryRaceResultId  = p.get('raceResultId') ?? undefined;
 
-    const catParam = this.route.snapshot.queryParamMap.get('category');
+    const catParam = p.get('category');
     if (catParam) {
       this.activeCategory.set(parseInt(catParam) as TemplateCategory);
-      this.showBrowser.set(true);
-    }
-
-    const clubId = this.auth.clubId();
-    if (clubId) {
-      this.templateApi.getPrintJobs(clubId).subscribe((p: { items: PrintJob[] }) => {
-        this.printJobs.set(p.items);
-        this.loadingJobs.set(false);
-      });
-    } else {
-      this.loadingJobs.set(false);
+      this.showPicker.set(true);
     }
   }
 
-  launchBrowser(cat: TemplateCategory) {
+  openCategory(cat: TemplateCategory) {
     this.activeCategory.set(cat);
-    this.showBrowser.set(true);
+    this.showPicker.set(true);
   }
 
-  activeCategoryLabel(): string {
-    return this.quickCategories.find(c => c.value === this.activeCategory())?.label ?? '';
-  }
-
-  categoryName(cat: TemplateCategory): string {
-    const m: Record<number, string> = {
-      1: 'Race Results', 2: 'Best Loft', 3: 'Ace Pigeon', 4: 'Super Ace', 5: 'Certificates'
-    };
-    return m[cat] ?? '';
-  }
-
-  statusBadge(s: PrintJobStatus): string {
-    const m: Record<number, string> = {
-      1: 'pr-badge--muted', 2: 'pr-badge--info', 3: 'pr-badge--success', 4: 'pr-badge--error'
-    };
-    return m[s] ?? 'pr-badge--muted';
-  }
+  close() { this.showPicker.set(false); }
 }

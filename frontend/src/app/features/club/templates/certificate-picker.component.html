@@ -3,54 +3,13 @@
 </button>
 
 @if (isOpen()) {
-  <div class="print-sheet-overlay" (click)="close()">
-    <div class="print-sheet" (click)="$event.stopPropagation()">
-      <div class="print-sheet__header">
-        <div>
-          <h3 style="margin:0">🏅 Generate Certificate</h3>
-          <div style="font-size:0.8rem;color:var(--pr-text-muted)">
-            Choose a template, enter recipient details, then print
-          </div>
-        </div>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="close()">✕</button>
-      </div>
-
-      @if (!templateChosen()) {
-        <div class="cert-recipient-form">
-          <div class="cert-form-grid">
-            <div class="pr-form-group">
-              <label class="pr-label">Recipient Name *</label>
-              <input class="pr-input" [(ngModel)]="recipientName" placeholder="e.g. John Smith" [ngModelOptions]="{standalone: true}">
-            </div>
-            <div class="pr-form-group">
-              <label class="pr-label">Rank / Position</label>
-              <input class="pr-input" [(ngModel)]="rank" placeholder="e.g. 1st, Champion" [ngModelOptions]="{standalone: true}">
-            </div>
-            <div class="pr-form-group" style="grid-column:span 2">
-              <label class="pr-label">Achievement (optional)</label>
-              <input class="pr-input" [(ngModel)]="achievement" placeholder="e.g. First place in the 500km race" [ngModelOptions]="{standalone: true}">
-            </div>
-          </div>
-          <div style="padding:0 16px 16px">
-            <button class="pr-btn pr-btn--primary" [disabled]="!recipientName" (click)="showTemplates()">
-              Choose Template →
-            </button>
-          </div>
-        </div>
-      } @else {
-        <div style="padding:8px 16px;background:var(--pr-surface-2);border-bottom:1px solid var(--pr-border);font-size:0.85rem;display:flex;gap:24px;align-items:center">
-          <span><strong>Recipient:</strong> {{ recipientName }}</span>
-          @if (rank) { <span><strong>Rank:</strong> {{ rank }}</span> }
-          <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="templateChosen.set(false)">← Edit</button>
-        </div>
-        <app-template-browser
-          [initialCategory]="TemplateCategory.Certificate"
-          [raceId]="raceId"
-          [programmeId]="programmeId"
-          [raceResultId]="raceResultId"
-          (templateSelected)="printCertificate($event)">
-        </app-template-browser>
-      }
-    </div>
-  </div>
+  <app-design-picker
+    [category]="TemplateCategory.Certificate"
+    [certSubType]="certType"
+    [raceResultId]="raceResultId"
+    [programmeId]="programmeId"
+    [fancierUserId]="fancierUserId"
+    [ringNumber]="ringNumber"
+    (close)="close()">
+  </app-design-picker>
 }

@@ -103,12 +103,16 @@ pigeon-racing/
 ├── PigeonRacing.Infrastructure/    # EF Core, migrations, services
 │   ├── Persistence/AppDbContext.cs
 │   ├── Services/                   # VelocityCalc, ETSParser, Cache, Email, Storage
-│   ├── Templates/
-│   │   ├── TemplateLibrary.Part1.cs  # RR-01..25 (Race Results)
-│   │   ├── TemplateLibrary.Part2.cs  # RR-26..50, BL-01..20, AP-01..20
-│   │   ├── TemplateLibrary.Part3.cs  # SA-01..20, CERT-01..50
-│   │   ├── TemplateRenderer.cs       # {{variable}}, #each, #if resolver
-│   │   └── TemplateSeeder.cs         # Seeds all 160 on startup (idempotent)
+│   ├── wwwroot/templates/            # 12 production HTML templates (8 cert + 4 result)
+│   ├── wwwroot/fonts/                # Google Fonts bundled at startup by FontBootstrapService
+│   ├── Services/
+│   │   ├── PuppeteerBrowserHost.cs   # Shared headless Chromium (ARM-aware)
+│   │   ├── CertRenderer.cs           # 8 cert templates → PDF
+│   │   ├── ResultRenderer.cs         # 4 result-table templates → PDF
+│   │   ├── ResultExcelExporter.cs    # ClosedXML → XLSX
+│   │   ├── DesignCatalog.cs          # Lists design IDs per type/orientation
+│   │   ├── PrintOrchestrator.cs      # Entity-ID → JSON → renderer
+│   │   └── FontBootstrapService.cs   # Downloads Google Fonts on first start
 │   ├── Migrations/
 │   │   ├── …001_InitialCreate.cs
 │   │   ├── …002_AddProgrammeAndAggregateResults.cs
@@ -145,9 +149,10 @@ pigeon-racing/
 │   │   │   │   ├── theme-picker.component.ts
 │   │   │   │   ├── club-members.component.ts
 │   │   │   │   └── templates/
-│   │   │   │       ├── template-browser.component.ts  # 160-template grid picker
-│   │   │   │       ├── print-button.component.ts      # Drop-in print/PDF button
-│   │   │   │       └── templates-page.component.ts    # /club/templates
+│   │   │   │       ├── design-picker.component.ts     # Design + language + orientation picker
+│   │   │   │       ├── print-button.component.ts      # Drop-in print button
+│   │   │   │       ├── certificate-picker.component.ts# Cert-specific entry
+│   │   │   │       └── templates-page.component.ts    # /club/templates landing
 │   │   │   ├── country/            # Country manager views
 │   │   │   ├── fancier/            # Fancier dashboard + notifications
 │   │   │   ├── public/             # Public club pages
@@ -208,15 +213,18 @@ pigeon-racing/
 | GET | /api/ace-pigeon/programme/:id |
 | GET | /api/super-ace-pigeon/programme/:id |
 
-### Print Templates
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/templates | List all 160 templates (filterable) |
-| GET | /api/templates/:id | Template metadata |
-| POST | /api/templates/:id/render | Returns substituted HTML |
-| GET | /api/templates/:id/print | Auto-print HTML page |
-| POST | /api/templates/jobs | Create print job record |
-| GET | /api/templates/jobs/club/:id | Job history |
+### Printing — Certificates & Results
+| Method | Endpoint | Returns |
+|--------|----------|---------|
+| GET  | /api/print/designs/cert/{race\|ace\|super-ace\|best-loft} | `{portrait, landscape}` design lists |
+| GET  | /api/print/designs/result/{race\|ace\|super-ace\|best-loft} | flat design list |
+| POST | /api/print/cert/{race\|ace\|super-ace\|best-loft} | **PDF** (entity-ID-driven) |
+| POST | /api/print/result/{type}/pdf | **PDF** (multi-page table) |
+| POST | /api/print/result/{type}/excel | **XLSX** (ClosedXML) |
+| POST | /api/certificates/{type} | low-level: raw JSON payload → PDF |
+| POST | /api/result-tables/{type}/{pdf\|excel} | low-level: raw JSON payload → blob |
+
+The high-level `/api/print/*` endpoints take entity IDs (`raceResultId`, `programmeId`, `ringNumber`, `fancierUserId`) and assemble the per-template JSON internally — the frontend never has to know the template schema.
 
 ### Monitoring
 | Endpoint | Description |
@@ -228,18 +236,40 @@ pigeon-racing/
 
 ---
 
-## Templates (160 total)
+## Templates (file-based packages)
 
-| Category | Count | Styles available |
-|----------|-------|-----------------|
-| Race Results | 50 | Classic, Modern, Elegant, Minimal, Sporty, Heritage, Dark, Branded, Landscape/Portrait |
-| Best Loft | 20 | All 10 style families |
-| Ace Pigeon | 20 | All 10 style families |
-| Super Ace Pigeon | 20 | All 10 style families |
-| Certificates | 50 | Portrait + Landscape, Podium (🥇🥈🥉), Programme-specific, Branded |
+Templates live as static HTML files in [`backend/RenderingService/wwwroot/templates/`](backend/RenderingService/wwwroot/templates/) and are rendered server-side by headless Chromium. The old DB-template library was retired; the table is wiped on next migrate.
 
-### Print / PDF workflow
-The `/api/templates/:id/print` endpoint returns a self-contained HTML page with `window.print()` injected. Opening in a new tab triggers the browser's print dialog. Select **Save as PDF** for a formatted PDF — no client-side dependencies needed.
+### Certificate package — 8 files, ~104 design variants
+
+| Type | Portrait file | Landscape file | Designs (per orientation) |
+|---|---|---|---|
+| Race | `race_cert_portrait.html` | `race_cert_landscape.html` | R1–R10, AR-R1..3 |
+| Ace | `ace_cert_portrait.html` | `ace_cert_landscape.html` | A1–A10, AR-A1..3 |
+| Super Ace | `superace_cert_portrait.html` | `superace_cert_landscape.html` | S1–S10, AR-S1..3 |
+| Best Loft | `bestloft_cert_portrait.html` | `bestloft_cert_landscape.html` | L1–L10, AR-L1..3 |
+
+### Result-table package — 4 files, ~59 design variants
+
+| File | Designs | Languages |
+|---|---|---|
+| `race_results.html` | T1–T20 | en, ar, fa, es, de, zh |
+| `ace_result.html` | A1–A10 + AR-A1..3 | en, ar |
+| `superace_result.html` | SA1–SA10 + AR-SA1..3 | en, ar |
+| `bestloft_result.html` | L1–L10 + AR-L1..3 | en, ar |
+
+### Print / PDF / Excel workflow
+
+1. Frontend opens the design picker, fetches the design list, user picks design + language (+ orientation for certs).
+2. Frontend `POST`s to `/api/print/...` with entity IDs.
+3. Backend `PrintOrchestrator` asks RaceService / ClubService / FederationService over RabbitMQ for the underlying data, then assembles the spec-shaped JSON.
+4. `CertRenderer` / `ResultRenderer` injects the JSON into the template via `window.CERT_DATA` / `window.RACE_DATA` etc., waits for `body[data-render-status="complete"]`, and returns the PDF.
+5. For result tables, `ResultExcelExporter` (ClosedXML) renders the same payload to an `.xlsx` workbook on request.
+
+### Deployment notes
+
+- **Fonts**: `FontBootstrapService` downloads all required Google Fonts woff2 files to `wwwroot/fonts/` on first start and writes `all.css`. Templates reference `/fonts/all.css` so renders work offline.
+- **Linux ARM**: `Dockerfile` installs system Chromium (`apt-get install chromium`), so `docker buildx --platform linux/arm64,linux/amd64` produces working images on both architectures. PuppeteerSharp's `BrowserFetcher` is skipped on ARM via `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
 
 ---
 

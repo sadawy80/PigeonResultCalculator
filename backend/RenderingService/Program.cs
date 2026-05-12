@@ -77,6 +77,15 @@ builder.Services.AddScoped<IRenderService, RenderService>();
 builder.Services.AddSingleton<IPdfGeneratorService, PdfGeneratorService>();
 builder.Services.AddHostedService<PrintJobProcessorService>();
 
+// File-based renderers for the certificate + result packages.
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<IPuppeteerBrowserHost, PuppeteerBrowserHost>();
+builder.Services.AddSingleton<ICertRenderer, CertRenderer>();
+builder.Services.AddSingleton<IResultRenderer, ResultRenderer>();
+builder.Services.AddSingleton<IResultExcelExporter, ResultExcelExporter>();
+builder.Services.AddScoped<IPrintOrchestrator, PrintOrchestrator>();
+builder.Services.AddHostedService<FontBootstrapService>();
+
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
@@ -106,6 +115,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCorrelationId();
+app.UseStaticFiles();   // serves wwwroot/fonts/* used by the cert / result templates
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())

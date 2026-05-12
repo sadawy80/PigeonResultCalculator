@@ -27,6 +27,9 @@ monitoring/grafana/data/
 monitoring/prometheus/data/
 uploads/
 
+# Auto-bundled fonts (regenerated at startup by FontBootstrapService)
+backend/RenderingService/wwwroot/fonts/
+
 # OS
 .DS_Store
 Thumbs.db

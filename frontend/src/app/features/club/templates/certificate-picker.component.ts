@@ -1,51 +1,32 @@
-import { Component, Input, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TemplateApiService } from '../../../core/services/template-api.service';
-import { TemplateBrowserComponent } from './template-browser.component';
-import { PrintTemplate, TemplateCategory } from '../../../core/models/template.models';
+import { DesignPickerComponent } from './design-picker.component';
+import { TemplateCategory } from '../../../core/models/template.models';
+import { CertType } from '../../../core/services/print-api.service';
 
+/**
+ * Opens the design picker scoped to a specific certificate sub-type (race,
+ * ace, super-ace, best-loft). Picks the right backend endpoint based on the
+ * entity IDs supplied — caller provides only what's relevant.
+ */
 @Component({
   selector: 'app-certificate-picker',
   standalone: true,
-  imports: [FormsModule, TemplateBrowserComponent],
+  imports: [FormsModule, DesignPickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './certificate-picker.component.html',
   styleUrls: ['./certificate-picker.component.scss']
 })
 export class CertificatePickerComponent {
-  private templateApi = inject(TemplateApiService);
-
-  @Input() raceId?: string;
-  @Input() programmeId?: string;
+  @Input() certType: CertType = 'race';
   @Input() raceResultId?: string;
+  @Input() programmeId?: string;
+  @Input() fancierUserId?: string;
+  @Input() ringNumber?: string;
 
   TemplateCategory = TemplateCategory;
-
-  isOpen         = signal(false);
-  templateChosen = signal(false);
-  recipientName  = '';
-  rank           = '';
-  achievement    = '';
+  isOpen = signal(false);
 
   open()  { this.isOpen.set(true); }
-  close() { this.isOpen.set(false); this.templateChosen.set(false); }
-
-  showTemplates() {
-    if (!this.recipientName) return;
-    this.templateChosen.set(true);
-  }
-
-  printCertificate(t: PrintTemplate) {
-    const url = this.templateApi.buildPrintUrl(t.id, {
-      category:                   TemplateCategory.Certificate,
-      raceId:                     this.raceId,
-      programmeId:                this.programmeId,
-      raceResultId:               this.raceResultId,
-      certificateRecipientName:   this.recipientName,
-      certificateRank:            this.rank,
-      certificateAchievement:     this.achievement,
-    });
-    window.open(url, '_blank');
-    this.close();
-  }
+  close() { this.isOpen.set(false); }
 }

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Super Ace Pigeon Certificate</title>
+<!--
+  PRODUCTION SUPER ACE PIGEON CERTIFICATE — Portrait, EN+AR, 13 designs (S1..S10, AR-S1..AR-S3)
+  Data-driven. See SUPER_ACE_PIGEON_CERT_PROD_SPEC.md for the JSON contract.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Cairo:wght@400;600;700;900&family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,800&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Marcellus&family=Noto+Naskh+Arabic:wght@400;500;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700;900&family=Reem+Kufi:wght@400;500;700&family=Scheherazade+New:wght@400;500;700&family=Syne:wght@500;700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #888; font-family: 'DM Sans', sans-serif; color: #222; min-height: 100vh; }
+  .preview-wrap { padding: 24px; display: flex; flex-direction: column; align-items: center; }
+  .sheet { width: 794px; height: 1123px; box-shadow: 0 4px 24px rgba(0,0,0,.4); overflow: hidden; background: #fff; }
+  @media (max-width: 900px) { .sheet { width: 100%; max-width: 794px; } }
+
+  .cert { width: 100%; height: 100%; background: var(--c-bg, #fff); color: var(--c-text, #222); padding: 50px 60px; display: flex; flex-direction: column; font-family: var(--c-font-body, 'DM Sans', sans-serif); position: relative; }
+  .arabesque-bg { position: absolute; inset: 0; pointer-events: none; opacity: .06; z-index: 0; }
+  .cert-header { display: grid; grid-template-columns: 80px 1fr 80px; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--c-accent, #333); position: relative; z-index: 1; }
+  .cert-logo { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .cert-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .cert-title-block { text-align: center; }
+  .cert-eyebrow { font-size: 11px; color: var(--c-accent, #666); letter-spacing: 4px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+  .cert-title { font-family: var(--c-font-display, 'Playfair Display', serif); font-size: 36px; font-weight: 800; letter-spacing: var(--c-title-spacing, 1px); color: var(--c-text, #222); line-height: 1.05; text-transform: var(--c-title-case, none); }
+  .cert-subtitle { font-size: 13px; color: var(--c-accent, #666); margin-top: 6px; font-style: italic; letter-spacing: 1px; }
+  .cert-loft { padding: 12px 0; font-size: 11px; line-height: 1.6; text-align: center; color: var(--c-muted, #666); border-bottom: 1px solid var(--c-rule, rgba(0,0,0,.1)); position: relative; z-index: 1; }
+  .cert-loft-name { font-weight: 700; font-size: 13px; color: var(--c-text, #222); display: block; margin-bottom: 2px; letter-spacing: 1px; }
+  .cert-loft .sep { margin: 0 7px; color: var(--c-rule, #aaa); }
+  .cert-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px 0; text-align: center; position: relative; z-index: 1; }
+  .cert-awarded-to { font-size: 12px; color: var(--c-muted, #666); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .cert-bird-name { font-family: var(--c-font-display, 'Playfair Display', serif); font-size: 54px; font-weight: 800; color: var(--c-text, #222); line-height: 1; margin-bottom: 6px; letter-spacing: -1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 8px; }
+  .cert-bird-ring { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--c-accent, #666); letter-spacing: 2px; margin-bottom: 24px; direction: ltr; }
+  .cert-citation { font-size: 13px; color: var(--c-text, #222); line-height: 1.7; max-width: 600px; margin: 0 auto 24px; font-style: italic; }
+  .cert-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 auto; max-width: 640px; }
+  .cert-stat { padding: 14px 10px; background: var(--c-stat-bg, rgba(0,0,0,.03)); border-radius: var(--c-radius, 4px); text-align: center; border: 1px solid var(--c-rule, rgba(0,0,0,.08)); }
+  .cert-stat-value { font-family: var(--c-font-display, 'Playfair Display', serif); font-size: 24px; font-weight: 800; color: var(--c-accent, #222); line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cert-stat-label { font-size: 9px; color: var(--c-muted, #666); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
+  .cert-meta-row { display: flex; justify-content: center; gap: 24px; margin-top: 18px; font-size: 11px; color: var(--c-muted, #666); flex-wrap: wrap; }
+  .cert-meta-row span b { color: var(--c-text, #222); font-weight: 700; margin-right: 4px; letter-spacing: .5px; }
+  .cert-footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--c-accent, #333); display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 14px; position: relative; z-index: 1; }
+  .cert-sig { text-align: center; font-size: 10px; color: var(--c-muted, #666); letter-spacing: 1px; }
+  .cert-sig-line { border-top: 1px solid var(--c-text, #222); padding-top: 4px; margin-bottom: 2px; font-family: var(--c-font-display, 'Playfair Display', serif); font-style: italic; font-size: 14px; color: var(--c-text, #222); }
+  .cert-qr { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .cert-qr canvas, .cert-qr img { display: block; background: #fff; padding: 3px; border: 1px solid var(--c-accent, #333); border-radius: 2px; }
+  .cert-qr-label { font-size: 8px; letter-spacing: 1px; color: var(--c-muted, #999); text-transform: uppercase; }
+
+  .cert.lang-ar { direction: rtl; font-family: var(--c-font-body-rtl, 'Tajawal', sans-serif); }
+  .cert.lang-ar .cert-title { font-family: var(--c-font-display-rtl, 'Aref Ruqaa', 'Amiri', 'Noto Naskh Arabic', serif); }
+  .cert.lang-ar .cert-bird-name { font-family: var(--c-font-display-rtl, 'Aref Ruqaa', 'Amiri', 'Noto Naskh Arabic', serif); }
+  .cert.lang-ar .cert-citation { font-style: normal; line-height: 1.85; }
+  .cert.lang-ar .cert-sig-line { font-family: var(--c-font-display-rtl, 'Aref Ruqaa', 'Amiri', 'Noto Naskh Arabic', serif); font-style: normal; }
+
+  /* English designs */
+  /* ============ ENGLISH DESIGNS S1..S10 ============ */
+
+  .S1{--c-bg:#0a1428;--c-text:#f4dfa3;--c-accent:#d4af5a;--c-muted:#b8943f;--c-rule:#7d6128;--c-font-display:'Cinzel',serif;--c-stat-bg:rgba(212,175,90,.08);background:linear-gradient(180deg,#0a1428 0%,#1a2548 50%,#0a1428 100%);position:relative}
+  .S1::before{content:"";position:absolute;inset:12px;border:2px solid #d4af5a;pointer-events:none}
+  .S1::after{content:"";position:absolute;inset:18px;border:1px solid #7d6128;pointer-events:none}
+  .S1>*{position:relative;z-index:1}
+  .S1 .cert-title{padding-top:8px;letter-spacing:6px;text-transform:uppercase;font-weight:600}
+  .S1 .cert-title::before{content:"★ ❖ ★";display:block;font-size:14px;letter-spacing:10px;color:#d4af5a;margin-bottom:10px}
+
+  .S2{--c-bg:#0f0f10;--c-text:#e8e6e1;--c-accent:#c9b27a;--c-muted:#7a6f55;--c-rule:#2a2825;--c-font-display:'Bodoni Moda',serif;--c-stat-bg:#1a1918;background:#0f0f10;position:relative}
+  .S2::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:1px;height:80%;background:linear-gradient(180deg,#c9b27a,transparent);opacity:.5;pointer-events:none}
+  .S2 .cert-title{font-weight:800;font-style:italic;letter-spacing:2px}
+
+  .S3{--c-bg:#3a0f1e;--c-text:#f5e0b8;--c-accent:#d4a951;--c-muted:#a07838;--c-rule:rgba(212,169,81,.3);--c-font-display:'Bodoni Moda',serif;--c-stat-bg:rgba(212,169,81,.06);background:linear-gradient(135deg,#5a1525 0%,#3a0f1e 100%);position:relative}
+  .S3::before{content:"";position:absolute;inset:14px;border:3px double #d4a951;pointer-events:none}
+  .S3>*{position:relative;z-index:1}
+  .S3 .cert-title{font-weight:800;font-style:italic;font-size:42px}
+
+  .S4{--c-bg:#0f3a2e;--c-text:#e8d8a8;--c-accent:#c8a858;--c-muted:#a08a4a;--c-rule:rgba(200,168,88,.3);--c-font-display:'Cinzel',serif;--c-stat-bg:rgba(200,168,88,.06);background:#0f3a2e;position:relative}
+  .S4::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(200,168,88,.1) 0%,transparent 50%);pointer-events:none}
+  .S4::after{content:"";position:absolute;inset:14px;border:2px solid #c8a858;pointer-events:none;z-index:0}
+  .S4>*{position:relative;z-index:1}
+  .S4 .cert-title{text-transform:uppercase;letter-spacing:4px}
+
+  .S5{--c-bg:#111;--c-text:#fff;--c-accent:#c0c0c0;--c-muted:#888;--c-rule:#333;--c-font-display:'Manrope',sans-serif;--c-stat-bg:#1a1a1a;background:#111}
+  .S5 .cert-title{font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,#c0c0c0,#fff,#c0c0c0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .S5 .cert-stat{border-top:2px solid #c0c0c0}
+
+  .S6{--c-bg:#f8f4ed;--c-text:#1a1a1a;--c-accent:#8a6f3a;--c-muted:#a89878;--c-rule:#d4c8a8;--c-font-display:'Italiana',serif;--c-stat-bg:#fff;background:#f8f4ed}
+  .S6 .cert-title{font-weight:400;letter-spacing:10px;font-size:32px;text-transform:uppercase}
+  .S6 .cert-stat{box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+  .S7{--c-bg:#0d1117;--c-text:#f0f0f0;--c-accent:#e8b923;--c-muted:#777;--c-rule:#1f2933;--c-font-display:'Inter Tight',sans-serif;--c-stat-bg:#161b22;background:#0d1117;position:relative}
+  .S7::before{content:"";position:absolute;top:-100px;right:-100px;width:300px;height:300px;background:radial-gradient(circle,rgba(232,185,35,.12) 0%,transparent 70%);pointer-events:none}
+  .S7 .cert-title{font-weight:800;letter-spacing:-1px;text-transform:uppercase}
+  .S7 .cert-stat{border-radius:8px;border:1px solid #e8b923}
+
+  .S8{--c-bg:#1c1410;--c-text:#e8c878;--c-accent:#d4a951;--c-muted:#8a6a3a;--c-rule:#d4a951;--c-font-display:'Marcellus',serif;--c-stat-bg:rgba(212,169,81,.05);position:relative}
+  .S8::before{content:"";position:absolute;inset:16px;border:2px solid #d4a951;pointer-events:none}
+  .S8::after{content:"";position:absolute;inset:22px;border:1px solid rgba(212,169,81,.4);pointer-events:none}
+  .S8>*{position:relative;z-index:1}
+  .S8 .cert-title{letter-spacing:10px;font-size:32px;text-transform:uppercase}
+  .S8 .cert-title::before{content:"◆ ❖ ◆";display:block;font-size:14px;letter-spacing:10px;margin-bottom:10px;color:#d4a951}
+
+  .S9{--c-bg:#f5f1e8;--c-text:#2a2418;--c-accent:#9c7838;--c-muted:#b8946c;--c-rule:#d4c8a8;--c-font-display:'Bodoni Moda',serif;--c-stat-bg:#fdfaf2;background:#f5f1e8;position:relative}
+  .S9::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(156,120,56,.04) 1px,transparent 1px);background-size:8px 8px;pointer-events:none}
+  .S9 .cert-title{font-weight:800;letter-spacing:3px;text-transform:uppercase}
+
+  .S10{--c-bg:linear-gradient(160deg,#1a1a2e 0%,#0a0a18 100%);--c-text:#fff;--c-accent:#d4a951;--c-muted:#9a8acf;--c-rule:rgba(212,169,81,.3);--c-font-display:'Syne',sans-serif;--c-stat-bg:rgba(212,169,81,.06);background:linear-gradient(160deg,#1a1a2e 0%,#0a0a18 100%);position:relative}
+  .S10::before{content:"";position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(212,169,81,.25) 0%,transparent 70%);pointer-events:none}
+  .S10::after{content:"";position:absolute;bottom:-50px;left:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(122,90,248,.2) 0%,transparent 70%);pointer-events:none}
+  .S10 .cert-title{font-weight:800;background:linear-gradient(135deg,#fff,#d4a951);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+
+  /* ============ ARABIC DESIGNS ARS1..ARS3 ============ */
+
+  .ARS1{--c-bg:#0a1a3a;--c-text:#f4dfa3;--c-accent:#d4af5a;--c-muted:#b8943f;--c-rule:#5a4a28;--c-font-display:'Aref Ruqaa',serif;--c-stat-bg:rgba(212,175,90,.08);background:linear-gradient(180deg,#0a1a3a 0%,#0a2818 50%,#0a1a3a 100%);position:relative}
+  .ARS1::before{content:"";position:absolute;inset:12px;border:2px solid #d4af5a;pointer-events:none;z-index:0}
+  .ARS1::after{content:"";position:absolute;inset:18px;border:1px solid #7d6128;pointer-events:none;z-index:0}
+  .ARS1 .arabesque-bg{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><path d='M30 5 L36 14 L46 12 L42 22 L52 25 L42 30 L52 35 L42 38 L46 48 L36 46 L30 55 L24 46 L14 48 L18 38 L8 35 L18 30 L8 25 L18 22 L14 12 L24 14 Z' fill='none' stroke='%23d4af5a' stroke-width='.6'/></svg>");opacity:.12}
+  .ARS1.lang-ar .cert-title::before{content:"☪ ❋ ☪";display:block;font-size:18px;letter-spacing:8px;color:#d4af5a;margin-bottom:8px;font-weight:400}
+  .ARS1.lang-en .cert-title::before{content:"★ ❖ ★";display:block;font-size:14px;letter-spacing:10px;color:#d4af5a;margin-bottom:8px}
+
+  .ARS2{--c-bg:#3a0a14;--c-text:#f5e0b8;--c-accent:#d4a951;--c-muted:#a07838;--c-rule:rgba(212,169,81,.3);--c-font-display:'Aref Ruqaa',serif;--c-font-body:'Scheherazade New',serif;--c-stat-bg:rgba(212,169,81,.06);background:linear-gradient(135deg,#5a1525 0%,#3a0a14 100%);position:relative}
+  .ARS2::before{content:"";position:absolute;inset:14px;border:3px double #d4a951;pointer-events:none;z-index:0}
+  .ARS2.lang-ar .cert-title::before,.ARS2.lang-ar .cert-title::after{content:"۞";color:#d4a951;margin:0 14px;font-size:22px;opacity:.8}
+
+  .ARS3{--c-bg:#0a2818;--c-text:#e8d8a8;--c-accent:#c8a858;--c-muted:#a08a4a;--c-rule:rgba(200,168,88,.3);--c-font-display:'Reem Kufi',sans-serif;--c-font-body:'Cairo',sans-serif;--c-stat-bg:rgba(200,168,88,.06);background:#0a2818;position:relative}
+  .ARS3::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(200,168,88,.12) 0%,transparent 50%);pointer-events:none;z-index:0}
+  .ARS3::after{content:"";position:absolute;inset:14px;border:2px solid #c8a858;pointer-events:none;z-index:0}
+  .ARS3 .arabesque-bg{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23c8a858' stroke-width='.5'><circle cx='40' cy='40' r='20'/><circle cx='40' cy='40' r='14'/><path d='M40 20 L60 40 L40 60 L20 40 Z'/><path d='M40 26 L54 40 L40 54 L26 40 Z'/></g></svg>");opacity:.1}
+
+
+
+  /* Error */
+  .cert-error { padding: 60px 30px; text-align: center; font-family: 'DM Sans', sans-serif; }
+  .cert-error h1 { font-size: 22px; margin-bottom: 14px; color: #c8262a; }
+  .cert-error p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 10px; }
+  .cert-error .example { text-align: left; max-width: 600px; margin: 18px auto 0; background: #0d1117; color: #e8e8e8; padding: 14px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; line-height: 1.5; overflow-x: auto; white-space: pre; }
+
+  @media print {
+    *, *::before, *::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { size: A4 portrait; margin: 0; }
+    html, body { background: #fff; }
+    .preview-wrap { padding: 0; display: block; background: #fff; }
+    .sheet { box-shadow: none; margin: 0; width: 210mm; height: 297mm; }
+  }
+</style>
+</head>
+<body data-render-status="rendering">
+
+<div class="preview-wrap" id="previewWrap"></div>
+
+<script>
+const VALID_DESIGNS = new Set(['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','AR-S1','AR-S2','AR-S3']);
+const VALID_LANGS = new Set(['en','ar']);
+
+function getParam(name) { return new URL(window.location.href).searchParams.get(name); }
+
+function getConfig() {
+  if (window.CERT_DESIGN || window.CERT_LANG) {
+    return {
+      design: (window.CERT_DESIGN && VALID_DESIGNS.has(window.CERT_DESIGN)) ? window.CERT_DESIGN : 'R1',
+      lang:   (window.CERT_LANG && VALID_LANGS.has(window.CERT_LANG)) ? window.CERT_LANG : 'en',
+      autoPrint: !!window.CERT_AUTOPRINT
+    };
+  }
+  let design = getParam('design') || 'S1';
+  if (!VALID_DESIGNS.has(design)) design = 'S1';
+  let lang = getParam('lang') || 'en';
+  if (!VALID_LANGS.has(lang)) lang = 'en';
+  return { design, lang, autoPrint: getParam('print') === '1' };
+}
+
+async function loadData() {
+  const dataUrl = getParam('data_url');
+  if (dataUrl) {
+    const res = await fetch(dataUrl, { credentials: 'omit' });
+    if (!res.ok) throw new Error(`fetch data_url failed: HTTP ${res.status}`);
+    return res.json();
+  }
+  const dataB64 = getParam('data');
+  if (dataB64) {
+    try { return JSON.parse(decodeURIComponent(escape(atob(dataB64)))); }
+    catch (e) { throw new Error(`base64 data decode failed: ${e.message}`); }
+  }
+  if (window.CERT_DATA) return window.CERT_DATA;
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      reject(new Error('No data source. Use ?data_url=, ?data=, window.CERT_DATA, or postMessage.'));
+    }, 15000);
+    function handler(ev) {
+      if (ev.data && ev.data.type === 'cert_data' && ev.data.payload) {
+        clearTimeout(timeout); window.removeEventListener('message', handler);
+        resolve(ev.data.payload);
+      }
+    }
+    window.addEventListener('message', handler);
+  });
+}
+
+function langField(record, baseKey, lang, fallback = 'en') {
+  if (!record) return '';
+  for (const k of [`${baseKey}_${lang}`, baseKey, `${baseKey}_${fallback}`]) {
+    if (record[k] !== undefined && record[k] !== null && record[k] !== '') return String(record[k]);
+  }
+  return '';
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showError(title, detail, example) {
+  document.body.dataset.renderStatus = 'error';
+  document.body.dataset.errorMessage = detail || '';
+  document.getElementById('previewWrap').innerHTML = `<div class="cert-error"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(detail)}</p>${example ? `<div class="example">${escapeHtml(example)}</div>` : ''}</div>`;
+}
+
+function designToClass(d) { return d.replace(/-/g, ''); }
+
+function buildSheet(data, config) {
+  const designClass = designToClass(config.design);
+  const isArabicDesign = config.design.startsWith('AR-');
+  const lang = isArabicDesign ? 'ar' : config.lang;
+
+  const meta    = data.meta    || {};
+  const loft    = data.loft    || {};
+  const bird    = data.bird    || {};
+  const stats   = data.stats   || {};
+  const metaRow = data.meta_row|| {};
+  const sigL    = data.sig_left  || {};
+  const sigR    = data.sig_right || {};
+  const schema  = data.schema  || {};
+  const labels  = data.labels  || {};
+  const showLoft = schema.show_loft !== false;
+  const showQR   = schema.show_qr   !== false;
+  const lbl = (k, fallback) => langField(labels, k, lang) || fallback;
+
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.innerHTML = `
+    <div class="cert ${designClass} lang-${lang}">
+      ${isArabicDesign ? '<div class="arabesque-bg"></div>' : ''}
+      <div class="cert-header">
+        <div class="cert-logo">${meta.logo_url ? `<img src="${escapeHtml(meta.logo_url)}" alt="">` : ''}</div>
+        <div class="cert-title-block">
+          <div class="cert-eyebrow"><bdi>${escapeHtml(langField(meta, 'eyebrow', lang))}</bdi></div>
+          <div class="cert-title"><bdi>${escapeHtml(langField(meta, 'title', lang) || 'Super Ace Pigeon')}</bdi></div>
+          <div class="cert-subtitle"><bdi>${escapeHtml(langField(meta, 'subtitle', lang))}</bdi></div>
+        </div>
+        <div></div>
+      </div>
+      ${showLoft ? `
+      <div class="cert-loft">
+        <span class="cert-loft-name"><bdi>${escapeHtml(langField(loft, 'name', lang))}</bdi></span>
+        <span><bdi>${escapeHtml(langField(loft, 'owner', lang))}</bdi></span><span class="sep">·</span>
+        <span><bdi>${escapeHtml(langField(loft, 'address', lang))}</bdi></span><span class="sep">·</span>
+        <span><bdi>${escapeHtml(loft.phone || '')}</bdi></span><span class="sep">·</span>
+        <span><bdi>${escapeHtml(loft.email || '')}</bdi></span>
+      </div>` : ''}
+      <div class="cert-body">
+        <div class="cert-awarded-to"><bdi>${escapeHtml(langField(bird, 'awarded_to', lang) || (lang==='ar'?'تُمنح إلى':'Awarded to'))}</bdi></div>
+        <div class="cert-bird-name"><bdi>${escapeHtml(langField(bird, 'name', lang))}</bdi></div>
+        <div class="cert-bird-ring"><bdi>${escapeHtml(bird.ring || '')}</bdi></div>
+        <div class="cert-citation"><bdi>${escapeHtml(langField(bird, 'citation', lang))}</bdi></div>
+        <div class="cert-stats">
+          <div class="cert-stat"><div class="cert-stat-value"><bdi>${escapeHtml(stats.position || '')}</bdi></div><div class="cert-stat-label">${escapeHtml(lbl('position', lang==='ar'?'المركز':'Position'))}</div></div>
+          <div class="cert-stat"><div class="cert-stat-value"><bdi>${escapeHtml(stats.velocity || '')}</bdi></div><div class="cert-stat-label">${escapeHtml(lbl('velocity', lang==='ar'?'السرعة':'Velocity'))}</div></div>
+          <div class="cert-stat"><div class="cert-stat-value"><bdi>${escapeHtml(stats.distance || '')}</bdi></div><div class="cert-stat-label">${escapeHtml(lbl('distance', lang==='ar'?'المسافة':'Distance'))}</div></div>
+          <div class="cert-stat"><div class="cert-stat-value"><bdi>${escapeHtml(stats.time || '')}</bdi></div><div class="cert-stat-label">${escapeHtml(lbl('time', lang==='ar'?'الزمن':'Time'))}</div></div>
+        </div>
+        <div class="cert-meta-row">
+          <span><b>${escapeHtml(lbl('distances', lang==='ar'?'المسافات:':'Distances:'))}</b><bdi>${escapeHtml(langField(metaRow, 'distances', lang))}</bdi></span>
+          <span><b>${escapeHtml(lbl('season', lang==='ar'?'الموسم:':'Season:'))}</b><bdi>${escapeHtml(langField(metaRow, 'season', lang) || metaRow.season || '')}</bdi></span>
+          <span><b>${escapeHtml(lbl('federation', lang==='ar'?'الاتحاد:':'Fed:'))}</b><bdi>${escapeHtml(langField(metaRow, 'federation', lang))}</bdi></span>
+        </div>
+      </div>
+      <div class="cert-footer">
+        <div class="cert-sig">
+          <div class="cert-sig-line"><bdi>${escapeHtml(langField(sigL, 'name', lang))}</bdi></div>
+          <div><bdi>${escapeHtml(langField(sigL, 'title', lang))}</bdi></div>
+        </div>
+        ${showQR ? `<div class="cert-qr">
+          <div class="qr-target" data-qr-content="${escapeHtml(meta.qr_content || '')}"></div>
+          <div class="cert-qr-label">${escapeHtml(langField(meta, 'qr_label', lang) || (lang==='ar'?'تحقق':'Verify'))}</div>
+        </div>` : '<div></div>'}
+        <div class="cert-sig">
+          <div class="cert-sig-line"><bdi>${escapeHtml(langField(sigR, 'name', lang))}</bdi></div>
+          <div><bdi>${escapeHtml(langField(sigR, 'title', lang))}</bdi></div>
+        </div>
+      </div>
+    </div>`;
+  return sheet;
+}
+
+async function render(data, config) {
+  const wrap = document.getElementById('previewWrap');
+  wrap.innerHTML = '';
+  const sheet = buildSheet(data, config);
+  wrap.appendChild(sheet);
+
+  const qrTarget = sheet.querySelector('.qr-target');
+  if (qrTarget && qrTarget.dataset.qrContent) {
+    const accent = getComputedStyle(sheet.querySelector('.cert')).getPropertyValue('--c-accent').trim() || '#000';
+    new QRCode(qrTarget, { text: qrTarget.dataset.qrContent, width: 72, height: 72, colorDark: accent || '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
+  }
+
+  try { await document.fonts.ready; } catch (e) {}
+  document.body.dataset.renderStatus = 'complete';
+  if (config.autoPrint) setTimeout(() => window.print(), 300);
+}
+
+async function init() {
+  const config = getConfig();
+  try {
+    const data = await loadData();
+    if (!data || typeof data !== 'object') throw new Error('Loaded data is not an object');
+    await render(data, config);
+  } catch (e) {
+    showError('Cannot render Super Ace Pigeon certificate', e.message, 'See SUPER_ACE_PIGEON_CERT_PROD_SPEC.md for the JSON schema.');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

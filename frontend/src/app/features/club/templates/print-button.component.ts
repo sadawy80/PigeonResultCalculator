@@ -1,19 +1,21 @@
-import { Component, Input, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { TemplateApiService } from '../../../core/services/template-api.service';
-import { TemplateBrowserComponent } from './template-browser.component';
-import { PrintTemplate, TemplateCategory } from '../../../core/models/template.models';
+import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
+import { DesignPickerComponent } from './design-picker.component';
+import { TemplateCategory } from '../../../core/models/template.models';
 
+/**
+ * Print / Excel entry point for a single race or programme. Renders a button
+ * that opens the new design picker, which handles fetching the design
+ * catalogue and downloading the rendered PDF / XLSX.
+ */
 @Component({
   selector: 'app-print-button',
   standalone: true,
-  imports: [TemplateBrowserComponent],
+  imports: [DesignPickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './print-button.component.html',
   styleUrls: ['./print-button.component.scss']
 })
-export class PrintButtonComponent implements OnInit {
-  private templateApi = inject(TemplateApiService);
-
+export class PrintButtonComponent {
   @Input() category: TemplateCategory = TemplateCategory.RaceResults;
   @Input() raceId?: string;
   @Input() programmeId?: string;
@@ -21,25 +23,9 @@ export class PrintButtonComponent implements OnInit {
   @Input() label = 'Print / PDF';
 
   pickerOpen = signal(false);
-  templates  = signal<PrintTemplate[]>([]);
 
-  ngOnInit() {
-    this.templateApi.getTemplates(this.category).subscribe(t => this.templates.set(t));
-  }
-
-  openPicker()  { this.pickerOpen.set(true); }
-  closePicker() { this.pickerOpen.set(false); }
-
-  onTemplateSelected(t: PrintTemplate) {
-    const url = this.templateApi.buildPrintUrl(t.id, {
-      category:     this.category,
-      raceId:       this.raceId,
-      programmeId:  this.programmeId,
-      raceResultId: this.raceResultId,
-    });
-    window.open(url, '_blank');
-    this.closePicker();
-  }
+  open()  { this.pickerOpen.set(true); }
+  close() { this.pickerOpen.set(false); }
 
   categoryLabel(): string {
     const m: Record<number, string> = {

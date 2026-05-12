@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Race Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Cairo:wght@400;600;700;900&family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,800&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@400;500;700;800&family=Marcellus&family=Noto+Naskh+Arabic:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@400;700;900&family=Playfair+Display:wght@400;700;900&family=Reem+Kufi:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&family=Syne:wght@500;700;800&family=Tajawal:wght@400;500;700;900&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#888;font-family:'DM Sans',sans-serif;color:#222;min-height:100vh}
+  .preview-wrap{padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px}
+
+  /* ============ A4 PAGE SHELL ============ */
+  .page{
+    width:794px;height:1123px;background:#fff;color:#222;
+    box-shadow:0 4px 24px rgba(0,0,0,.4);
+    display:flex;flex-direction:column;overflow:hidden;
+    font-family:var(--rr-font-body,'DM Sans',sans-serif);
+    background:var(--rr-bg,#fff);color:var(--rr-text,#222);
+    position:relative;flex-shrink:0
+  }
+  @media(max-width:900px){.page{width:100%;max-width:794px}}
+
+  /* ============ UNIVERSAL HEADER ============ */
+  .rr-header{display:grid;grid-template-columns:80px 1fr 80px;align-items:center;gap:14px;padding:18px 30px 12px;border-bottom:1px solid var(--rr-accent,#333);position:relative;z-index:1;flex-shrink:0}
+  .rr-logo{width:80px;height:80px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .rr-logo img{max-width:100%;max-height:100%;object-fit:contain}
+  .rr-title-block{text-align:center;min-width:0}
+  .rr-org{font-family:var(--rr-font-display,'Playfair Display',serif);font-size:18px;font-weight:700;color:var(--rr-text,#222);line-height:1.2;margin-bottom:4px}
+  .lang-ar .rr-org,.lang-fa .rr-org{font-family:var(--rr-font-display-rtl,'Amiri',serif)}
+  .lang-zh .rr-org{font-family:'Noto Serif SC',serif}
+  .rr-race-name{font-family:var(--rr-font-display,'Playfair Display',serif);font-size:13px;font-weight:600;color:var(--rr-accent,#666);letter-spacing:1.5px}
+  .rr-qr{width:80px;height:80px;display:flex;align-items:center;justify-content:center}
+  .rr-qr canvas,.rr-qr img{max-width:100%;max-height:100%;display:block;background:#fff;padding:2px;border:1px solid var(--rr-accent,#333);border-radius:2px}
+
+  .rr-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 18px;padding:10px 30px;font-size:10px;line-height:1.5;color:var(--rr-muted,#666);border-bottom:1px solid var(--rr-rule,rgba(0,0,0,.1));position:relative;z-index:1;flex-shrink:0}
+  .rr-meta-item{display:flex;flex-direction:column;gap:1px}
+  .rr-meta-label{font-size:8px;color:var(--rr-muted,#999);letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
+  .rr-meta-value{font-size:11px;color:var(--rr-text,#222);font-weight:600;font-family:var(--rr-font-mono,'JetBrains Mono',monospace)}
+  .lang-ar .rr-meta-value,.lang-fa .rr-meta-value{direction:ltr;text-align:left}
+
+  .rr-remarks{padding:6px 30px;font-size:10px;background:var(--rr-stripe,rgba(0,0,0,.03));color:var(--rr-muted,#666);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--rr-rule,rgba(0,0,0,.1));position:relative;z-index:1;flex-shrink:0}
+  .rr-remarks-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--rr-accent,#666)}
+  .rr-page-num{font-size:9px;color:var(--rr-muted,#999);font-weight:600}
+
+  .rr-table-wrap{flex:1;padding:8px 22px;position:relative;z-index:1;overflow:hidden}
+  .rr-table{width:100%;border-collapse:collapse;font-size:9.5px;line-height:1.3}
+  .rr-table thead th{background:var(--rr-head-bg,#1a1a1a);color:var(--rr-head-text,#fff);padding:7px 5px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid var(--rr-head-bg,#1a1a1a)}
+  .rr-table tbody td{padding:5px;border:1px solid var(--rr-rule,#ddd);text-align:center;vertical-align:middle}
+  .rr-table tbody tr:nth-child(even) td{background:var(--rr-stripe,rgba(0,0,0,.02))}
+
+  .rr-table th.col-pos,.rr-table td.col-pos{width:5%;font-weight:700;font-family:var(--rr-font-display,'Playfair Display',serif);font-size:11px;color:var(--rr-accent,#222)}
+  .rr-table th.col-nom,.rr-table td.col-nom{width:5%;font-family:'JetBrains Mono',monospace;font-size:9px}
+  .rr-table th.col-fancier,.rr-table td.col-fancier{width:24%;text-align:start;padding-inline-start:8px;font-weight:600}
+  .rr-table th.col-pigeon,.rr-table td.col-pigeon{width:13%;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.3px;direction:ltr}
+  .rr-table th.col-arrival,.rr-table td.col-arrival{width:14%;font-family:'JetBrains Mono',monospace;font-size:9px;direction:ltr}
+  .rr-table th.col-duration,.rr-table td.col-duration{width:11%;font-family:'JetBrains Mono',monospace;font-size:9px;direction:ltr}
+  .rr-table th.col-distance,.rr-table td.col-distance{width:9%;font-family:'JetBrains Mono',monospace;font-size:9px;direction:ltr}
+  .rr-table th.col-speed,.rr-table td.col-speed{width:10%;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--rr-accent,#222);direction:ltr}
+  .rr-table th.col-bask,.rr-table td.col-bask{width:5%;font-size:9px;direction:ltr}
+  .rr-table th.col-points,.rr-table td.col-points{width:9%;font-family:var(--rr-font-display,'Playfair Display',serif);font-size:11px;font-weight:700;color:var(--rr-accent,#222);direction:ltr}
+
+  .show-nom .rr-table th.col-fancier,.show-nom .rr-table td.col-fancier{width:20%}
+  .show-nom .rr-table th.col-pigeon,.show-nom .rr-table td.col-pigeon{width:12%}
+  .show-nom .rr-table th.col-arrival,.show-nom .rr-table td.col-arrival{width:12%}
+
+  .rr-fancier-name{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rr-table.dir-rtl td.col-fancier{text-align:right;padding-inline-end:8px;padding-inline-start:5px}
+
+  /* Podium */
+  .rr-table tbody tr.podium-1 td{background:var(--rr-gold-bg,linear-gradient(90deg,rgba(212,175,90,.18),rgba(212,175,90,.06)));font-weight:700}
+  .rr-table tbody tr.podium-2 td{background:var(--rr-silver-bg,linear-gradient(90deg,rgba(180,180,190,.18),rgba(180,180,190,.06)));font-weight:600}
+  .rr-table tbody tr.podium-3 td{background:var(--rr-bronze-bg,linear-gradient(90deg,rgba(168,107,58,.15),rgba(168,107,58,.04)));font-weight:600}
+  .rr-table tbody tr.podium-1 td.col-pos{color:var(--rr-gold,#b8862a);font-size:13px}
+  .rr-table tbody tr.podium-2 td.col-pos{color:var(--rr-silver,#787880)}
+  .rr-table tbody tr.podium-3 td.col-pos{color:var(--rr-bronze,#a86b3a)}
+  .rr-table tbody tr.podium-1 td.col-pos::before{content:"🥇 ";font-size:11px}
+  .rr-table tbody tr.podium-2 td.col-pos::before{content:"🥈 ";font-size:11px}
+  .rr-table tbody tr.podium-3 td.col-pos::before{content:"🥉 ";font-size:11px}
+  .no-podium .rr-table tbody tr.podium-1 td,
+  .no-podium .rr-table tbody tr.podium-2 td,
+  .no-podium .rr-table tbody tr.podium-3 td{background:initial;font-weight:initial}
+  .no-podium .rr-table tbody tr.podium-1 td.col-pos::before,
+  .no-podium .rr-table tbody tr.podium-2 td.col-pos::before,
+  .no-podium .rr-table tbody tr.podium-3 td.col-pos::before{content:""}
+
+  .rr-footer{padding:8px 30px;font-size:9px;border-top:1px solid var(--rr-accent,#333);display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:12px;color:var(--rr-muted,#666);position:relative;z-index:1;flex-shrink:0}
+  .rr-footer-left{text-align:start;font-family:var(--rr-font-display,'Playfair Display',serif);font-size:10px;font-weight:600;color:var(--rr-text,#222)}
+  .rr-footer-center{text-align:center;font-size:9px;letter-spacing:1px}
+  .rr-footer-right{text-align:end;font-family:'JetBrains Mono',monospace;font-size:9px}
+
+  .page.lang-ar,.page.lang-fa{direction:rtl;font-family:var(--rr-font-body-rtl,'Tajawal',sans-serif)}
+  .page.lang-ar .rr-table,.page.lang-fa .rr-table{direction:rtl}
+  .page.lang-ar .rr-org,.page.lang-fa .rr-org{font-family:var(--rr-font-display-rtl,'Amiri',serif)}
+  .page.lang-fa{font-family:'Vazirmatn',sans-serif}
+  .page.lang-fa .rr-org{font-family:'Vazirmatn',serif}
+  .page.lang-zh{font-family:'Noto Sans SC',sans-serif}
+  .page.lang-zh .rr-org{font-family:'Noto Serif SC',serif}
+
+  /* ============ 20 DESIGN VARIANTS ============ */
+  .T1{--rr-bg:#fdfbf4;--rr-text:#2a1f12;--rr-accent:#6b4a25;--rr-muted:#8a6a3a;--rr-rule:#d4b878;--rr-stripe:rgba(107,74,37,.04);--rr-head-bg:#2a1f12;--rr-head-text:#f4ecd8;--rr-font-display:'Cormorant Garamond',serif;--rr-gold:#b8862a;--rr-silver:#787880;--rr-bronze:#a86b3a}
+  .T1::before{content:"";position:absolute;inset:8px;border:1px solid #c4a878;pointer-events:none;z-index:0}
+
+  .T2{--rr-bg:#0a1428;--rr-text:#f4dfa3;--rr-accent:#d4af5a;--rr-muted:#9c8b58;--rr-rule:rgba(212,175,90,.3);--rr-stripe:rgba(212,175,90,.05);--rr-head-bg:#d4af5a;--rr-head-text:#0a1428;--rr-font-display:'Cinzel',serif;--rr-gold:#f4dfa3;--rr-silver:#c8c8d0;--rr-bronze:#d4956a;--rr-gold-bg:linear-gradient(90deg,rgba(244,223,163,.22),rgba(244,223,163,.06));--rr-silver-bg:linear-gradient(90deg,rgba(200,200,208,.20),rgba(200,200,208,.06));--rr-bronze-bg:linear-gradient(90deg,rgba(212,149,106,.18),rgba(212,149,106,.06))}
+  .T2::before{content:"";position:absolute;inset:10px;border:1px solid #d4af5a;pointer-events:none;z-index:0;opacity:.5}
+
+  .T3{--rr-bg:#fff;--rr-text:#0a0a0a;--rr-accent:#0a0a0a;--rr-muted:#666;--rr-rule:#ddd;--rr-stripe:#fafafa;--rr-head-bg:#0a0a0a;--rr-head-text:#fff;--rr-font-display:'Fraunces',serif}
+
+  .T4{--rr-bg:#fafafa;--rr-text:#111;--rr-accent:#e8264a;--rr-muted:#888;--rr-rule:#e0e0e0;--rr-stripe:#fff;--rr-head-bg:#111;--rr-head-text:#fff;--rr-font-display:'Inter Tight',sans-serif}
+  .T4 .rr-org{text-transform:uppercase;letter-spacing:2px}
+  .T4::before{content:"";position:absolute;top:0;left:0;width:5px;height:100%;background:#e8264a;z-index:0}
+
+  .T5{--rr-bg:#0d1117;--rr-text:#f0f0f0;--rr-accent:#e8b923;--rr-muted:#777;--rr-rule:#1f2933;--rr-stripe:#161b22;--rr-head-bg:#e8b923;--rr-head-text:#0d1117;--rr-font-display:'Inter Tight',sans-serif;--rr-font-body:'Source Sans 3',sans-serif}
+  .T5{background:#0d1117;background-image:linear-gradient(90deg,rgba(232,185,35,.025) 1px,transparent 1px),linear-gradient(rgba(232,185,35,.025) 1px,transparent 1px);background-size:40px 40px}
+
+  .T6{--rr-bg:#fff;--rr-text:#0a0a0a;--rr-accent:#0066ff;--rr-muted:#666;--rr-rule:#e8e8e8;--rr-stripe:#f6f9ff;--rr-head-bg:#0066ff;--rr-head-text:#fff;--rr-font-display:'Inter Tight',sans-serif;--rr-font-body:'Inter Tight',sans-serif}
+  .T6 .rr-org{font-weight:800;letter-spacing:-.5px}
+
+  .T7{--rr-bg:#1c1410;--rr-text:#e8c878;--rr-accent:#d4a951;--rr-muted:#8a6a3a;--rr-rule:rgba(212,169,81,.3);--rr-stripe:rgba(212,169,81,.05);--rr-head-bg:#d4a951;--rr-head-text:#1c1410;--rr-font-display:'Marcellus',serif}
+  .T7::before{content:"";position:absolute;inset:8px;border:2px solid #d4a951;pointer-events:none;z-index:0}
+  .T7::after{content:"";position:absolute;inset:12px;border:1px solid rgba(212,169,81,.4);pointer-events:none;z-index:0}
+
+  .T8{--rr-bg:#2a0a14;--rr-text:#f4e0c0;--rr-accent:#d4a060;--rr-muted:#b88858;--rr-rule:rgba(212,160,96,.25);--rr-stripe:rgba(212,160,96,.05);--rr-head-bg:#d4a060;--rr-head-text:#2a0a14;--rr-font-display:'Cinzel',serif}
+  .T8{background:linear-gradient(180deg,#3a0f1a 0%,#2a0a14 100%)}
+
+  .T9{--rr-bg:#1a1a1f;--rr-text:#f0f0f5;--rr-accent:#b8c0c8;--rr-muted:#888;--rr-rule:#2a2a30;--rr-stripe:#22222a;--rr-head-bg:#b8c0c8;--rr-head-text:#1a1a1f;--rr-font-display:'Syne',sans-serif}
+  .T9 .rr-org{text-transform:uppercase;letter-spacing:6px;font-weight:300}
+
+  .T10{--rr-bg:#0a2818;--rr-text:#f4e6b8;--rr-accent:#d4af5a;--rr-muted:#9c8b58;--rr-rule:rgba(212,175,90,.25);--rr-stripe:rgba(212,175,90,.05);--rr-head-bg:#d4af5a;--rr-head-text:#0a2818;--rr-font-display:'Aref Ruqaa',serif;--rr-font-display-rtl:'Aref Ruqaa',serif;--rr-font-body-rtl:'Tajawal',sans-serif}
+  .T10::before{content:"";position:absolute;inset:10px;border:2px solid #d4af5a;pointer-events:none;z-index:0}
+  .T10::after{content:"";position:absolute;inset:14px;border:1px solid rgba(212,175,90,.4);pointer-events:none;z-index:0}
+
+  .T11{--rr-bg:#fbf4e4;--rr-text:#3a1e08;--rr-accent:#c44510;--rr-muted:#8a5a30;--rr-rule:#d4b894;--rr-stripe:rgba(196,69,16,.04);--rr-head-bg:#c44510;--rr-head-text:#fbf4e4;--rr-font-display:'Cormorant Garamond',serif;--rr-font-display-rtl:'Vazirmatn',serif;--rr-font-body-rtl:'Vazirmatn',sans-serif}
+  .T11::before{content:"";position:absolute;inset:10px;border:2px solid #c44510;pointer-events:none;z-index:0}
+  .T11::after{content:"";position:absolute;inset:14px;border:1px solid rgba(196,69,16,.4);pointer-events:none;z-index:0}
+
+  .T12{--rr-bg:#faf3e3;--rr-text:#3a2418;--rr-accent:#8a5a18;--rr-muted:#a88858;--rr-rule:#c4a878;--rr-stripe:#fff8e8;--rr-head-bg:#3a2418;--rr-head-text:#faf3e3;--rr-font-display:'Aref Ruqaa',serif;--rr-font-display-rtl:'Aref Ruqaa',serif}
+  .T12::before{content:"";position:absolute;inset:12px;border:1px solid #8a5a18;pointer-events:none;z-index:0}
+
+  .T13{--rr-bg:#fff;--rr-text:#0a0a0a;--rr-accent:#1a3a8a;--rr-muted:#666;--rr-rule:#ddd;--rr-stripe:#f6f9ff;--rr-head-bg:#1a3a8a;--rr-head-text:#fff;--rr-font-display:'Playfair Display',serif}
+  .T13::before{content:"";position:absolute;top:0;left:0;width:100%;height:7px;background:linear-gradient(90deg,#1a3a8a 0%,#1a3a8a 33%,#fff 33%,#fff 66%,#c8262a 66%,#c8262a 100%);z-index:0}
+
+  .T14{--rr-bg:#fafafa;--rr-text:#0a0a0a;--rr-accent:#0a4d2e;--rr-muted:#666;--rr-rule:#ddd;--rr-stripe:rgba(10,77,46,.04);--rr-head-bg:#0a4d2e;--rr-head-text:#fff;--rr-font-display:'Manrope',sans-serif}
+  .T14 .rr-org{font-weight:800;text-transform:uppercase;letter-spacing:1px}
+
+  .T15{--rr-bg:#fff;--rr-text:#111;--rr-accent:#d4262a;--rr-muted:#666;--rr-rule:#e0e0e0;--rr-stripe:#fff5f5;--rr-head-bg:#111;--rr-head-text:#fff;--rr-font-display:'Syne',sans-serif}
+  .T15 .rr-org{text-transform:uppercase;letter-spacing:3px;font-weight:800}
+  .T15::before{content:"";position:absolute;top:0;left:0;width:100%;height:5px;background:#d4262a;z-index:0}
+
+  .T16{--rr-bg:#fff;--rr-text:#0a0a0a;--rr-accent:#0a0a0a;--rr-muted:#666;--rr-rule:#e8e8e8;--rr-stripe:#fafafa;--rr-head-bg:#fff;--rr-head-text:#0a0a0a;--rr-font-display:'Fraunces',serif}
+  .T16 .rr-org{font-style:italic;font-weight:300;font-size:22px}
+  .T16 .rr-table thead th{border-bottom:2px solid #0a0a0a;background:#fff;color:#0a0a0a}
+
+  .T17{--rr-bg:#fff;--rr-text:#0a0a0a;--rr-accent:#c8442a;--rr-muted:#666;--rr-rule:#ddd;--rr-stripe:#fafafa;--rr-head-bg:#0a0a0a;--rr-head-text:#fff;--rr-font-display:'Playfair Display',serif}
+  .T17 .rr-org{font-weight:900;font-size:26px;letter-spacing:-1px;line-height:1}
+  .T17 .rr-race-name{color:#c8442a;text-transform:uppercase;letter-spacing:4px}
+
+  .T18{--rr-bg:#f4f1ea;--rr-text:#1a2a1a;--rr-accent:#5a7a4a;--rr-muted:#7a8a6a;--rr-rule:#c4d4b4;--rr-stripe:#fff;--rr-head-bg:#1a2a1a;--rr-head-text:#f4f1ea;--rr-font-display:'Manrope',sans-serif;--rr-font-body:'Source Sans 3',sans-serif}
+  .T18 .rr-org{font-weight:800;text-transform:uppercase;letter-spacing:2px}
+
+  .T19{--rr-bg:#0a0a0a;--rr-text:#fff;--rr-accent:#d4a951;--rr-muted:#888;--rr-rule:#2a2a2a;--rr-stripe:#141414;--rr-head-bg:#d4a951;--rr-head-text:#0a0a0a;--rr-font-display:'Syne',sans-serif}
+  .T19 .rr-org{text-transform:uppercase;letter-spacing:4px;font-weight:300}
+
+  .T20{--rr-bg:#efe5cf;--rr-text:#3a2818;--rr-accent:#8a6a3a;--rr-muted:#6b4a25;--rr-rule:#8a6a3a;--rr-stripe:rgba(255,250,235,.6);--rr-head-bg:#3a2818;--rr-head-text:#efe5cf;--rr-font-display:'Marcellus',serif}
+  .T20{background:#efe5cf;background-image:radial-gradient(rgba(58,40,24,.04) 1px,transparent 1px);background-size:6px 6px}
+  .T20::before{content:"";position:absolute;inset:10px;border:3px double #8a6a3a;pointer-events:none;z-index:0}
+  .T20 .rr-org{letter-spacing:5px;text-transform:uppercase}
+
+  /* ============ ERROR / LOADING ============ */
+  .rr-error{padding:60px 30px;text-align:center;font-family:'DM Sans',sans-serif}
+  .rr-error h1{font-size:22px;margin-bottom:14px;color:#c8262a}
+  .rr-error p{font-size:13px;color:#666;line-height:1.6;margin-bottom:10px}
+  .rr-error code{display:inline-block;background:#f4f4f4;padding:2px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#222}
+  .rr-error .example{text-align:left;max-width:600px;margin:18px auto 0;background:#0d1117;color:#e8e8e8;padding:14px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.5;overflow-x:auto;white-space:pre}
+
+  @media print{
+    body{background:#fff}
+    .preview-wrap{padding:0;display:block;background:#fff}
+    .page{margin:0;box-shadow:none;page-break-after:always;width:210mm;height:297mm}
+    .page:last-child{page-break-after:auto}
+    @page{size:A4 portrait;margin:0}
+  }
+</style>
+</head>
+<body>
+<div class="preview-wrap" id="previewWrap">
+  <!-- pages rendered by JS -->
+</div>
+
+<script>
+/* ==========================================================================
+   PRODUCTION RACE RESULTS TEMPLATE
+   --------------------------------------------------------------------------
+   Data sources (checked in order):
+     1. URL param ?data_url=<absolute-url> — fetched as JSON
+     2. URL param ?data=<url-encoded-base64-json>
+     3. window.RACE_DATA — globalvar injected by backend before this script runs
+     4. window.postMessage with {type:'race_data', payload:{...}}
+   Render config also via URL params:
+     ?design=T1..T20 (default T1)
+     ?lang=en|ar|fa|es|de|zh (default en)
+     ?print=1 — auto-trigger window.print() once render is complete
+   Expected JSON shape — see schema doc in /docs/race_results_schema.md.
+   ========================================================================== */
+
+const VALID_DESIGNS = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12','T13','T14','T15','T16','T17','T18','T19','T20'];
+const VALID_LANGS = ['en','ar','fa','es','de','zh'];
+
+function getParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function getConfig(){
+  // Backend headless-render path: prefer injected globals (URL params lost via SetContentAsync)
+  if (window.RACE_DESIGN || window.RACE_LANG) {
+    return {
+      design: (window.RACE_DESIGN && VALID_DESIGNS.includes(window.RACE_DESIGN)) ? window.RACE_DESIGN : 'T1',
+      lang: (window.RACE_LANG && VALID_LANGS.includes(window.RACE_LANG)) ? window.RACE_LANG : 'en',
+      autoPrint: !!window.RACE_AUTOPRINT
+    };
+  }
+  // Browser preview path: URL params
+  let design = getParam('design') || 'T1';
+  if (!VALID_DESIGNS.includes(design)) design = 'T1';
+  let lang = getParam('lang') || 'en';
+  if (!VALID_LANGS.includes(lang)) lang = 'en';
+  const autoPrint = getParam('print') === '1';
+  return { design, lang, autoPrint };
+}
+
+async function loadData(){
+  // 1. data_url
+  const dataUrl = getParam('data_url');
+  if (dataUrl){
+    try {
+      const res = await fetch(dataUrl, { credentials:'omit' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch(e){
+      throw new Error(`Failed to fetch data_url: ${e.message}`);
+    }
+  }
+  // 2. data (base64-encoded JSON)
+  const dataB64 = getParam('data');
+  if (dataB64){
+    try {
+      const decoded = decodeURIComponent(escape(atob(dataB64)));
+      return JSON.parse(decoded);
+    } catch(e){
+      throw new Error(`Failed to decode data param: ${e.message}`);
+    }
+  }
+  // 3. window.RACE_DATA
+  if (window.RACE_DATA) return window.RACE_DATA;
+  // 4. wait for postMessage (resolves on first message)
+  return await new Promise((resolve, reject)=>{
+    const timeout = setTimeout(()=>{
+      window.removeEventListener('message', handler);
+      reject(new Error('No data source found. Provide via ?data_url=, ?data=, window.RACE_DATA, or postMessage.'));
+    }, 15000);
+    function handler(ev){
+      if (ev.data && ev.data.type === 'race_data' && ev.data.payload){
+        clearTimeout(timeout);
+        window.removeEventListener('message', handler);
+        resolve(ev.data.payload);
+      }
+    }
+    window.addEventListener('message', handler);
+  });
+}
+
+function pickLang(obj, lang, fallback='en'){
+  if (!obj) return '';
+  // Try _<lang> suffix first, then _en, then unsuffixed key
+  const candidates = [`${fallback}_${lang}`, `_${lang}`, `${lang}`, `_${fallback}`, fallback, ''];
+  // If obj is a string, return it as-is
+  if (typeof obj === 'string') return obj;
+  // If obj is an object with lang keys, pick the right one
+  for (const k of [lang, fallback]){
+    if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return String(obj[k]);
+  }
+  return '';
+}
+
+// For backend pattern: meta.org_en, meta.org_ar, meta.org_zh — pick by language
+function langField(record, baseKey, lang, fallback='en'){
+  if (!record) return '';
+  const candidates = [`${baseKey}_${lang}`, baseKey, `${baseKey}_${fallback}`];
+  for (const k of candidates){
+    if (record[k] !== undefined && record[k] !== null && record[k] !== '') return String(record[k]);
+  }
+  return '';
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showError(title, detail, example){
+  const wrap = document.getElementById('previewWrap');
+  wrap.innerHTML = `<div class="rr-error">
+    <h1>${escapeHtml(title)}</h1>
+    <p>${escapeHtml(detail)}</p>
+    ${example ? `<div class="example">${escapeHtml(example)}</div>` : ''}
+  </div>`;
+}
+
+function buildPage(rows, pageNum, totalPages, config, data){
+  const lang = config.lang;
+  const isRtl = lang === 'ar' || lang === 'fa';
+  const showNom = !!(data.schema && data.schema.show_nom);
+  const useCoeffi = !!(data.schema && data.schema.use_coeffi);
+  const showPodium = data.schema ? data.schema.show_podium !== false : true;
+  const showQR = data.schema ? data.schema.show_qr !== false : true;
+
+  const t = (data.i18n && data.i18n[lang]) ? data.i18n[lang] : DEFAULT_I18N[lang];
+  const meta = data.meta || {};
+
+  const page = document.createElement('div');
+  page.className = `page ${config.design} lang-${lang}${showNom ? ' show-nom' : ''}${showPodium ? '' : ' no-podium'}`;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'rr-header';
+  const logoSrc = langField(meta, 'logo_url', lang) || meta.logo_url || '';
+  header.innerHTML = `
+    <div class="rr-logo">${logoSrc ? `<img src="${escapeHtml(logoSrc)}">` : ''}</div>
+    <div class="rr-title-block">
+      <div class="rr-org">${escapeHtml(langField(meta,'org',lang))}</div>
+      <div class="rr-race-name">${escapeHtml(langField(meta,'race_name',lang))}</div>
+    </div>
+    <div class="rr-qr">${showQR ? '<div class="qr-target"></div>' : ''}</div>
+  `;
+  page.appendChild(header);
+
+  // Meta
+  const metaEl = document.createElement('div');
+  metaEl.className = 'rr-meta';
+  metaEl.innerHTML = `
+    <div class="rr-meta-item"><div class="rr-meta-label">${escapeHtml(t.coordinates)}</div><div class="rr-meta-value">${escapeHtml(meta.coordinates || '')}</div></div>
+    <div class="rr-meta-item"><div class="rr-meta-label">${escapeHtml(t.liberation)}</div><div class="rr-meta-value">${escapeHtml(meta.liberation || '')}</div></div>
+    <div class="rr-meta-item"><div class="rr-meta-label">${escapeHtml(t.prizes)}</div><div class="rr-meta-value">${escapeHtml(String(meta.prizes || ''))}</div></div>
+    <div class="rr-meta-item"><div class="rr-meta-label">${escapeHtml(t.total_pigeons)}</div><div class="rr-meta-value">${escapeHtml(String(meta.total_pigeons || ''))}</div></div>
+    <div class="rr-meta-item"><div class="rr-meta-label">${escapeHtml(t.total_fanciers)}</div><div class="rr-meta-value">${escapeHtml(String(meta.total_fanciers || ''))}</div></div>
+    <div class="rr-meta-item"><div class="rr-meta-label">${escapeHtml(t.remarks)}</div><div class="rr-meta-value">${escapeHtml(langField(meta,'remarks',lang))}</div></div>
+  `;
+  page.appendChild(metaEl);
+
+  // Remarks bar
+  const remarks = document.createElement('div');
+  remarks.className = 'rr-remarks';
+  remarks.innerHTML = `
+    <div class="rr-remarks-label">${escapeHtml(langField(meta,'race_name',lang))}</div>
+    <div class="rr-page-num">${escapeHtml(t.page)} ${pageNum} ${escapeHtml(t.of)} ${totalPages}</div>
+  `;
+  page.appendChild(remarks);
+
+  // Table
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'rr-table-wrap';
+  const table = document.createElement('table');
+  table.className = `rr-table ${isRtl ? 'dir-rtl' : ''}`;
+  const lastColLabel = useCoeffi ? t.col_coeffi : t.col_points;
+
+  let headHtml = `<thead><tr>
+    <th class="col-pos">${escapeHtml(t.col_pos)}</th>
+    ${showNom ? `<th class="col-nom">${escapeHtml(t.col_nom)}</th>` : ''}
+    <th class="col-fancier">${escapeHtml(t.col_fancier)}</th>
+    <th class="col-pigeon">${escapeHtml(t.col_pigeon)}</th>
+    <th class="col-arrival">${escapeHtml(t.col_arrival)}</th>
+    <th class="col-duration">${escapeHtml(t.col_duration)}</th>
+    <th class="col-distance">${escapeHtml(t.col_distance)}</th>
+    <th class="col-speed">${escapeHtml(t.col_speed)}</th>
+    <th class="col-bask">${escapeHtml(t.col_bask)}</th>
+    <th class="col-points">${escapeHtml(lastColLabel)}</th>
+  </tr></thead>`;
+
+  let bodyHtml = '<tbody>';
+  rows.forEach(r=>{
+    const pos = parseInt(r.pos) || 0;
+    const podiumClass = pos === 1 ? 'podium-1' : pos === 2 ? 'podium-2' : pos === 3 ? 'podium-3' : '';
+    const fancierName = langField(r,'fancier',lang);
+    bodyHtml += `<tr class="${podiumClass}">
+      <td class="col-pos">${escapeHtml(String(r.pos ?? ''))}</td>
+      ${showNom ? `<td class="col-nom">${escapeHtml(String(r.nom ?? ''))}</td>` : ''}
+      <td class="col-fancier"><bdi class="rr-fancier-name">${escapeHtml(fancierName)}</bdi></td>
+      <td class="col-pigeon">${escapeHtml(r.pigeon || '')}</td>
+      <td class="col-arrival">${escapeHtml(r.arrival || '')}</td>
+      <td class="col-duration">${escapeHtml(r.duration || '')}</td>
+      <td class="col-distance">${escapeHtml(String(r.distance ?? ''))}</td>
+      <td class="col-speed">${escapeHtml(String(r.speed ?? ''))}</td>
+      <td class="col-bask">${escapeHtml(String(r.bask ?? ''))}</td>
+      <td class="col-points">${escapeHtml(String(r.points ?? r.coeffi ?? ''))}</td>
+    </tr>`;
+  });
+  bodyHtml += '</tbody>';
+
+  table.innerHTML = headHtml + bodyHtml;
+  tableWrap.appendChild(table);
+  page.appendChild(tableWrap);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'rr-footer';
+  const fLeft = langField(meta,'footer_left',lang);
+  const fCenter = langField(meta,'footer_center',lang);
+  const fRight = langField(meta,'footer_right',lang);
+  footer.innerHTML = `
+    <div class="rr-footer-left">${escapeHtml(fLeft)}</div>
+    <div class="rr-footer-center">${escapeHtml(fCenter)}</div>
+    <div class="rr-footer-right">${escapeHtml(fRight)} · ${escapeHtml(t.page)} ${pageNum}/${totalPages}</div>
+  `;
+  page.appendChild(footer);
+
+  // Render QR after insertion
+  if (showQR && meta.qr_content){
+    setTimeout(()=>{
+      const target = page.querySelector('.qr-target');
+      if (!target) return;
+      const dark = getComputedStyle(page).getPropertyValue('--rr-accent').trim() || '#000';
+      new QRCode(target, { text: String(meta.qr_content), width:72, height:72, colorDark: dark, colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
+    }, 0);
+  }
+
+  return page;
+}
+
+const DEFAULT_I18N = {
+  en:{coordinates:"Coordinates",liberation:"Liberation Time",total_pigeons:"Total Pigeons",total_fanciers:"Total Fanciers",prizes:"Prizes",remarks:"Remarks",page:"Page",of:"of",col_pos:"Pos.",col_nom:"Nom.",col_fancier:"Fancier",col_pigeon:"Pigeon",col_arrival:"Arrival",col_duration:"Duration",col_distance:"Distance",col_speed:"Speed",col_bask:"Bask.",col_points:"Points",col_coeffi:"Coeffi."},
+  ar:{coordinates:"الإحداثيات",liberation:"وقت الإطلاق",total_pigeons:"إجمالي الحمام",total_fanciers:"إجمالي المربين",prizes:"الجوائز",remarks:"ملاحظات",page:"صفحة",of:"من",col_pos:"المركز",col_nom:"العدد",col_fancier:"المربي",col_pigeon:"الحمامة",col_arrival:"الوصول",col_duration:"المدة",col_distance:"المسافة",col_speed:"السرعة",col_bask:"السلة",col_points:"النقاط",col_coeffi:"المعامل"},
+  fa:{coordinates:"مختصات",liberation:"زمان رهاسازی",total_pigeons:"تعداد کبوتر",total_fanciers:"تعداد پرورش‌دهنده",prizes:"جوایز",remarks:"توضیحات",page:"صفحه",of:"از",col_pos:"رتبه",col_nom:"تعداد",col_fancier:"پرورش‌دهنده",col_pigeon:"کبوتر",col_arrival:"رسیدن",col_duration:"مدت",col_distance:"مسافت",col_speed:"سرعت",col_bask:"سبد",col_points:"امتیاز",col_coeffi:"ضریب"},
+  es:{coordinates:"Coordenadas",liberation:"Hora de Suelta",total_pigeons:"Total Palomas",total_fanciers:"Total Colombófilos",prizes:"Premios",remarks:"Observaciones",page:"Página",of:"de",col_pos:"Pos.",col_nom:"Núm.",col_fancier:"Colombófilo",col_pigeon:"Paloma",col_arrival:"Llegada",col_duration:"Duración",col_distance:"Distancia",col_speed:"Velocidad",col_bask:"Cesta",col_points:"Puntos",col_coeffi:"Coef."},
+  de:{coordinates:"Koordinaten",liberation:"Auflasszeit",total_pigeons:"Tauben gesamt",total_fanciers:"Züchter gesamt",prizes:"Preise",remarks:"Bemerkungen",page:"Seite",of:"von",col_pos:"Pos.",col_nom:"Nr.",col_fancier:"Züchter",col_pigeon:"Taube",col_arrival:"Ankunft",col_duration:"Dauer",col_distance:"Strecke",col_speed:"Geschw.",col_bask:"Korb",col_points:"Punkte",col_coeffi:"Koeff."},
+  zh:{coordinates:"坐标",liberation:"放飞时间",total_pigeons:"参赛鸽数",total_fanciers:"参赛鸽友",prizes:"奖项",remarks:"备注",page:"第",of:"页 / 共",col_pos:"名次",col_nom:"数",col_fancier:"鸽友",col_pigeon:"赛鸽",col_arrival:"到达",col_duration:"用时",col_distance:"距离",col_speed:"分速",col_bask:"笼",col_points:"积分",col_coeffi:"系数"}
+};
+
+function render(data, config){
+  const wrap = document.getElementById('previewWrap');
+  wrap.innerHTML = '';
+
+  const rows = data.rows || [];
+  if (!rows.length){
+    showError('No rows to display', 'Your data has no rows. Check the `rows` array in your JSON.');
+    return;
+  }
+  const rowsPerPage = (data.schema && data.schema.rows_per_page) || 35;
+  const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage));
+
+  for (let p = 0; p < totalPages; p++){
+    const slice = rows.slice(p * rowsPerPage, (p+1) * rowsPerPage);
+    const page = buildPage(slice, p + 1, totalPages, config, data);
+    wrap.appendChild(page);
+  }
+
+  // Mark render complete for backend to detect
+  document.body.setAttribute('data-render-status', 'complete');
+  if (config.autoPrint){
+    setTimeout(()=>window.print(), 300);
+  }
+}
+
+async function init(){
+  const config = getConfig();
+  try {
+    const data = await loadData();
+    if (!data || typeof data !== 'object'){
+      throw new Error('Loaded data is not an object');
+    }
+    render(data, config);
+  } catch(e){
+    const example = `{
+  "meta": {
+    "org_en": "Saudi Pigeon Federation",
+    "org_ar": "الاتحاد السعودي للحمام",
+    "race_name_en": "Riyadh National 400",
+    "race_name_ar": "سباق الرياض الوطني ٤٠٠",
+    "coordinates": "242643.5 463821.7",
+    "liberation": "01/09/2025 07:40:00",
+    "total_pigeons": 1688,
+    "total_fanciers": 61,
+    "prizes": 337,
+    "remarks_en": "Weather NW 11",
+    "remarks_ar": "الطقس شمال غرب ١١",
+    "logo_url": "https://example.com/logo.png",
+    "qr_content": "https://verify.example.com/race/abc123"
+  },
+  "schema": {
+    "show_nom": false,
+    "use_coeffi": false,
+    "show_podium": true,
+    "show_qr": true,
+    "rows_per_page": 35
+  },
+  "rows": [
+    {
+      "pos": 1,
+      "fancier_en": "Mahmoud Elgazar",
+      "fancier_ar": "محمود الجزار",
+      "pigeon": "EG-23-12AA",
+      "arrival": "04/05/2025 13:05:40",
+      "duration": "06:05:40.200",
+      "distance": "401,501",
+      "speed": "1,098.040",
+      "bask": 73,
+      "points": "100.00"
+    }
+  ]
+}`;
+    showError('Cannot render results', e.message, example);
+    document.body.setAttribute('data-render-status', 'error');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
