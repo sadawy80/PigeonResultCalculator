@@ -1,8 +1,10 @@
-import { Component, signal, computed, OnInit, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
+import { ToasterService } from '../../core/services/toaster.service';
+import { ModalService } from '../../core/services/modal.service';
 
 interface BackupEntry {
   id:               string;
@@ -18,391 +20,496 @@ interface BackupEntry {
   triggeredBy:      string;
 }
 
+/**
+ * Admin Database Backups page. Layout adopted from the reference design:
+ *  - Search-by-filename + date filter at the top
+ *  - Prominent "Backup Now" CTA
+ *  - List of backups with per-row Browse / Restore / Delete actions
+ *  - Browse opens a modal with a table picker, a search box, and a list of
+ *    records each with a "Restore this record" button
+ *
+ * All chrome is built from the site's --pr-* tokens so it stays in theme.
+ */
 @Component({
   selector: 'app-admin-backups',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, NgClass, FormsModule],
+  imports: [CommonModule, FormsModule, DatePipe],
   template: `
-    <!-- Page header -->
-    <div class="pr-page-header">
-      <div>
-        <h1 class="pr-page-header__title">Database Backups</h1>
-        <p class="pr-page-header__subtitle">{{ total() }} backup(s) · MinIO object storage · optional pCloud offsite</p>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="pr-btn pr-btn--outline pr-btn--sm"
-                (click)="openTrigger(null)"
-                [disabled]="triggering()">
-          Full Backup
-        </button>
-      </div>
+    <header class="bk-header">
+      <h1 class="bk-header__title">Database Backups</h1>
+      <p class="bk-header__subtitle">Daily automated backups to MinIO and pCloud. Restore individual records or full database.</p>
+    </header>
+
+    <div class="bk-toolbar">
+      <label class="bk-search">
+        <span class="bk-search__icon" aria-hidden="true">🔍</span>
+        <input class="pr-input" type="search" placeholder="Search filename…" [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
+      </label>
+      <label class="bk-date">
+        <input class="pr-input" type="date" [(ngModel)]="filterDate" (ngModelChange)="onFilterChange()" />
+        <span class="bk-date__hint">Filter by date</span>
+      </label>
     </div>
 
-    @if (error()) {
-      <div class="pr-alert pr-alert--error mb-4">{{ error() }}</div>
-    }
+    <button
+      type="button"
+      class="bk-cta"
+      [disabled]="triggering()"
+      (click)="triggerNow()">
+      {{ triggering() ? 'Starting…' : 'Backup Now' }}
+    </button>
 
-    @if (triggerMsg()) {
-      <div class="pr-alert pr-alert--success mb-4">{{ triggerMsg() }}</div>
-    }
+    @if (error()) { <div class="pr-alert pr-alert--error mt-4">{{ error() }}</div> }
 
-    <!-- Filters -->
-    <div class="sub-filters">
-      <div class="sub-filter-group">
-        <label>Database</label>
-        <select class="pr-input" [(ngModel)]="filterDb" (ngModelChange)="onFilterChange()">
-          <option value="">All databases</option>
-          @for (db of knownDbs; track db) {
-            <option [value]="db">{{ db }}</option>
-          }
-        </select>
-      </div>
-      <div class="sub-filter-group">
-        <label>Status</label>
-        <select class="pr-input" [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
-          <option value="">All statuses</option>
-          <option value="Completed">Completed</option>
-          <option value="Failed">Failed</option>
-          <option value="InProgress">In progress</option>
-        </select>
-      </div>
-      @if (filterDb || filterStatus) {
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" style="align-self:flex-end" (click)="clearFilters()">
-          Clear
-        </button>
-      }
-    </div>
+    <section class="bk-card mt-6">
+      <div class="bk-table">
+        <div class="bk-table__head" role="row">
+          <span>Backup file</span>
+          <span>Date</span>
+          <span>Size</span>
+          <span>Stored in</span>
+          <span class="bk-actions-col">Actions</span>
+        </div>
 
-    <!-- Table -->
-    <div class="pr-table-wrap">
-      <table class="pr-table">
-        <thead>
-          <tr>
-            <th>Database</th>
-            <th>Started</th>
-            <th>Duration</th>
-            <th>Size</th>
-            <th>Status</th>
-            <th>MinIO</th>
-            <th>pCloud</th>
-            <th>Triggered by</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (loading()) {
-            <tr><td colspan="9" style="text-align:center;padding:32px">
-              <div class="pr-spinner" style="margin:0 auto"></div>
-            </td></tr>
-          } @else if (items().length === 0) {
-            <tr><td colspan="9">
-              <div class="pr-empty">
-                <div class="pr-empty__icon">💾</div>
-                <div class="pr-empty__title">No backups yet</div>
-                <p class="pr-empty__desc">Backups run automatically at 2 AM UTC. You can also trigger one manually.</p>
+        @if (loading()) {
+          <div class="bk-empty"><div class="pr-spinner" style="margin:0 auto"></div></div>
+        } @else if (visible().length === 0) {
+          <div class="bk-empty">
+            <div class="bk-empty__icon">💾</div>
+            <div>No backups match.</div>
+          </div>
+        } @else {
+          @for (b of visible(); track b.id) {
+            <div class="bk-row" role="row">
+              <code class="bk-row__file">{{ filename(b) }}</code>
+              <div class="bk-row__date">{{ b.createdAt | date: 'medium' }}</div>
+              <div class="bk-row__size">{{ formatSize(b.sizeBytes) }}</div>
+              <div class="bk-row__store">
+                @if (b.uploadedToMinIO) { <span class="bk-pill">MinIO</span> }
+                @if (b.uploadedToPCloud) { <span class="bk-pill bk-pill--alt">pCloud</span> }
               </div>
-            </td></tr>
-          } @else {
-            @for (b of items(); track b.id) {
-              <tr>
-                <td><code style="font-size:0.8rem">{{ b.databaseName }}</code></td>
-                <td>{{ b.createdAt | date:'dd MMM yyyy HH:mm' }}</td>
-                <td>{{ durationLabel(b) }}</td>
-                <td>{{ b.sizeBytes > 0 ? formatSize(b.sizeBytes) : '—' }}</td>
-                <td>
-                  <span class="pr-badge"
-                    [ngClass]="{
-                      'pr-badge--success': b.status === 2,
-                      'pr-badge--error':   b.status === 3,
-                      'pr-badge--warning': b.status === 1
-                    }">
-                    {{ statusLabel(b.status) }}
-                  </span>
-                </td>
-                <td>
-                  @if (b.uploadedToMinIO) {
-                    <span class="pr-badge pr-badge--success">✓</span>
-                  } @else {
-                    <span style="color:var(--pr-text-muted)">—</span>
-                  }
-                </td>
-                <td>
-                  @if (b.uploadedToPCloud) {
-                    <span class="pr-badge pr-badge--success">✓</span>
-                  } @else {
-                    <span style="color:var(--pr-text-muted)">—</span>
-                  }
-                </td>
-                <td style="font-size:0.8rem;color:var(--pr-text-muted)">
-                  {{ b.triggeredBy === 'schedule' ? '🕑 Schedule' : '👤 ' + b.triggeredBy.replace('manual:', '') }}
-                </td>
-                <td>
-                  <div class="row-actions">
-                    @if (b.status === 1) {
-                      <button class="pr-btn pr-btn--outline pr-btn--sm"
-                              (click)="openTrigger(b.databaseName)"
-                              [disabled]="triggering()">
-                        Re-run
-                      </button>
-                    } @else {
-                      <button class="pr-btn pr-btn--outline pr-btn--sm"
-                              (click)="openTrigger(b.databaseName)"
-                              [disabled]="triggering()">
-                        Back up now
-                      </button>
-                    }
-                    @if (b.status === 2 && b.uploadedToMinIO) {
-                      <button class="pr-btn pr-btn--primary pr-btn--sm"
-                              [disabled]="downloadingId() === b.id"
-                              (click)="download(b)">
-                        {{ downloadingId() === b.id ? '…' : 'Download' }}
-                      </button>
-                    }
-                    <button class="pr-btn pr-btn--ghost pr-btn--sm"
-                            style="color:var(--pr-danger)"
-                            [disabled]="deletingId() === b.id"
-                            (click)="confirmDelete(b)">
-                      {{ deletingId() === b.id ? '…' : 'Delete' }}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              @if (b.errorMessage) {
-                <tr>
-                  <td colspan="9" style="padding:0 12px 8px;background:var(--pr-surface-2)">
-                    <div style="font-size:0.78rem;color:var(--pr-danger);font-family:monospace;white-space:pre-wrap;word-break:break-all">
-                      {{ b.errorMessage }}
-                    </div>
-                  </td>
-                </tr>
-              }
-            }
+              <div class="bk-row__actions">
+                <button class="icon-btn"            title="Browse"  aria-label="Browse"  (click)="openBrowse(b)">🔍</button>
+                <button class="icon-btn icon-btn--success" title="Restore" aria-label="Restore" (click)="confirmRestore(b)">⟲</button>
+                <button class="icon-btn icon-btn--danger"  title="Delete"  aria-label="Delete"  (click)="confirmDelete(b)">🗑</button>
+              </div>
+            </div>
           }
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    @if (totalPages() > 1) {
-      <div class="pagination-row">
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="goPage(page - 1)">← Prev</button>
-        <span style="font-size:0.85rem;color:var(--pr-text-muted)">Page {{ page }} of {{ totalPages() }}</span>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === totalPages()" (click)="goPage(page + 1)">Next →</button>
+        }
       </div>
-    }
 
-    <!-- Trigger confirmation modal -->
-    @if (showTriggerModal()) {
-      <div class="modal-backdrop" (click)="closeTrigger()">
-        <div class="modal-card" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h2 class="modal-title">Trigger Backup</h2>
-            <button class="modal-close" (click)="closeTrigger()">✕</button>
-          </div>
-          <div class="modal-body">
-            @if (triggerTarget()) {
-              <p>Back up <strong>{{ triggerTarget() }}</strong> right now?</p>
-              <p class="pr-hint">The backup will compress and upload to MinIO. This may take several minutes.</p>
-            } @else {
-              <p>Run a full backup of <strong>all 8 databases</strong> right now?</p>
-              <p class="pr-hint">This runs in the background. Each database is compressed and uploaded to MinIO.</p>
-            }
-          </div>
-          <div class="modal-footer">
-            <button class="pr-btn pr-btn--ghost" (click)="closeTrigger()">Cancel</button>
-            <button class="pr-btn pr-btn--primary" [disabled]="triggering()" (click)="runTrigger()">
-              {{ triggering() ? 'Starting…' : 'Start Backup' }}
-            </button>
-          </div>
+    </section>
+
+    @if (filteredCount() > 0) {
+      <div class="pagination-row">
+        <span class="text-muted text-sm">{{ filteredCount() }} backups · page {{ page() }} of {{ totalPages() }}</span>
+        <div class="flex gap-2 items-center">
+          <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+            <option [ngValue]="10">10 / page</option>
+            <option [ngValue]="25">25 / page</option>
+            <option [ngValue]="50">50 / page</option>
+            <option [ngValue]="100">100 / page</option>
+          </select>
+          <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1"            (click)="goPage(page() - 1)">Prev</button>
+          <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === totalPages()" (click)="goPage(page() + 1)">Next</button>
         </div>
       </div>
     }
 
-    <!-- Delete confirmation modal -->
-    @if (deleteTarget()) {
-      <div class="modal-backdrop" (click)="deleteTarget.set(null)">
-        <div class="modal-card" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h2 class="modal-title">Delete Backup</h2>
-            <button class="modal-close" (click)="deleteTarget.set(null)">✕</button>
-          </div>
-          <div class="modal-body">
-            <div class="pr-alert pr-alert--warning mb-4">This cannot be undone.</div>
-            <p>Delete the <strong>{{ deleteTarget()!.databaseName }}</strong> backup from
-               <strong>{{ deleteTarget()!.createdAt | date:'dd MMM yyyy HH:mm' }}</strong>?</p>
-            <p class="pr-hint">The MinIO object will also be removed.</p>
-          </div>
-          <div class="modal-footer">
-            <button class="pr-btn pr-btn--ghost" (click)="deleteTarget.set(null)">Cancel</button>
-            <button class="pr-btn pr-btn--primary" style="background:var(--pr-danger);border-color:var(--pr-danger)"
-                    [disabled]="deletingId() === deleteTarget()!.id"
-                    (click)="doDelete()">
-              Delete
+    <!-- ── Browse modal ─────────────────────────────────────────────────── -->
+    @if (browseTarget(); as bt) {
+      <div class="modal-backdrop" (click)="closeBrowse()">
+        <div class="modal-card modal-card--wide" (click)="$event.stopPropagation()">
+          <header class="modal-card__head">
+            <h2>Browse: <code>{{ filename(bt) }}</code></h2>
+            <button class="modal-card__close" aria-label="Close" (click)="closeBrowse()">×</button>
+          </header>
+
+          <div class="browse-controls">
+            <select class="pr-input" [(ngModel)]="browseTable" (ngModelChange)="runBrowse()">
+              @for (t of browseTables(); track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
+            <input
+              class="pr-input"
+              type="search"
+              placeholder="Search (band, name, ID…)"
+              [(ngModel)]="browseSearch"
+              (keyup.enter)="runBrowse()" />
+            <button class="pr-btn pr-btn--primary" (click)="runBrowse()" [disabled]="browseLoading()">
+              {{ browseLoading() ? 'Searching…' : 'Search' }}
             </button>
+          </div>
+
+          <p class="browse-count">{{ browseResults().length }} record(s) found</p>
+
+          @if (browseNotice()) {
+            <div class="pr-alert pr-alert--info mb-4">{{ browseNotice() }}</div>
+          }
+
+          <div class="browse-list">
+            @for (r of browseResults(); track r.id) {
+              <div class="browse-row">
+                <code class="browse-row__table">{{ r.table }}</code>
+                <code class="browse-row__json">{{ r.preview }}</code>
+                <button class="pr-btn pr-btn--outline pr-btn--sm browse-row__btn"
+                        (click)="confirmRestoreRecord(bt, r)">
+                  Restore this record
+                </button>
+              </div>
+            }
+            @if (browseResults().length === 0 && !browseLoading() && !browseNotice()) {
+              <div class="bk-empty">No matching records.</div>
+            }
           </div>
         </div>
       </div>
     }
   `,
   styles: [`
-    .sub-filters {
-      display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
-      padding: 16px; border-bottom: 1px solid var(--pr-border);
+    :host { display: block; }
+
+    /* Header */
+    .bk-header__title    { margin: 0; font-size: 1.65rem; color: var(--pr-primary); }
+    .bk-header__subtitle { margin: .35rem 0 1.5rem; color: var(--pr-text-muted); }
+
+    /* Toolbar */
+    .bk-toolbar {
+      display: grid; grid-template-columns: 1fr 280px;
+      gap: 1rem; margin-bottom: 1rem;
+    }
+    @media (max-width: 720px) { .bk-toolbar { grid-template-columns: 1fr; } }
+
+    .bk-search, .bk-date {
+      position: relative; display: flex; align-items: center;
+    }
+    .bk-search .pr-input, .bk-date .pr-input {
+      width: 100%; height: 52px; padding-inline-start: 2.6rem;
+      background: var(--pr-surface); border: 1px solid var(--pr-border);
+      border-radius: 10px; font-size: 1rem;
+    }
+    .bk-search__icon {
+      position: absolute; inset-inline-start: 1rem; color: var(--pr-text-muted);
+      font-size: 1rem; pointer-events: none;
+    }
+    .bk-date .pr-input { padding-inline-start: 1rem; }
+    .bk-date__hint {
+      position: absolute; inset-inline-start: 1rem; top: 50%;
+      transform: translateY(-50%); color: var(--pr-text-muted);
+      pointer-events: none; font-size: .92rem;
+    }
+    .bk-date input[type="date"]:not(:placeholder-shown) + .bk-date__hint,
+    .bk-date input[type="date"]:valid + .bk-date__hint { display: none; }
+
+    /* Backup Now CTA */
+    .bk-cta {
+      width: 100%; padding: 1rem; border: 0; border-radius: 10px;
+      background: var(--pr-primary); color: #fff;
+      font: 600 1rem/1 system-ui, sans-serif; cursor: pointer;
+      transition: filter .15s;
+    }
+    .bk-cta:hover:not(:disabled) { filter: brightness(.95); }
+    .bk-cta:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* Card + table */
+    .bk-card {
+      background: var(--pr-surface); border: 1px solid var(--pr-border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .bk-table { display: flex; flex-direction: column; }
+    .bk-table__head, .bk-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 2fr) minmax(170px, 1.4fr) 100px 130px 150px;
+      align-items: center; gap: 1rem;
+      padding: .8rem 1.25rem;
+    }
+    .bk-table__head {
       background: var(--pr-surface-2);
-      border-radius: var(--pr-radius) var(--pr-radius) 0 0;
+      color: var(--pr-text-muted);
+      font: 700 .72rem/1 system-ui, sans-serif;
+      text-transform: uppercase; letter-spacing: .06em;
+      border-bottom: 1px solid var(--pr-border);
     }
-    .sub-filter-group {
-      display: flex; flex-direction: column; gap: 4px; min-width: 160px;
-      label { font-size: 0.7rem; font-weight: 600; color: var(--pr-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .bk-row { border-bottom: 1px solid var(--pr-border); }
+    .bk-row:last-child { border-bottom: 0; }
+    .bk-row__file  { color: var(--pr-primary); font-family: 'JetBrains Mono', monospace; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bk-row__date  { color: var(--pr-text); }
+    .bk-row__size  { color: var(--pr-text); }
+    .bk-row__store { display: flex; gap: .35rem; flex-wrap: wrap; }
+    .bk-row__actions { display: flex; gap: .35rem; justify-content: flex-end; }
+
+    .bk-pill {
+      padding: .25rem .65rem; border-radius: 999px;
+      background: color-mix(in srgb, var(--pr-primary) 14%, transparent);
+      color: var(--pr-primary); font: 600 .75rem/1 system-ui, sans-serif;
     }
-    .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-    .pagination-row {
-      display: flex; align-items: center; gap: 12px; justify-content: center;
-      padding: 16px;
+    .bk-pill--alt {
+      background: color-mix(in srgb, var(--pr-success, #16a34a) 14%, transparent);
+      color: var(--pr-success, #16a34a);
     }
-    @media (max-width: 767px) {
-      .sub-filters { flex-direction: column; gap: 8px; }
-      .sub-filter-group { min-width: 100%; }
+
+    .icon-btn {
+      width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px;
+      background: transparent; color: var(--pr-text-muted); cursor: pointer;
+      font-size: 1.05rem; display: inline-flex; align-items: center; justify-content: center;
+      transition: background .15s, color .15s;
     }
+    .icon-btn:hover         { background: var(--pr-surface-2); color: var(--pr-text); }
+    .icon-btn--success      { color: var(--pr-success, #16a34a); }
+    .icon-btn--success:hover{ background: color-mix(in srgb, var(--pr-success, #16a34a) 14%, transparent); }
+    .icon-btn--danger       { color: var(--pr-danger, #dc2626); }
+    .icon-btn--danger:hover { background: color-mix(in srgb, var(--pr-danger, #dc2626) 14%, transparent); }
+
+    .bk-actions-col { text-align: end; }
+    .bk-empty {
+      padding: 2rem 1rem; text-align: center; color: var(--pr-text-muted);
+    }
+    .bk-empty__icon { font-size: 2rem; margin-bottom: .35rem; }
+
+    .bk-foot {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 1rem; padding: .9rem 1.25rem;
+      background: var(--pr-surface-2); border-top: 1px solid var(--pr-border);
+      color: var(--pr-text-muted); font-size: .9rem; flex-wrap: wrap;
+    }
+    .bk-foot__page { display: flex; align-items: center; gap: .5rem; }
+    .bk-foot__page label { display: inline-flex; align-items: center; gap: .5rem; }
+    .bk-foot__page select { padding: .35rem .5rem; height: auto; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, .45); z-index: 9000;
+      display: flex; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-card {
+      background: var(--pr-surface); border-radius: 12px;
+      max-width: 760px; width: 100%; max-height: 85vh; overflow: auto;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, .25);
+    }
+    .modal-card--wide { max-width: 1100px; }
+    .modal-card__head {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--pr-border);
+    }
+    .modal-card__head h2 { margin: 0; font-size: 1.2rem; color: var(--pr-primary); }
+    .modal-card__head code { color: var(--pr-primary); font-size: .95rem; }
+    .modal-card__close {
+      background: transparent; border: 0; cursor: pointer; padding: .25rem;
+      color: var(--pr-text-muted); font-size: 1.4rem; line-height: 1;
+    }
+    .modal-card__close:hover { color: var(--pr-text); }
+
+    .browse-controls {
+      display: grid; grid-template-columns: 200px 1fr auto;
+      gap: .65rem; padding: 1rem 1.5rem;
+    }
+    @media (max-width: 640px) { .browse-controls { grid-template-columns: 1fr; } }
+    .browse-count { padding: 0 1.5rem; color: var(--pr-text-muted); font-size: .9rem; margin: 0 0 .75rem; }
+
+    .browse-list { display: flex; flex-direction: column; gap: .5rem; padding: 0 1.5rem 1.5rem; }
+    .browse-row {
+      display: grid; grid-template-columns: 110px 1fr auto;
+      align-items: center; gap: 1rem;
+      padding: .65rem .9rem;
+      background: var(--pr-surface-2); border: 1px solid var(--pr-border);
+      border-radius: 8px;
+    }
+    .browse-row__table { color: var(--pr-primary); font-family: 'JetBrains Mono', monospace; font-size: .8rem; }
+    .browse-row__json  { color: var(--pr-text-muted); font-family: 'JetBrains Mono', monospace; font-size: .8rem;
+                         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .browse-row__btn   { color: var(--pr-success, #16a34a); border-color: var(--pr-success, #16a34a); }
+    .browse-row__btn:hover { background: color-mix(in srgb, var(--pr-success, #16a34a) 12%, transparent); }
   `]
 })
 export class AdminBackupsComponent implements OnInit {
-  private http = inject(HttpClient);
-  private base = `${environment.apiUrl}/backups`;
+  private http    = inject(HttpClient);
+  private toaster = inject(ToasterService);
+  private modals  = inject(ModalService);
+  private base    = `${environment.apiUrl}/backups`;
 
-  items        = signal<BackupEntry[]>([]);
-  total        = signal(0);
-  loading      = signal(false);
-  error        = signal<string | null>(null);
-  triggerMsg   = signal<string | null>(null);
+  items      = signal<BackupEntry[]>([]);
+  loading    = signal(false);
+  error      = signal<string | null>(null);
+  triggering = signal(false);
 
-  page     = 1;
-  pageSize = 20;
-  filterDb     = '';
-  filterStatus = '';
+  search     = '';
+  filterDate = '';
+  pageSize   = 25;
+  page       = signal(1);
 
-  showTriggerModal = signal(false);
-  triggerTarget    = signal<string | null>(null);
-  triggering       = signal(false);
+  /** All items after search + date filter (pre-pagination). */
+  filtered = computed(() => {
+    const s = this.search.trim().toLowerCase();
+    const d = this.filterDate;
+    return this.items().filter(b => {
+      if (s && !this.filename(b).toLowerCase().includes(s)) return false;
+      if (d) {
+        const day = (b.createdAt || '').slice(0, 10);
+        if (day !== d) return false;
+      }
+      return true;
+    });
+  });
 
-  deleteTarget  = signal<BackupEntry | null>(null);
-  deletingId    = signal<string | null>(null);
-  downloadingId = signal<string | null>(null);
+  filteredCount = computed(() => this.filtered().length);
+  totalPages    = computed(() => Math.max(1, Math.ceil(this.filtered().length / this.pageSize)));
 
-  readonly knownDbs = [
-    'PRC_Identity', 'PRC_Club', 'PRC_Race', 'PRC_Federation',
-    'PRC_Rendering', 'PRC_Integration', 'PRC_Admin', 'PRC_Subscription'
-  ];
+  /** Page-of-filtered items rendered in the table. */
+  visible = computed(() => {
+    const start = (this.page() - 1) * this.pageSize;
+    return this.filtered().slice(start, start + this.pageSize);
+  });
 
-  totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
+  // ── Browse modal state ──────────────────────────────────────────────────
+  browseTarget   = signal<BackupEntry | null>(null);
+  browseTables   = signal<string[]>([]);
+  browseTable    = '';
+  browseSearch   = '';
+  browseLoading  = signal(false);
+  browseNotice   = signal<string | null>(null);
+  browseResults  = signal<{ id: string; table: string; preview: string }[]>([]);
 
   ngOnInit() { this.load(); }
 
   load() {
     this.loading.set(true);
     this.error.set(null);
-
-    let params = new HttpParams()
-      .set('page', this.page)
-      .set('pageSize', this.pageSize);
-    if (this.filterDb)     params = params.set('database', this.filterDb);
-    if (this.filterStatus) params = params.set('status', this.filterStatus);
-
-    this.http.get<any>(this.base, { params }).subscribe({
+    this.http.get<any>(this.base, { params: { page: 1, pageSize: 200 } as any }).subscribe({
       next: r => {
-        this.items.set(r.items ?? []);
-        this.total.set(r.total ?? 0);
+        this.items.set(r?.items ?? []);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Failed to load backups.');
+      error: err => {
+        this.error.set(err?.error?.detail || err?.error?.title || 'Failed to load backups.');
         this.loading.set(false);
       }
     });
   }
 
-  onFilterChange() { this.page = 1; this.load(); }
+  onFilterChange()    { this.page.set(1); }
+  onPageSizeChange()  { this.page.set(1); }
+  goPage(p: number)   { if (p >= 1 && p <= this.totalPages()) this.page.set(p); }
 
-  clearFilters() {
-    this.filterDb = '';
-    this.filterStatus = '';
-    this.page = 1;
-    this.load();
-  }
-
-  goPage(p: number) { this.page = p; this.load(); }
-
-  openTrigger(db: string | null) {
-    this.triggerTarget.set(db);
-    this.showTriggerModal.set(true);
-  }
-
-  closeTrigger() { this.showTriggerModal.set(false); }
-
-  runTrigger() {
+  triggerNow() {
+    if (this.triggering()) return;
     this.triggering.set(true);
-    const body = this.triggerTarget() ? { databaseName: this.triggerTarget() } : {};
-    this.http.post<any>(`${this.base}/trigger`, body).subscribe({
+    this.http.post<any>(`${this.base}/trigger`, {}).subscribe({
       next: r => {
         this.triggering.set(false);
-        this.showTriggerModal.set(false);
-        this.triggerMsg.set(r.message ?? 'Backup started.');
-        setTimeout(() => this.triggerMsg.set(null), 5000);
-        this.load();
+        this.toaster.success(r?.message ?? 'Backup started.');
+        setTimeout(() => this.load(), 1200);
       },
-      error: () => {
+      error: err => {
         this.triggering.set(false);
-        this.error.set('Failed to trigger backup.');
+        this.toaster.error(err?.error?.detail || 'Failed to trigger backup.');
       }
     });
   }
 
-  download(b: BackupEntry) {
-    this.downloadingId.set(b.id);
-    this.http.get<{ url: string }>(`${this.base}/${b.id}/download-url`).subscribe({
+  // ── Per-row actions ─────────────────────────────────────────────────────
+  openBrowse(b: BackupEntry) {
+    this.browseTarget.set(b);
+    this.browseSearch = '';
+    this.browseResults.set([]);
+    this.browseNotice.set(null);
+    this.http.get<{ tables: string[] }>(`${this.base}/${b.id}/tables`).subscribe({
       next: r => {
-        this.downloadingId.set(null);
-        window.open(r.url, '_blank');
+        this.browseTables.set(r?.tables ?? []);
+        this.browseTable = this.browseTables()[0] ?? '';
+        this.runBrowse();
       },
-      error: () => {
-        this.downloadingId.set(null);
-        this.error.set('Failed to get download URL.');
-      }
+      error: () => { this.browseTables.set([]); }
     });
   }
+  closeBrowse() { this.browseTarget.set(null); }
 
-  confirmDelete(b: BackupEntry) { this.deleteTarget.set(b); }
-
-  doDelete() {
-    const b = this.deleteTarget();
+  runBrowse() {
+    const b = this.browseTarget();
     if (!b) return;
-    this.deletingId.set(b.id);
-    this.http.delete(`${this.base}/${b.id}`).subscribe({
-      next: () => {
-        this.deletingId.set(null);
-        this.deleteTarget.set(null);
-        this.load();
+    this.browseLoading.set(true);
+    this.browseNotice.set(null);
+    this.http.get<any>(`${this.base}/${b.id}/browse`, {
+      params: {
+        table: this.browseTable, search: this.browseSearch, page: 1, pageSize: 50
+      } as any
+    }).subscribe({
+      next: r => {
+        this.browseResults.set(r?.items ?? []);
+        this.browseLoading.set(false);
       },
-      error: () => {
-        this.deletingId.set(null);
-        this.error.set('Failed to delete backup.');
+      error: err => {
+        this.browseLoading.set(false);
+        // 501 is expected today — render the detail as an informational notice.
+        if (err?.status === 501) {
+          this.browseNotice.set(err?.error?.detail || 'Backup browsing is being implemented.');
+          this.browseResults.set([]);
+        } else {
+          this.toaster.error(err?.error?.detail || 'Failed to browse backup.');
+        }
       }
     });
   }
 
-  statusLabel(status: number): string {
-    return { 1: 'In Progress', 2: 'Completed', 3: 'Failed' }[status] ?? 'Unknown';
+  async confirmRestore(b: BackupEntry) {
+    const ok = await this.modals.confirm({
+      title: 'Restore entire backup',
+      message: `Restore ${this.filename(b)}? This will overwrite the current ${b.databaseName} database. The operation cannot be undone.`,
+      confirmLabel: 'Restore',
+      cancelLabel: 'Cancel',
+      variant: 'danger'
+    });
+    if (!ok) return;
+    this.http.post<any>(`${this.base}/${b.id}/restore`, {}).subscribe({
+      next: () => this.toaster.success('Restore started.'),
+      error: err => {
+        if (err?.status === 501) this.toaster.info(err?.error?.detail || 'Restore pipeline is not yet enabled.');
+        else this.toaster.error(err?.error?.detail || 'Restore failed.');
+      }
+    });
   }
 
-  durationLabel(b: BackupEntry): string {
-    if (!b.completedAt) return '—';
-    const ms = new Date(b.completedAt).getTime() - new Date(b.createdAt).getTime();
-    if (ms < 1000)   return `${ms}ms`;
-    if (ms < 60000)  return `${(ms / 1000).toFixed(1)}s`;
-    return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+  async confirmRestoreRecord(b: BackupEntry, r: { id: string; table: string }) {
+    const ok = await this.modals.confirm({
+      title: 'Restore record',
+      message: `Restore record ${r.id} from table ${r.table}?`,
+      confirmLabel: 'Restore',
+      variant: 'danger'
+    });
+    if (!ok) return;
+    this.http.post<any>(`${this.base}/${b.id}/restore`, {
+      table: r.table, recordId: r.id
+    }).subscribe({
+      next: () => this.toaster.success('Record restored.'),
+      error: err => {
+        if (err?.status === 501) this.toaster.info(err?.error?.detail || 'Record restore not yet enabled.');
+        else this.toaster.error(err?.error?.detail || 'Restore failed.');
+      }
+    });
+  }
+
+  async confirmDelete(b: BackupEntry) {
+    const ok = await this.modals.confirm({
+      title: 'Delete backup',
+      message: `Delete ${this.filename(b)} from ${b.uploadedToMinIO ? 'MinIO' : 'storage'}? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    });
+    if (!ok) return;
+    this.http.delete(`${this.base}/${b.id}`).subscribe({
+      next: () => { this.toaster.success('Backup deleted.'); this.load(); },
+      error: err => this.toaster.error(err?.error?.detail || 'Failed to delete backup.')
+    });
+  }
+
+  // ── Display helpers ────────────────────────────────────────────────────
+  filename(b: BackupEntry): string {
+    if (b.objectKey) return b.objectKey.split('/').pop()!;
+    return `${b.databaseName}_${(b.createdAt || '').replace(/[-:T.Z]/g, '').slice(0, 14)}.bak.gz`;
   }
 
   formatSize(bytes: number): string {
+    if (!bytes) return '—';
     if (bytes < 1024)        return `${bytes} B`;
     if (bytes < 1048576)     return `${(bytes / 1024).toFixed(1)} KB`;
     if (bytes < 1073741824)  return `${(bytes / 1048576).toFixed(1)} MB`;

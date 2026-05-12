@@ -11,7 +11,10 @@ namespace PRC.BackupService.Controllers;
 
 [ApiController]
 [Route("api/backups")]
-[Authorize]
+// SuperAdmin sign-in (POST /admin/auth/login) issues a JWT signed with
+// Jwt:AdminKey — accept that scheme alongside the default user-token scheme
+// so the admin console can load this controller.
+[Authorize(AuthenticationSchemes = "Bearer,Admin")]
 public class BackupsController : ControllerBase
 {
     private readonly BackupDbContext      _db;
@@ -124,6 +127,70 @@ public class BackupsController : ControllerBase
         ];
         return Ok(dbs);
     }
+
+    /// <summary>
+    /// Returns the list of tables the backup can be browsed by. For now this
+    /// is the well-known table set per database (derived from BackupEntry.DatabaseName)
+    /// — the actual backup file isn't extracted yet. The endpoint exists so the
+    /// admin Browse modal has a dropdown to populate.
+    /// </summary>
+    [HttpGet("{id:guid}/tables")]
+    public async Task<IActionResult> Tables(Guid id, CancellationToken ct)
+    {
+        var entry = await _db.Backups.FindAsync([id], ct);
+        if (entry is null) return NotFound();
+
+        // The actual catalog comes from the backup file once we implement the
+        // RESTORE-FILELISTONLY pipeline. Until then surface the schema name
+        // as the only "table" so the modal is functional in dev.
+        return Ok(new { tables = new[] { entry.DatabaseName } });
+    }
+
+    /// <summary>
+    /// Browse rows inside a backup. Not yet implemented — the SQL RESTORE to a
+    /// sandbox database has to land first. Returns 501 with a friendly detail
+    /// so the admin UI can render an explanation banner.
+    /// </summary>
+    [HttpGet("{id:guid}/browse")]
+    public async Task<IActionResult> Browse(
+        Guid id,
+        [FromQuery] string? table = null,
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var entry = await _db.Backups.FindAsync([id], ct);
+        if (entry is null) return NotFound();
+
+        return Problem(
+            statusCode: 501,
+            title: "Not implemented",
+            detail: "Browsing rows inside a .bak.gz backup requires restoring the file " +
+                    "to a sandbox database first. The endpoint stub is in place; the " +
+                    "RESTORE pipeline is the next step.");
+    }
+
+    /// <summary>
+    /// Restore a backup (full or selected record). Stubbed until the SQL
+    /// RESTORE step is implemented; returns 501.
+    /// </summary>
+    [HttpPost("{id:guid}/restore")]
+    public async Task<IActionResult> Restore(Guid id, [FromBody] RestoreRequest? req, CancellationToken ct)
+    {
+        var entry = await _db.Backups.FindAsync([id], ct);
+        if (entry is null) return NotFound();
+
+        return Problem(
+            statusCode: 501,
+            title: "Not implemented",
+            detail: req?.Table is null
+                ? "Full-database restore is a multi-step SQL operation (DROP / RESTORE / re-grant). " +
+                  "The endpoint stub is wired so the UI can confirm intent; the runner is next."
+                : $"Restoring a single record from table '{req.Table}' requires the backup-browse " +
+                  "pipeline. Endpoint stub in place — runner next.");
+    }
 }
 
 public record TriggerRequest(string? DatabaseName);
+public record RestoreRequest(string? Table, string? RecordId);

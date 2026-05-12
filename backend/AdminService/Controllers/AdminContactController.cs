@@ -50,13 +50,17 @@ public class AdminContactController : AdminControllerBase
 
         var total = await q.CountAsync(ct);
 
+        // Return the full message in the list — admin inbox is low cardinality
+        // (dozens, not thousands) and the new card UI displays the body inline,
+        // so paying the body bytes here avoids an N+1 from the frontend.
         var items = await q
             .OrderByDescending(m => m.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(m => new ContactMessageListItem(
+            .Select(m => new ContactMessageDetail(
                 m.Id, m.SenderRole, m.SenderName, m.SenderEmail, m.SenderPhone,
-                m.Subject, m.Status, m.AdminReply != null, m.CreatedAt))
+                m.Subject, m.Body, m.Status, m.AdminReply, m.RepliedAt, m.RepliedByAdminId,
+                m.CreatedAt, m.UpdatedAt))
             .ToListAsync(ct);
 
         return Ok(ApiResponse<object>.Ok(new { items, total, page, pageSize }));
