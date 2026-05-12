@@ -104,7 +104,7 @@ pigeon-racing/
 │   ├── Persistence/AppDbContext.cs
 │   ├── Services/                   # VelocityCalc, ETSParser, Cache, Email, Storage
 │   ├── wwwroot/templates/            # 12 production HTML templates (8 cert + 4 result)
-│   ├── wwwroot/fonts/                # Google Fonts bundled at startup by FontBootstrapService
+│   ├── wwwroot/fonts/                # 23 Google Fonts pre-bundled in the repo (woff2)
 │   ├── Services/
 │   │   ├── PuppeteerBrowserHost.cs   # Shared headless Chromium (ARM-aware)
 │   │   ├── CertRenderer.cs           # 8 cert templates → PDF
@@ -278,7 +278,7 @@ Templates live as static HTML files in [`backend/RenderingService/wwwroot/templa
 
 ### Deployment notes
 
-- **Fonts**: `FontBootstrapService` downloads all required Google Fonts woff2 files to `wwwroot/fonts/` on first start and writes `all.css`. Templates reference `/fonts/all.css` so renders work offline.
+- **Fonts**: every required Google Fonts woff2 is pre-bundled in [`backend/RenderingService/wwwroot/fonts/`](backend/RenderingService/wwwroot/fonts/) (committed to the repo, 308 files / ~15 MB) so renders work fully offline. The startup `FontBootstrapService` is a safety net that fills in any missing files on first boot. To regenerate the bundle (e.g. after bumping a family/weight), run `dotnet run --project tools/FontDownloader` and commit the result.
 - **Linux ARM**: `Dockerfile` installs system Chromium (`apt-get install chromium`), so `docker buildx --platform linux/arm64,linux/amd64` produces working images on both architectures. PuppeteerSharp's `BrowserFetcher` is skipped on ARM via `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
 
 ---

@@ -27,8 +27,9 @@ monitoring/grafana/data/
 monitoring/prometheus/data/
 uploads/
 
-# Auto-bundled fonts (regenerated at startup by FontBootstrapService)
-backend/RenderingService/wwwroot/fonts/
+# Fonts are pre-bundled into the repo by tools/FontDownloader so containers
+# never have to reach fonts.googleapis.com on first boot. If you regenerate
+# them, commit the new files — do NOT add wwwroot/fonts/ back to this list.
 
 # OS
 .DS_Store
