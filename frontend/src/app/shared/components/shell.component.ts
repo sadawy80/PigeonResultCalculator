@@ -357,6 +357,7 @@ export class ShellComponent implements OnInit, OnDestroy {
         { icon: '⬆️', label: 'nav.upgradeRequests',  path: '/federation/upgrade-requests' },
         { icon: '🎨', label: 'nav.clubPage',         path: '/federation/page' },
         { icon: '🔔', label: 'nav.notifications',    path: '/federation/notifications' },
+        { icon: '✉️', label: 'nav.contactSupport',   path: '/contact' },
       ],
       [UserRole.ClubManager]: [
         { icon: '📊', label: 'nav.dashboard',    path: '/club/dashboard' },
@@ -368,6 +369,7 @@ export class ShellComponent implements OnInit, OnDestroy {
         { icon: '👥', label: 'nav.members',      path: '/club/members' },
         { icon: '🎨', label: 'nav.clubPage',     path: '/club/page' },
         { icon: '🔔', label: 'nav.notifications',path: '/club/notifications' },
+        { icon: '✉️', label: 'nav.contactSupport', path: '/contact' },
       ],
       [UserRole.Fancier]: [
         { icon: '📊', label: 'nav.dashboard',    path: '/fancier/dashboard' },
@@ -375,6 +377,7 @@ export class ShellComponent implements OnInit, OnDestroy {
         { icon: '🏁', label: 'nav.myResults',    path: '/fancier/results' },
         { icon: '🔔', label: 'nav.notifications',path: '/fancier/notifications' },
         { icon: '🔗', label: 'nav.integrations', path: '/fancier/integrations' },
+        { icon: '✉️', label: 'nav.contactSupport', path: '/contact' },
       ],
     };
     return base[role ?? -1] ?? [];

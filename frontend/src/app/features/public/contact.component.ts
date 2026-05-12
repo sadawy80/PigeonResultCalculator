@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/services';
 import { TranslatePipe, TranslationService, LanguageSwitcherComponent } from '../../core/i18n';
 
 @Component({
@@ -100,14 +101,17 @@ import { TranslatePipe, TranslationService, LanguageSwitcherComponent } from '..
     @media (max-width: 640px) { .row { grid-template-columns: 1fr; } .contact-card { padding: 1.25rem; } }
   `]
 })
-export class ContactComponent {
-  private fb  = inject(FormBuilder);
-  private api = inject(ApiService);
-  i18n        = inject(TranslationService);
+export class ContactComponent implements OnInit {
+  private fb   = inject(FormBuilder);
+  private api  = inject(ApiService);
+  private auth = inject(AuthService);
+  i18n         = inject(TranslationService);
 
   sending   = signal(false);
   submitted = signal(false);
   error     = signal<string | null>(null);
+  /** True when an authenticated user opened the page — used to lock identity fields. */
+  authenticated = signal(false);
 
   form: FormGroup = this.fb.group({
     name:    ['', [Validators.required, Validators.maxLength(200)]],
@@ -117,12 +121,25 @@ export class ContactComponent {
     body:    ['', [Validators.required, Validators.maxLength(5000)]]
   });
 
+  ngOnInit() {
+    const user = this.auth.currentUser();
+    if (user) {
+      const fullName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+      this.form.patchValue({ name: fullName, email: user.email ?? '' });
+      // Submission still works even if locked — backend reads the JWT for role + UserId.
+      this.form.get('name')!.disable();
+      this.form.get('email')!.disable();
+      this.authenticated.set(true);
+    }
+  }
+
   submit() {
     if (this.form.invalid || this.sending()) return;
     this.sending.set(true);
     this.error.set(null);
 
-    this.api.submitContactMessage(this.form.value).subscribe({
+    // getRawValue() so disabled (prefilled) name + email are still sent.
+    this.api.submitContactMessage(this.form.getRawValue()).subscribe({
       next: () => { this.sending.set(false); this.submitted.set(true); },
       error: err => {
         this.sending.set(false);
@@ -132,7 +149,9 @@ export class ContactComponent {
   }
 
   reset() {
-    this.form.reset({ name: '', email: '', phone: '', subject: '', body: '' });
+    // Re-run ngOnInit so we re-lock identity fields if still authenticated.
     this.submitted.set(false);
+    this.form.reset({ name: '', email: '', phone: '', subject: '', body: '' });
+    this.ngOnInit();
   }
 }
