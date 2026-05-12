@@ -369,7 +369,7 @@ export class ShellComponent implements OnInit, OnDestroy {
         { icon: '👥', label: 'nav.members',      path: '/club/members' },
         { icon: '🎨', label: 'nav.clubPage',     path: '/club/page' },
         { icon: '🔔', label: 'nav.notifications',path: '/club/notifications' },
-        { icon: '✉️', label: 'nav.contactSupport', path: '/contact' },
+        { icon: '✉️', label: 'nav.contactSupport', path: '/support' },
       ],
       [UserRole.Fancier]: [
         { icon: '📊', label: 'nav.dashboard',    path: '/fancier/dashboard' },
@@ -377,7 +377,7 @@ export class ShellComponent implements OnInit, OnDestroy {
         { icon: '🏁', label: 'nav.myResults',    path: '/fancier/results' },
         { icon: '🔔', label: 'nav.notifications',path: '/fancier/notifications' },
         { icon: '🔗', label: 'nav.integrations', path: '/fancier/integrations' },
-        { icon: '✉️', label: 'nav.contactSupport', path: '/contact' },
+        { icon: '✉️', label: 'nav.contactSupport', path: '/support' },
       ],
     };
     return base[role ?? -1] ?? [];

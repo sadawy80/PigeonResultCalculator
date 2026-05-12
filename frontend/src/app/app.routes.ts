@@ -52,7 +52,7 @@ export const routes: Routes = [
   // Public pages
   {
     path: 'contact',
-    loadComponent: () => import('./features/public/contact.component').then(m => m.ContactComponent)
+    loadComponent: () => import('./features/public/contact-public-page.component').then(m => m.ContactPublicPageComponent)
   },
   {
     path: 'p/:slug',
@@ -78,6 +78,14 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/components/shell.component').then(m => m.ShellComponent),
     children: [
       { path: '', loadComponent: () => import('./features/auth/auth.components').then(m => m.UpgradeRequestComponent) }
+    ]
+  },
+  {
+    path: 'support',
+    canActivate: [authGuard],
+    loadComponent: () => import('./shared/components/shell.component').then(m => m.ShellComponent),
+    children: [
+      { path: '', loadComponent: () => import('./features/public/contact.component').then(m => m.ContactComponent) }
     ]
   },
 
