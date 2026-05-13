@@ -5,8 +5,9 @@ EXPOSE 9500
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY ["ApiGateway/ApiGateway.csproj", "ApiGateway/"]
+COPY ["Common/Common.csproj", "Common/"]
 RUN dotnet restore "ApiGateway/ApiGateway.csproj"
-COPY ApiGateway/ ApiGateway/
+COPY . .
 WORKDIR "/src/ApiGateway"
 RUN dotnet build "ApiGateway.csproj" -c Release -o /app/build
 
