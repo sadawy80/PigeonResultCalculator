@@ -12,8 +12,8 @@ using PRC.AdminService.Data;
 namespace PRC.AdminService.Data.Migrations
 {
     [DbContext(typeof(AdminDbContext))]
-    [Migration("20260511010409_AddContactMessages")]
-    partial class AddContactMessages
+    [Migration("20260513010000_FixContactMessagesIfMissing")]
+    partial class FixContactMessagesIfMissing
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

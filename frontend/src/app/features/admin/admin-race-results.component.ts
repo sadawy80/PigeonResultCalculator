@@ -1,7 +1,10 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { PrintApiService } from '../../core/services/print-api.service';
+import { TranslationService } from '../../core/i18n';
 
 const RACE_STATUSES: Record<number, string> = { 1: 'Draft', 2: 'Open', 3: 'Closed', 4: 'Published', 5: 'Cancelled' };
 
@@ -84,8 +87,15 @@ const RACE_STATUSES: Record<number, string> = { 1: 'Draft', 2: 'Open', 3: 'Close
                   <td class="text-muted text-sm">{{ r.publishedAt | date:'dd MMM yyyy' }}</td>
                   <td class="text-sm">{{ r.resultCount }}</td>
                   <td>
-                    <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error,#dc2626)"
-                      (click)="confirmDelete(r)">🗑️ Delete</button>
+                    <div class="flex gap-1 flex-wrap">
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="viewResult(r)" title="Open race detail">👁 View</button>
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm"
+                        [disabled]="pdfBusy() === r.id" (click)="downloadPdf(r)" title="Download results PDF">
+                        {{ pdfBusy() === r.id ? '…' : '⬇ PDF' }}
+                      </button>
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error,#dc2626)"
+                        (click)="confirmDelete(r)">🗑️ Delete</button>
+                    </div>
                   </td>
                 </tr>
               } @empty {
@@ -134,7 +144,10 @@ const RACE_STATUSES: Record<number, string> = { 1: 'Draft', 2: 'Open', 3: 'Close
   `,
 })
 export class AdminRaceResultsComponent implements OnInit {
-  private api = inject(ApiService);
+  private api    = inject(ApiService);
+  private print  = inject(PrintApiService);
+  private router = inject(Router);
+  private i18n   = inject(TranslationService);
 
   loading   = signal(false);
   items     = signal<any[]>([]);
@@ -152,6 +165,8 @@ export class AdminRaceResultsComponent implements OnInit {
   deleteTarget = signal<any>(null);
   deleting     = signal(false);
   deleteError  = signal<string | null>(null);
+
+  pdfBusy = signal<string | null>(null);
 
   totalPages = () => Math.max(1, Math.ceil(this.totalCount() / this.pageSize));
   onPageSizeChange() { this.page.set(1); this.loadPage(1); }
@@ -226,6 +241,28 @@ export class AdminRaceResultsComponent implements OnInit {
       error: () => {
         this.deleteError.set('Failed to delete race. Please try again.');
         this.deleting.set(false);
+      }
+    });
+  }
+
+  viewResult(race: any) {
+    // Race detail lives inside the club shell; SuperAdmin satisfies the route guard.
+    this.router.navigate(['/club/races', race.id]);
+  }
+
+  downloadPdf(race: any) {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(race.id);
+    this.error.set(null);
+    this.print.renderRaceResultsPdf({ raceId: race.id, designId: 'T1', language: this.i18n.locale() }).subscribe({
+      next: blob => {
+        const safe = (race.name ?? 'race').replace(/[^a-z0-9-]+/gi, '_');
+        this.print.download(blob, `race-${safe}.pdf`);
+        this.pdfBusy.set(null);
+      },
+      error: () => {
+        this.pdfBusy.set(null);
+        this.error.set('Failed to render PDF for this race.');
       }
     });
   }

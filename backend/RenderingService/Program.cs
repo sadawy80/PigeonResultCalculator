@@ -45,7 +45,39 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+// Also accept AdminService tokens so SuperAdmin can render result PDFs from the admin pages.
+var adminKey = builder.Configuration["Jwt:AdminKey"];
+if (!string.IsNullOrEmpty(adminKey))
+{
+    builder.Services.AddAuthentication()
+        .AddJwtBearer("Admin", opt =>
+        {
+            opt.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(adminKey)),
+                ValidateIssuer           = true,
+                ValidIssuer              = builder.Configuration["Jwt:AdminIssuer"]  ?? "PRC.AdminService",
+                ValidateAudience         = true,
+                ValidAudience            = builder.Configuration["Jwt:AdminAudience"] ?? "PRC.Admin",
+                ValidateLifetime         = true,
+                ClockSkew                = TimeSpan.FromSeconds(30)
+            };
+        });
+}
+
+builder.Services.AddAuthorization(opt =>
+{
+    // Default policy accepts BOTH user and admin schemes — print endpoints are
+    // [Authorize] without a specific scheme, so listing them here is what lets
+    // SuperAdmin tokens through alongside ordinary user tokens.
+    var schemes = string.IsNullOrEmpty(adminKey)
+        ? new[] { JwtBearerDefaults.AuthenticationScheme }
+        : new[] { JwtBearerDefaults.AuthenticationScheme, "Admin" };
+    opt.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(schemes)
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddMassTransit(x =>
 {

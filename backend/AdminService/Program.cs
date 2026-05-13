@@ -60,6 +60,25 @@ builder.Services.AddAuthentication(opts =>
     };
 });
 
+// Also accept user-issued IdentityService tokens — used by the anonymous /api/contact
+// endpoint to record SenderRole + UserId when the visitor happens to be logged in.
+var userKey = builder.Configuration["Jwt:Key"];
+if (!string.IsNullOrEmpty(userKey))
+{
+    builder.Services.AddAuthentication()
+        .AddJwtBearer("User", opts =>
+        {
+            opts.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(userKey)),
+                ValidateIssuer   = true, ValidIssuer   = builder.Configuration["Jwt:Issuer"]   ?? "PRC",
+                ValidateAudience = true, ValidAudience = builder.Configuration["Jwt:Audience"] ?? "PRC",
+                ValidateLifetime = true, ClockSkew = TimeSpan.FromSeconds(30)
+            };
+        });
+}
+
 builder.Services.AddAuthorization();
 
 // ── CORS ──────────────────────────────────────────────────────────────────────

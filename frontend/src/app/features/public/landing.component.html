@@ -12,6 +12,7 @@
       <a href="#integrations">{{ 'landing.navIntegrations' | translate }}</a>
       <a href="#season">{{ 'landing.navSeason' | translate }}</a>
       <a href="#pricing">Pricing</a>
+      <a routerLink="/contact">{{ 'contact.title' | translate }}</a>
     </div>
     <app-language-switcher />
     <div class="nav__actions">
@@ -486,8 +487,9 @@
     <div class="footer__links">
       <a routerLink="/auth/login">{{ 'landing.footerLogin' | translate }}</a>
       <a routerLink="/auth/register">{{ 'landing.footerRegister' | translate }}</a>
+      <a routerLink="/contact">{{ 'contact.title' | translate }}</a>
       <a href="https://github.com/sadawy/PigeonResultCalculator" target="_blank" rel="noopener">GitHub</a>
     </div>
-    <div class="footer__copy">{{ i18n.t('landing.footerCopy', { year: currentYear.toString() }) }}</div>
+    <div class="footer__copy">{{ 'landing.footerCopy' | translate:{ year: currentYear } }}</div>
   </div>
 </footer>

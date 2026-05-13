@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRC.AdminService.Data;
@@ -11,6 +12,12 @@ namespace PRC.AdminService.Controllers;
 
 [ApiController]
 [Route("api/contact")]
+// Accept BOTH the admin scheme (default) and the user IdentityService scheme so
+// a logged-in fancier/club-manager/federation-manager submitting from /support
+// has their JWT decoded — letting us stamp the real SenderRole + UserId on the
+// message. The endpoint itself is [AllowAnonymous], so the request still goes
+// through when no token is present at all.
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme + ",User")]
 public class ContactController : ControllerBase
 {
     private static readonly Regex EmailFormat = new(

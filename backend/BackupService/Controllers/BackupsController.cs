@@ -20,17 +20,20 @@ public class BackupsController : ControllerBase
     private readonly BackupDbContext      _db;
     private readonly BackupOrchestrator   _orchestrator;
     private readonly IFileServiceClient   _files;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<BackupsController> _log;
 
     public BackupsController(
         BackupDbContext db,
         BackupOrchestrator orchestrator,
         IFileServiceClient files,
+        IServiceScopeFactory scopeFactory,
         ILogger<BackupsController> log)
     {
         _db           = db;
         _orchestrator = orchestrator;
         _files        = files;
+        _scopeFactory = scopeFactory;
         _log          = log;
     }
 
@@ -75,14 +78,32 @@ public class BackupsController : ControllerBase
         if (!string.IsNullOrEmpty(req?.DatabaseName))
         {
             var entry = await _orchestrator.BackupDatabaseAsync(req.DatabaseName, trigger, ct);
+            if (entry.Status == BackupStatus.Failed)
+                return Problem(
+                    detail:     entry.ErrorMessage ?? "Backup failed for an unknown reason.",
+                    statusCode: 500,
+                    title:      $"Backup failed for {req.DatabaseName}");
+
             return Ok(new { message = "Backup started", entryId = entry.Id, status = entry.Status.ToString() });
         }
 
+        // Capture the scope factory NOW — HttpContext.RequestServices becomes
+        // invalid as soon as this method returns, so resolving services off the
+        // request scope inside the background task would NRE.
+        var scopeFactory = _scopeFactory;
+        var logger       = _log;
         _ = Task.Run(async () =>
         {
-            using var scope = HttpContext.RequestServices.CreateScope();
-            var orch = scope.ServiceProvider.GetRequiredService<BackupOrchestrator>();
-            await orch.RunAllAsync(trigger, CancellationToken.None);
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var orch = scope.ServiceProvider.GetRequiredService<BackupOrchestrator>();
+                await orch.RunAllAsync(trigger, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Background backup run failed (trigger={Trigger})", trigger);
+            }
         });
 
         return Accepted(new { message = "Full backup run started in background" });

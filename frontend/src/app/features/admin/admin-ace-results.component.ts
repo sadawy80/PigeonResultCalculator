@@ -1,7 +1,10 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { PrintApiService } from '../../core/services/print-api.service';
+import { TranslationService } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-ace-results',
@@ -37,7 +40,7 @@ import { ApiService } from '../../core/services/api.service';
             <thead>
               <tr>
                 <th>Rank</th><th>Fancier</th><th>Ring #</th><th>Pigeon</th>
-                <th>Programme</th><th>Year</th><th>Club</th><th>Score</th><th>Races</th>
+                <th>Programme</th><th>Year</th><th>Club</th><th>Score</th><th>Races</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -52,9 +55,20 @@ import { ApiService } from '../../core/services/api.service';
                   <td class="text-sm text-muted">{{ r.clubName }}</td>
                   <td class="text-sm font-bold">{{ r.totalScore | number:'1.2-2' }}</td>
                   <td class="text-sm text-muted">{{ r.racesEntered }}</td>
+                  <td>
+                    <div class="flex gap-1 flex-wrap">
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="viewResult(r)" title="Open programme results">👁 View</button>
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm"
+                        [disabled]="pdfBusy() === r.programmeId" (click)="downloadPdf(r)" title="Download programme PDF">
+                        {{ pdfBusy() === r.programmeId ? '…' : '⬇ PDF' }}
+                      </button>
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error,#dc2626)"
+                        (click)="confirmDelete(r)" title="Delete underlying programme (cascade)">🗑️ Delete</button>
+                    </div>
+                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="9" class="text-center text-muted py-6">No ace pigeon results found</td></tr>
+                <tr><td colspan="10" class="text-center text-muted py-6">No ace pigeon results found</td></tr>
               }
             </tbody>
           </table>
@@ -74,10 +88,35 @@ import { ApiService } from '../../core/services/api.service';
         </div>
       }
     </div>
+
+    @if (deleteTarget()) {
+      <div class="pr-modal-backdrop" (click)="deleteTarget.set(null)">
+        <div class="pr-modal pr-modal--sm" (click)="$event.stopPropagation()">
+          <h3 class="pr-modal__title">Delete Programme</h3>
+          <p class="pr-modal__subtitle" style="margin-top:8px">
+            This row belongs to programme <strong>{{ deleteTarget()!.programmeName }} ({{ deleteTarget()!.programmeYear }})</strong>.
+            Deleting it removes all ace, super-ace and best-loft rankings derived from it.
+          </p>
+          @if (deleteError()) {
+            <div class="pr-alert pr-alert--error mt-3">{{ deleteError() }}</div>
+          }
+          <div class="flex gap-3 justify-end mt-6">
+            <button class="pr-btn pr-btn--ghost" (click)="deleteTarget.set(null)">Cancel</button>
+            <button class="pr-btn pr-btn--primary" style="background:var(--pr-error,#dc2626);border-color:var(--pr-error,#dc2626)"
+              [disabled]="deleting()" (click)="executeDelete()">
+              {{ deleting() ? 'Deleting…' : 'Delete Programme' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class AdminAceResultsComponent implements OnInit {
-  private api = inject(ApiService);
+  private api    = inject(ApiService);
+  private print  = inject(PrintApiService);
+  private router = inject(Router);
+  private i18n   = inject(TranslationService);
 
   loading    = signal(false);
   items      = signal<any[]>([]);
@@ -86,6 +125,12 @@ export class AdminAceResultsComponent implements OnInit {
   pageSize = 10;
   error      = signal<string | null>(null);
   search     = '';
+
+  deleteTarget = signal<any>(null);
+  deleting     = signal(false);
+  deleteError  = signal<string | null>(null);
+
+  pdfBusy = signal<string | null>(null);
 
   totalPages = () => Math.max(1, Math.ceil(this.totalCount() / this.pageSize));
   onPageSizeChange() { this.page.set(1); this.loadPage(1); }
@@ -111,4 +156,48 @@ export class AdminAceResultsComponent implements OnInit {
   }
 
   reset() { this.search = ''; this.loadPage(1); }
+
+  viewResult(r: any) {
+    this.router.navigate(['/club/programmes', r.programmeId, 'ace-pigeon']);
+  }
+
+  downloadPdf(r: any) {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(r.programmeId);
+    this.error.set(null);
+    this.print.renderAceResultsPdf({ programmeId: r.programmeId, designId: 'A1', language: this.i18n.locale() }).subscribe({
+      next: blob => {
+        const safe = (r.programmeName ?? 'programme').replace(/[^a-z0-9-]+/gi, '_');
+        this.print.download(blob, `ace-${safe}-${r.programmeYear}.pdf`);
+        this.pdfBusy.set(null);
+      },
+      error: () => {
+        this.pdfBusy.set(null);
+        this.error.set('Failed to render PDF.');
+      }
+    });
+  }
+
+  confirmDelete(r: any) {
+    this.deleteError.set(null);
+    this.deleteTarget.set(r);
+  }
+
+  executeDelete() {
+    const row = this.deleteTarget();
+    if (!row) return;
+    this.deleting.set(true);
+    this.deleteError.set(null);
+    this.api.adminDeleteProgramme(row.programmeId).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.deleteTarget.set(null);
+        this.loadPage(this.page());
+      },
+      error: () => {
+        this.deleteError.set('Failed to delete programme. Please try again.');
+        this.deleting.set(false);
+      }
+    });
+  }
 }
