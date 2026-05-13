@@ -1,9 +1,9 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
-    <h1 class="pr-page-header__title">Subscriptions</h1>
-    <p class="pr-page-header__subtitle">Active federation subscriptions</p>
+    <h1 class="pr-page-header__title">{{ 'admin.subscriptions.title' | translate }}</h1>
+    <p class="pr-page-header__subtitle">{{ 'admin.subscriptions.subtitle' | translate }}</p>
   </div>
-  <button class="pr-btn pr-btn--primary" (click)="showNewSubModal.set(true)">+ New Subscription</button>
+  <button class="pr-btn pr-btn--primary" (click)="showNewSubModal.set(true)">+ {{ 'admin.common.add' | translate }}</button>
 </div>
 
 @if (error()) {

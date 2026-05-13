@@ -1,15 +1,16 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslationService, TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-fanciers',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   template: `
     <div class="pr-page-header">
-      <h1 class="pr-page-header__title">Fanciers</h1>
-      <p class="pr-page-header__subtitle">{{ total() }} fanciers from race results</p>
+      <h1 class="pr-page-header__title">{{ 'admin.fanciers.title' | translate }}</h1>
+      <p class="pr-page-header__subtitle">{{ 'admin.fanciers.subtitle' | translate:{ count: total() } }}</p>
     </div>
 
     @if (error()) {
@@ -19,37 +20,41 @@ import { ApiService } from '../../core/services/api.service';
     <div class="pr-card mb-4">
       <div class="flex flex-wrap gap-4 items-end">
         <div class="pr-form-group" style="flex:2;min-width:180px">
-          <label class="pr-label">Search name</label>
-          <input class="pr-input" [(ngModel)]="search" placeholder="Fancier name…" (keyup.enter)="loadPage(1)">
+          <label class="pr-label">{{ 'admin.fanciers.searchName' | translate }}</label>
+          <input class="pr-input" [(ngModel)]="search" [placeholder]="'admin.fanciers.fancierSearchPlaceholder' | translate" (keyup.enter)="loadPage(1)">
         </div>
         <div class="pr-form-group" style="flex:1;min-width:140px">
-          <label class="pr-label">Linked</label>
+          <label class="pr-label">{{ 'admin.fanciers.linkedFilter' | translate }}</label>
           <select class="pr-select" [(ngModel)]="linkedFilter" (change)="loadPage(1)">
-            <option value="">All</option>
-            <option value="true">Linked</option>
-            <option value="false">Unlinked</option>
+            <option value="">{{ 'admin.common.all' | translate }}</option>
+            <option value="true">{{ 'admin.common.linked' | translate }}</option>
+            <option value="false">{{ 'admin.common.unlinked' | translate }}</option>
           </select>
         </div>
-        <button class="pr-btn pr-btn--primary pr-btn--field" (click)="loadPage(1)" [disabled]="loading()">Search</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="reset()">Reset</button>
+        <button class="pr-btn pr-btn--primary pr-btn--field" (click)="loadPage(1)" [disabled]="loading()">{{ 'admin.common.search' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="reset()">{{ 'admin.common.reset' | translate }}</button>
       </div>
     </div>
 
     <div class="pr-card">
       @if (loading()) {
-        <div class="text-center py-8 text-muted">Loading…</div>
+        <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
               <tr>
-                <th>Name</th><th>Club</th><th>Federation</th><th>Country</th>
-                <th>Linked To</th><th style="text-align:right">Actions</th>
+                <th>{{ 'admin.common.name' | translate }}</th>
+                <th>{{ 'admin.common.club' | translate }}</th>
+                <th>{{ 'admin.common.federation' | translate }}</th>
+                <th>{{ 'admin.common.country' | translate }}</th>
+                <th>{{ 'admin.fanciers.linkedTo' | translate }}</th>
+                <th style="text-align:right">{{ 'admin.common.actions' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               @if (items().length === 0) {
-                <tr><td colspan="6" class="text-center py-6 text-muted">No fanciers found.</td></tr>
+                <tr><td colspan="6" class="text-center py-6 text-muted">{{ 'admin.fanciers.noFanciers' | translate }}</td></tr>
               }
               @for (f of items(); track f.id) {
                 <tr>
@@ -64,14 +69,14 @@ import { ApiService } from '../../core/services/api.service';
                         <div class="text-muted">{{ f.linkedUserEmail }}</div>
                       </div>
                     } @else {
-                      <span class="pr-badge pr-badge--warning">Unlinked</span>
+                      <span class="pr-badge pr-badge--warning">{{ 'admin.common.unlinked' | translate }}</span>
                     }
                   </td>
                   <td style="text-align:right">
                     @if (!f.isLinked) {
-                      <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="openLinkModal(f)">Link</button>
+                      <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="openLinkModal(f)">{{ 'admin.common.link' | translate }}</button>
                     } @else {
-                      <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-danger)" (click)="unlink(f)">Unlink</button>
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-danger)" (click)="unlink(f)">{{ 'admin.common.unlink' | translate }}</button>
                     }
                   </td>
                 </tr>
@@ -81,16 +86,16 @@ import { ApiService } from '../../core/services/api.service';
         </div>
 
         <div class="pagination-row">
-          <span class="text-muted text-sm">{{ total() }} fanciers · page {{ page() }} of {{ totalPages() }}</span>
+          <span class="text-muted text-sm">{{ 'admin.fanciers.fanciersCount' | translate:{ n: total() } }} · {{ 'admin.common.page' | translate }} {{ page() }} {{ 'admin.common.of' | translate }} {{ totalPages() }}</span>
           <div class="flex gap-2 items-center">
             <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-              <option [ngValue]="10">10 / page</option>
-              <option [ngValue]="25">25 / page</option>
-              <option [ngValue]="50">50 / page</option>
-              <option [ngValue]="100">100 / page</option>
+              <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+              <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+              <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+              <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
             </select>
-            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1" (click)="loadPage(page() - 1)">Prev</button>
-            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === totalPages()" (click)="loadPage(page() + 1)">Next</button>
+            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1" (click)="loadPage(page() - 1)">{{ 'admin.common.prev' | translate }}</button>
+            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === totalPages()" (click)="loadPage(page() + 1)">{{ 'admin.common.next' | translate }}</button>
           </div>
         </div>
       }
@@ -100,11 +105,11 @@ import { ApiService } from '../../core/services/api.service';
     @if (showLinkModal()) {
       <div class="pr-modal-backdrop" (click)="showLinkModal.set(false)">
         <div class="pr-modal" (click)="$event.stopPropagation()">
-          <h3 class="pr-modal__title">Link Fancier — {{ linkTarget()?.name }}</h3>
-          <p class="text-muted text-sm mt-1">Search for a registered user to link this fancier record to.</p>
+          <h3 class="pr-modal__title">{{ 'admin.fanciers.linkFancierTitle' | translate:{ name: linkTarget()?.name } }}</h3>
+          <p class="text-muted text-sm mt-1">{{ 'admin.fanciers.linkFancierBody' | translate }}</p>
           <div class="flex gap-2 mt-4">
-            <input class="pr-input" style="flex:1" [(ngModel)]="userSearch" placeholder="Search by name or email…" (keyup.enter)="searchUsers()">
-            <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="searchUsers()" [disabled]="searchingUsers()">Search</button>
+            <input class="pr-input" style="flex:1" [(ngModel)]="userSearch" [placeholder]="'admin.fanciers.searchByNameEmail' | translate" (keyup.enter)="searchUsers()">
+            <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="searchUsers()" [disabled]="searchingUsers()">{{ 'admin.common.search' | translate }}</button>
           </div>
           @if (userResults().length > 0) {
             <div class="mt-3" style="max-height:200px;overflow-y:auto;border:1px solid var(--pr-border);border-radius:var(--pr-radius)">
@@ -117,16 +122,16 @@ import { ApiService } from '../../core/services/api.service';
                     <div class="text-muted text-sm">{{ u.email }}</div>
                   </div>
                   @if (selectedUser()?.id === u.id) {
-                    <span class="pr-badge pr-badge--success">Selected</span>
+                    <span class="pr-badge pr-badge--success">{{ 'admin.common.selected' | translate }}</span>
                   }
                 </div>
               }
             </div>
           }
           <div class="flex gap-3 justify-end mt-6">
-            <button class="pr-btn pr-btn--ghost" (click)="showLinkModal.set(false)">Cancel</button>
+            <button class="pr-btn pr-btn--ghost" (click)="showLinkModal.set(false)">{{ 'admin.common.cancel' | translate }}</button>
             <button class="pr-btn pr-btn--primary" [disabled]="!selectedUser() || linking()" (click)="confirmLink()">
-              {{ linking() ? 'Linking…' : 'Link' }}
+              {{ (linking() ? 'admin.common.linking' : 'admin.common.link') | translate }}
             </button>
           </div>
         </div>
@@ -135,7 +140,8 @@ import { ApiService } from '../../core/services/api.service';
   `
 })
 export class AdminFanciersComponent implements OnInit {
-  private api = inject(ApiService);
+  private api  = inject(ApiService);
+  private i18n = inject(TranslationService);
 
   search       = '';
   linkedFilter = '';

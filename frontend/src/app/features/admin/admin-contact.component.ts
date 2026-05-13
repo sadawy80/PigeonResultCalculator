@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToasterService } from '../../core/services/toaster.service';
 import { ModalService } from '../../core/services/modal.service';
+import { TranslatePipe } from '../../core/i18n';
 
 interface ContactItem {
   id: string;
@@ -28,11 +29,11 @@ interface ContactItem {
 @Component({
   selector: 'app-admin-contact',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, TranslatePipe],
   template: `
     <div class="inbox-header">
-      <h1 class="inbox-title">Contact Inbox</h1>
-      <div class="inbox-count">{{ total() }} message(s)</div>
+      <h1 class="inbox-title">{{ 'admin.contact.title' | translate }}</h1>
+      <div class="inbox-count">{{ 'admin.contact.messagesCount' | translate:{ n: total() } }}</div>
     </div>
 
     <div class="inbox-controls">
@@ -41,12 +42,12 @@ interface ContactItem {
           type="button"
           class="filter-pill"
           [class.active]="activeFilter() === 'all'"
-          (click)="setFilter('all')">All</button>
+          (click)="setFilter('all')">{{ 'admin.common.all' | translate }}</button>
         <button
           type="button"
           class="filter-pill"
           [class.active]="activeFilter() === 'new'"
-          (click)="setFilter('new')">New</button>
+          (click)="setFilter('new')">{{ 'admin.contact.open' | translate }}</button>
         <button
           type="button"
           class="filter-pill"

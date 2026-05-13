@@ -1,7 +1,7 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
-    <h1 class="pr-page-header__title">Users</h1>
-    <p class="pr-page-header__subtitle">{{ total() }} platform users</p>
+    <h1 class="pr-page-header__title">{{ 'admin.users.title' | translate }}</h1>
+    <p class="pr-page-header__subtitle">{{ 'admin.users.subtitle' | translate:{ count: total() } }}</p>
   </div>
 </div>
 
@@ -12,32 +12,39 @@
 <div class="pr-card mb-4">
   <div class="flex flex-wrap gap-4 items-end">
     <div class="pr-form-group" style="flex:2;min-width:200px">
-      <label class="pr-label">Search</label>
-      <input class="pr-input" [(ngModel)]="search" placeholder="Name or email…" (keyup.enter)="onSearch()">
+      <label class="pr-label">{{ 'admin.common.search' | translate }}</label>
+      <input class="pr-input" [(ngModel)]="search" [placeholder]="'admin.users.searchPlaceholder' | translate" (keyup.enter)="onSearch()">
     </div>
     <div class="pr-form-group" style="flex:1;min-width:160px">
-      <label class="pr-label">Role</label>
+      <label class="pr-label">{{ 'admin.common.role' | translate }}</label>
       <select class="pr-select" [(ngModel)]="roleFilter" (change)="onSearch()">
-        <option value="">All Roles</option>
-        <option value="SuperAdmin">Super Admin</option>
-        <option value="FederationManager">Federation Manager</option>
-        <option value="ClubManager">Club Manager</option>
-        <option value="Fancier">Fancier</option>
+        <option value="">{{ 'admin.common.allRoles' | translate }}</option>
+        <option value="SuperAdmin">{{ 'admin.users.superAdmin' | translate }}</option>
+        <option value="FederationManager">{{ 'admin.users.federationManager' | translate }}</option>
+        <option value="ClubManager">{{ 'admin.users.clubManager' | translate }}</option>
+        <option value="Fancier">{{ 'admin.users.fancier' | translate }}</option>
       </select>
     </div>
-    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="onSearch()">Search</button>
-    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="search=''; roleFilter=''; onSearch()">Reset</button>
+    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="onSearch()">{{ 'admin.common.search' | translate }}</button>
+    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="search=''; roleFilter=''; onSearch()">{{ 'admin.common.reset' | translate }}</button>
   </div>
 </div>
 
 <div class="pr-card">
   @if (loading()) {
-    <div class="text-center py-8 text-muted">Loading...</div>
+    <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
   } @else {
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
-          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+          <tr>
+            <th>{{ 'admin.common.name' | translate }}</th>
+            <th>{{ 'admin.common.email' | translate }}</th>
+            <th>{{ 'admin.common.role' | translate }}</th>
+            <th>{{ 'admin.common.status' | translate }}</th>
+            <th>{{ 'admin.common.joined' | translate }}</th>
+            <th>{{ 'admin.common.actions' | translate }}</th>
+          </tr>
         </thead>
         <tbody>
           @for (u of users(); track u.id) {
@@ -45,19 +52,19 @@
               <td class="font-bold">{{ u.firstName }} {{ u.lastName }}</td>
               <td class="text-muted text-sm">{{ u.email }}</td>
               <td><span class="pr-badge pr-badge--info">{{ u.role }}</span></td>
-              <td><span [class]="u.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ u.isActive ? 'Active' : 'Suspended' }}</span></td>
+              <td><span [class]="u.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--error'">{{ (u.isActive ? 'admin.common.active' : 'admin.common.suspended') | translate }}</span></td>
               <td class="text-muted text-sm">{{ u.createdAt | date:'dd MMM yyyy' }}</td>
               <td>
                 <div class="flex gap-2">
-                  <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openRoleModal(u)">Role</button>
-                  <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openLimitsModal(u)">Limits</button>
+                  <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openRoleModal(u)">{{ 'admin.users.openRole' | translate }}</button>
+                  <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openLimitsModal(u)">{{ 'admin.users.openLimits' | translate }}</button>
                   @if (u.isActive) {
-                    <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleUser(u.id)">Suspend</button>
+                    <button class="pr-btn pr-btn--danger pr-btn--sm" (click)="toggleUser(u.id)">{{ 'admin.common.suspend' | translate }}</button>
                   } @else {
-                    <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="toggleUser(u.id)">Activate</button>
+                    <button class="pr-btn pr-btn--primary pr-btn--sm" (click)="toggleUser(u.id)">{{ 'admin.common.activate' | translate }}</button>
                   }
                   @if (!u.isActive) {
-                    <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-danger)" (click)="openDeleteModal(u)" title="Delete user">✕</button>
+                    <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-danger)" (click)="openDeleteModal(u)" [title]="'admin.users.deleteUser' | translate">✕</button>
                   }
                 </div>
               </td>
@@ -68,16 +75,16 @@
     </div>
 
     <div class="flex justify-between items-center mt-4">
-      <span class="text-muted text-sm">{{ total() }} users · page {{ page }} of {{ totalPages }}</span>
+      <span class="text-muted text-sm">{{ 'admin.users.usersCount' | translate:{ n: total() } }} · {{ 'admin.common.page' | translate }} {{ page }} {{ 'admin.common.of' | translate }} {{ totalPages }}</span>
       <div class="flex gap-2 items-center">
         <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-          <option [ngValue]="10">10 / page</option>
-          <option [ngValue]="25">25 / page</option>
-          <option [ngValue]="50">50 / page</option>
-          <option [ngValue]="100">100 / page</option>
+          <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+          <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+          <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+          <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
         </select>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">{{ 'admin.common.prev' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">{{ 'admin.common.next' | translate }}</button>
       </div>
     </div>
   }
@@ -87,22 +94,22 @@
 @if (showRoleModal()) {
   <div class="pr-modal-backdrop" (click)="showRoleModal.set(false)">
     <div class="pr-modal" (click)="$event.stopPropagation()">
-      <h3 class="pr-modal__title">Assign Role — {{ selectedUser()?.firstName }} {{ selectedUser()?.lastName }}</h3>
+      <h3 class="pr-modal__title">{{ 'admin.users.assignRoleTitle' | translate:{ name: (selectedUser()?.firstName + ' ' + selectedUser()?.lastName) } }}</h3>
       <div class="flex flex-col gap-4 mt-4">
         <div>
-          <label class="pr-label">Role</label>
+          <label class="pr-label">{{ 'admin.common.role' | translate }}</label>
           <select class="pr-select w-full" [(ngModel)]="assignRoleVal">
             @for (r of roles; track r) { <option [value]="r">{{ r }}</option> }
           </select>
         </div>
         <div>
-          <label class="pr-label">Federation ID (for FederationManager)</label>
-          <input class="pr-input w-full" placeholder="Leave blank if not applicable" [(ngModel)]="assignFederation">
+          <label class="pr-label">{{ 'admin.users.federationIdLabel' | translate }}</label>
+          <input class="pr-input w-full" [placeholder]="'admin.users.leaveBlank' | translate" [(ngModel)]="assignFederation">
         </div>
       </div>
       <div class="flex gap-3 justify-end mt-6">
-        <button class="pr-btn pr-btn--ghost" (click)="showRoleModal.set(false)">Cancel</button>
-        <button class="pr-btn pr-btn--primary" (click)="saveRole()">Save</button>
+        <button class="pr-btn pr-btn--ghost" (click)="showRoleModal.set(false)">{{ 'admin.common.cancel' | translate }}</button>
+        <button class="pr-btn pr-btn--primary" (click)="saveRole()">{{ 'admin.common.save' | translate }}</button>
       </div>
     </div>
   </div>
@@ -112,17 +119,17 @@
 @if (showDeleteModal()) {
   <div class="pr-modal-backdrop" (click)="showDeleteModal.set(false)">
     <div class="pr-modal" (click)="$event.stopPropagation()">
-      <h3 class="pr-modal__title" style="color:var(--pr-danger)">Delete User</h3>
+      <h3 class="pr-modal__title" style="color:var(--pr-danger)">{{ 'admin.users.deleteUser' | translate }}</h3>
       <p class="text-muted text-sm mt-2">
-        You are about to permanently delete <strong>{{ deleteUser()?.firstName }} {{ deleteUser()?.lastName }}</strong> ({{ deleteUser()?.email }}).
+        {{ 'admin.users.deleteUserBody' | translate:{ name: (deleteUser()?.firstName + ' ' + deleteUser()?.lastName), email: deleteUser()?.email } }}
       </p>
       <div class="pr-alert pr-alert--error mt-3" style="font-size:0.875rem">
-        This will delete the user account and all associated upgrade requests. Race results and pigeon records may still reference this user. This action cannot be undone.
+        {{ 'admin.users.deleteUserWarning' | translate }}
       </div>
       <div class="flex gap-3 justify-end mt-6">
-        <button class="pr-btn pr-btn--ghost" (click)="showDeleteModal.set(false)" [disabled]="deleting()">Cancel</button>
+        <button class="pr-btn pr-btn--ghost" (click)="showDeleteModal.set(false)" [disabled]="deleting()">{{ 'admin.common.cancel' | translate }}</button>
         <button class="pr-btn pr-btn--danger" (click)="confirmDelete()" [disabled]="deleting()">
-          {{ deleting() ? 'Deleting…' : 'Delete Permanently' }}
+          {{ (deleting() ? 'admin.common.deleting' : 'admin.users.deletePermanently') | translate }}
         </button>
       </div>
     </div>
@@ -133,21 +140,21 @@
 @if (showLimitsModal()) {
   <div class="pr-modal-backdrop" (click)="showLimitsModal.set(false)">
     <div class="pr-modal" (click)="$event.stopPropagation()">
-      <h3 class="pr-modal__title">Set Limits — {{ limitsUser()?.firstName }} {{ limitsUser()?.lastName }}</h3>
-      <p class="text-muted text-sm mt-1">Leave blank to use plan default. Set 0 for unlimited.</p>
+      <h3 class="pr-modal__title">{{ 'admin.users.setLimitsTitle' | translate:{ name: (limitsUser()?.firstName + ' ' + limitsUser()?.lastName) } }}</h3>
+      <p class="text-muted text-sm mt-1">{{ 'admin.users.limitsHint' | translate }}</p>
       <div class="flex flex-col gap-4 mt-4">
         <div>
-          <label class="pr-label">Max Results</label>
-          <input type="number" class="pr-input w-full" placeholder="blank = plan default" [(ngModel)]="limitMaxResults">
+          <label class="pr-label">{{ 'admin.users.maxResults' | translate }}</label>
+          <input type="number" class="pr-input w-full" [placeholder]="'admin.users.blankDefault' | translate" [(ngModel)]="limitMaxResults">
         </div>
         <div>
-          <label class="pr-label">Max Clubs</label>
-          <input type="number" class="pr-input w-full" placeholder="blank = plan default" [(ngModel)]="limitMaxClubs">
+          <label class="pr-label">{{ 'admin.users.maxClubs' | translate }}</label>
+          <input type="number" class="pr-input w-full" [placeholder]="'admin.users.blankDefault' | translate" [(ngModel)]="limitMaxClubs">
         </div>
       </div>
       <div class="flex gap-3 justify-end mt-6">
-        <button class="pr-btn pr-btn--ghost" (click)="showLimitsModal.set(false)">Cancel</button>
-        <button class="pr-btn pr-btn--primary" (click)="saveLimits()">Save</button>
+        <button class="pr-btn pr-btn--ghost" (click)="showLimitsModal.set(false)">{{ 'admin.common.cancel' | translate }}</button>
+        <button class="pr-btn pr-btn--primary" (click)="saveLimits()">{{ 'admin.common.save' | translate }}</button>
       </div>
     </div>
   </div>

@@ -3,32 +3,33 @@ import { DatePipe, NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslationService, TranslatePipe } from '../../core/i18n';
 
 const ROLE_LABELS: Record<number, string> = {
-  0: 'Pending', 1: 'Super Admin', 2: 'Federation Manager', 3: 'Club Manager', 4: 'Fancier'
+  0: 'Pending', 1: 'admin.users.superAdmin', 2: 'admin.users.federationManager', 3: 'admin.users.clubManager', 4: 'admin.users.fancier'
 };
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe, NgClass, FormsModule],
+  imports: [RouterLink, DatePipe, NgClass, FormsModule, TranslatePipe],
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>
-        <h1 class="pr-page-header__title">Dashboard</h1>
-        <p class="pr-page-header__subtitle">Super Admin · {{ today | date:'EEEE, d MMMM yyyy' }}</p>
+        <h1 class="pr-page-header__title">{{ 'admin.dashboard.title' | translate }}</h1>
+        <p class="pr-page-header__subtitle">{{ 'admin.dashboard.subtitle' | translate:{ date: ((today | date:'EEEE, d MMMM yyyy') ?? '') } }}</p>
       </div>
     </div>
 
     <!-- KPI Section 1 — People & Platform -->
-    <div class="kpi-section-label">People &amp; Platform</div>
+    <div class="kpi-section-label">{{ 'admin.dashboard.peoplePlatform' | translate }}</div>
     <div class="kpi-grid mb-2">
       @for (s of kpiPeople; track s.label) {
         <div class="pr-card pr-card--flat kpi-card">
           <div class="kpi-icon">{{ s.icon }}</div>
           <div class="kpi-body">
             <div class="kpi-value">{{ stats()[s.key] ?? '—' }}</div>
-            <div class="kpi-label">{{ s.label }}</div>
+            <div class="kpi-label">{{ s.label | translate }}</div>
           </div>
           <a [routerLink]="s.link" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
         </div>
@@ -36,14 +37,14 @@ const ROLE_LABELS: Record<number, string> = {
     </div>
 
     <!-- KPI Section 2 — People This Year -->
-    <div class="kpi-section-label kpi-section-label--sub">↳ This Year ({{ today.getFullYear() }})</div>
+    <div class="kpi-section-label kpi-section-label--sub">{{ 'admin.dashboard.thisYearArrow' | translate:{ year: today.getFullYear() } }}</div>
     <div class="kpi-grid mb-4">
       @for (s of kpiPeopleThisYear; track s.label) {
         <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
           <div class="kpi-icon">{{ s.icon }}</div>
           <div class="kpi-body">
             <div class="kpi-value">{{ stats()[s.key] ?? '—' }}</div>
-            <div class="kpi-label">{{ s.label }}</div>
+            <div class="kpi-label">{{ s.label | translate }}</div>
           </div>
           <a [routerLink]="s.link" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
         </div>
@@ -51,14 +52,14 @@ const ROLE_LABELS: Record<number, string> = {
     </div>
 
     <!-- KPI Section 3 — Activity Totals -->
-    <div class="kpi-section-label">Activity Totals</div>
+    <div class="kpi-section-label">{{ 'admin.dashboard.activityTotals' | translate }}</div>
     <div class="kpi-grid mb-2">
       @for (s of kpiActivity; track s.label) {
         <div class="pr-card pr-card--flat kpi-card">
           <div class="kpi-icon">{{ s.icon }}</div>
           <div class="kpi-body">
             <div class="kpi-value">{{ stats()[s.key] ?? '—' }}</div>
-            <div class="kpi-label">{{ s.label }}</div>
+            <div class="kpi-label">{{ s.label | translate }}</div>
           </div>
           <a [routerLink]="s.link" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
         </div>
@@ -66,14 +67,14 @@ const ROLE_LABELS: Record<number, string> = {
     </div>
 
     <!-- KPI Section 4 — Activity This Year -->
-    <div class="kpi-section-label kpi-section-label--sub">↳ This Year ({{ today.getFullYear() }})</div>
+    <div class="kpi-section-label kpi-section-label--sub">{{ 'admin.dashboard.thisYearArrow' | translate:{ year: today.getFullYear() } }}</div>
     <div class="kpi-grid mb-8">
       @for (s of kpiThisYear; track s.label) {
         <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
           <div class="kpi-icon">{{ s.icon }}</div>
           <div class="kpi-body">
             <div class="kpi-value">{{ stats()[s.key] ?? '—' }}</div>
-            <div class="kpi-label">{{ s.label }}</div>
+            <div class="kpi-label">{{ s.label | translate }}</div>
           </div>
           <a [routerLink]="s.link" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
         </div>
@@ -86,24 +87,24 @@ const ROLE_LABELS: Record<number, string> = {
       <!-- Pending Upgrade Requests -->
       <div class="pr-card">
         <div class="flex justify-between items-center mb-4">
-          <h3 style="margin:0">⬆️ Pending Upgrade Requests
+          <h3 style="margin:0">⬆️ {{ 'admin.dashboard.pendingUpgrades' | translate }}
             @if (pendingUpgrades().length) {
               <span class="upgrade-badge">{{ pendingUpgrades().length }}</span>
             }
           </h3>
-          <a routerLink="/admin/upgrade-requests" class="pr-btn pr-btn--ghost pr-btn--sm">All Requests →</a>
+          <a routerLink="/admin/upgrade-requests" class="pr-btn pr-btn--ghost pr-btn--sm">{{ 'admin.dashboard.allRequests' | translate }} →</a>
         </div>
 
         @if (upgradesLoading()) {
-          <div class="text-center py-4 text-muted text-sm">Loading…</div>
+          <div class="text-center py-4 text-muted text-sm">{{ 'admin.common.loading' | translate }}</div>
         } @else if (upgradesError()) {
           <div class="pr-alert pr-alert--error" style="padding:12px 16px;font-size:0.875rem">
-            Could not load upgrade requests — IdentityService may be unavailable.
+            {{ 'admin.dashboard.couldNotLoadUpgrades' | translate }}
           </div>
         } @else if (pendingUpgrades().length === 0) {
           <div class="pr-empty" style="padding:24px 0">
             <div class="pr-empty__icon">✅</div>
-            <div class="pr-empty__title" style="font-size:0.9rem">No pending requests</div>
+            <div class="pr-empty__title" style="font-size:0.9rem">{{ 'admin.dashboard.noPendingRequests' | translate }}</div>
           </div>
         } @else {
           <div class="upgrade-list">
@@ -112,8 +113,8 @@ const ROLE_LABELS: Record<number, string> = {
                 <div class="upgrade-item__info">
                   <div class="upgrade-item__name">{{ req.userFullName }}</div>
                   <div class="upgrade-item__meta text-muted text-sm">
-                    {{ req.userEmail }} · Requesting
-                    <span class="pr-badge pr-badge--info" style="font-size:0.65rem;padding:1px 6px">{{ roleLabel(req.requestedRole) }}</span>
+                    {{ req.userEmail }} · {{ 'admin.dashboard.requesting' | translate }}
+                    <span class="pr-badge pr-badge--info" style="font-size:0.65rem;padding:1px 6px">{{ roleLabel(req.requestedRole) | translate }}</span>
                     @if (req.federationName) {
                       · {{ req.federationName }}
                     } @else if (req.federationId) {
@@ -128,27 +129,27 @@ const ROLE_LABELS: Record<number, string> = {
                   <button class="pr-btn pr-btn--sm pr-btn--primary"
                     [disabled]="busyId() === req.id"
                     (click)="approve(req)">
-                    {{ busyId() === req.id ? '…' : '✓ Approve' }}
+                    {{ busyId() === req.id ? '…' : ('admin.dashboard.approve' | translate) }}
                   </button>
                   <button class="pr-btn pr-btn--sm pr-btn--ghost" style="color:var(--pr-error,#dc2626)"
                     [disabled]="busyId() === req.id"
                     (click)="openReject(req)">
-                    ✕ Reject
+                    ✕ {{ 'admin.dashboard.reject' | translate }}
                   </button>
                 </div>
               </div>
             }
           </div>
           <div class="pagination-row" style="margin-top:12px">
-            <span class="text-muted text-sm">{{ upgradesTotalCount() }} pending · page {{ upgradesPage() }} of {{ upgradesTotalPages() }}</span>
+            <span class="text-muted text-sm">{{ 'admin.dashboard.pendingCount' | translate:{ n: upgradesTotalCount() } }} · {{ 'admin.common.page' | translate }} {{ upgradesPage() }} {{ 'admin.common.of' | translate }} {{ upgradesTotalPages() }}</span>
             <div class="flex gap-2 items-center">
               <select class="pr-select" style="width:auto" [ngModel]="upgradesPageSize()" (ngModelChange)="upgradesChangeSize($event)">
-                <option [ngValue]="10">10 / page</option>
-                <option [ngValue]="25">25 / page</option>
-                <option [ngValue]="50">50 / page</option>
+                <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+                <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+                <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
               </select>
-              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="upgradesPage() === 1" (click)="upgradesChangePage(upgradesPage() - 1)">Prev</button>
-              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="upgradesPage() >= upgradesTotalPages()" (click)="upgradesChangePage(upgradesPage() + 1)">Next</button>
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="upgradesPage() === 1" (click)="upgradesChangePage(upgradesPage() - 1)">{{ 'admin.common.prev' | translate }}</button>
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="upgradesPage() >= upgradesTotalPages()" (click)="upgradesChangePage(upgradesPage() + 1)">{{ 'admin.common.next' | translate }}</button>
             </div>
           </div>
         }
@@ -157,14 +158,14 @@ const ROLE_LABELS: Record<number, string> = {
       <!-- Recent Events -->
       <div class="pr-card">
         <div class="flex justify-between items-center mb-4">
-          <h3 style="margin:0">📋 Recent Events</h3>
-          <a routerLink="/admin/events" class="pr-btn pr-btn--ghost pr-btn--sm">Full Log →</a>
+          <h3 style="margin:0">📋 {{ 'admin.dashboard.recentEvents' | translate }}</h3>
+          <a routerLink="/admin/events" class="pr-btn pr-btn--ghost pr-btn--sm">{{ 'admin.dashboard.fullLog' | translate }} →</a>
         </div>
 
         @if (recentEvents().length === 0) {
           <div class="pr-empty" style="padding:24px 0">
             <div class="pr-empty__icon">📋</div>
-            <div class="pr-empty__title" style="font-size:0.9rem">No events yet</div>
+            <div class="pr-empty__title" style="font-size:0.9rem">{{ 'admin.dashboard.noEventsYet' | translate }}</div>
           </div>
         } @else {
           <div class="event-list">
@@ -189,15 +190,15 @@ const ROLE_LABELS: Record<number, string> = {
             }
           </div>
           <div class="pagination-row" style="margin-top:12px">
-            <span class="text-muted text-sm">{{ eventsTotal() }} events · page {{ eventsPage() }} of {{ eventsTotalPages() }}</span>
+            <span class="text-muted text-sm">{{ 'admin.dashboard.eventsCount' | translate:{ n: eventsTotal() } }} · {{ 'admin.common.page' | translate }} {{ eventsPage() }} {{ 'admin.common.of' | translate }} {{ eventsTotalPages() }}</span>
             <div class="flex gap-2 items-center">
               <select class="pr-select" style="width:auto" [ngModel]="eventsPageSize()" (ngModelChange)="eventsChangeSize($event)">
-                <option [ngValue]="10">10 / page</option>
-                <option [ngValue]="25">25 / page</option>
-                <option [ngValue]="50">50 / page</option>
+                <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+                <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+                <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
               </select>
-              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="eventsPage() === 1" (click)="eventsChangePage(eventsPage() - 1)">Prev</button>
-              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="eventsPage() >= eventsTotalPages()" (click)="eventsChangePage(eventsPage() + 1)">Next</button>
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="eventsPage() === 1" (click)="eventsChangePage(eventsPage() - 1)">{{ 'admin.common.prev' | translate }}</button>
+              <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="eventsPage() >= eventsTotalPages()" (click)="eventsChangePage(eventsPage() + 1)">{{ 'admin.common.next' | translate }}</button>
             </div>
           </div>
         }
@@ -208,25 +209,25 @@ const ROLE_LABELS: Record<number, string> = {
     @if (rejectTarget()) {
       <div class="pr-modal-backdrop" (click)="rejectTarget.set(null)">
         <div class="pr-modal pr-modal--sm" (click)="$event.stopPropagation()">
-          <h3 class="pr-modal__title">Reject Upgrade Request</h3>
+          <h3 class="pr-modal__title">{{ 'admin.dashboard.rejectTitle' | translate }}</h3>
           <p class="pr-modal__subtitle" style="margin-top:6px">
-            <strong>{{ rejectTarget()!.userFullName }}</strong> — {{ roleLabel(rejectTarget()!.requestedRole) }}
+            <strong>{{ rejectTarget()!.userFullName }}</strong> — {{ roleLabel(rejectTarget()!.requestedRole) | translate }}
           </p>
           <hr class="pr-modal__divider">
           <div class="pr-form-group">
-            <label class="pr-label">Reason <span style="font-weight:400;color:var(--pr-text-muted)">(optional)</span></label>
-            <input class="pr-input" [(ngModel)]="rejectReason" placeholder="e.g. Incomplete information">
+            <label class="pr-label">{{ 'admin.dashboard.reason' | translate }} <span style="font-weight:400;color:var(--pr-text-muted)">{{ 'admin.common.optional' | translate }}</span></label>
+            <input class="pr-input" [(ngModel)]="rejectReason" [placeholder]="'admin.dashboard.reasonPlaceholder' | translate">
           </div>
           @if (rejectError()) {
             <div class="pr-alert pr-alert--error mt-3">{{ rejectError() }}</div>
           }
           <div class="flex gap-3 justify-end mt-4">
-            <button class="pr-btn pr-btn--ghost" (click)="rejectTarget.set(null)">Cancel</button>
+            <button class="pr-btn pr-btn--ghost" (click)="rejectTarget.set(null)">{{ 'admin.common.cancel' | translate }}</button>
             <button class="pr-btn pr-btn--primary"
               style="background:var(--pr-error,#dc2626);border-color:var(--pr-error,#dc2626)"
               [disabled]="busyId() !== null"
               (click)="confirmReject()">
-              {{ busyId() !== null ? 'Rejecting…' : 'Reject' }}
+              {{ (busyId() !== null ? 'admin.dashboard.rejecting' : 'admin.dashboard.reject') | translate }}
             </button>
           </div>
         </div>
@@ -337,41 +338,41 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   rejectError     = signal<string | null>(null);
 
   kpiPeopleThisYear = [
-    { key: 'federationsThisYear',    label: 'Federations',    icon: '🌍', link: '/admin/federations' },
-    { key: 'clubsThisYear',          label: 'Clubs',          icon: '🏟️', link: '/admin/clubs' },
-    { key: 'usersThisYear',          label: 'Users',          icon: '👥', link: '/admin/users' },
-    { key: 'fanciersThisYear',       label: 'Fanciers',       icon: '🕊️', link: '/admin/fanciers' },
-    { key: 'pigeonsThisYear',        label: 'Pigeons',        icon: '🐦', link: '/admin/pigeons' },
-    { key: 'federationSubsThisYear', label: 'Federation Subs',icon: '💳', link: '/admin/subscriptions' },
-    { key: 'clubSubsThisYear',       label: 'Club Subs',      icon: '🏷️', link: '/admin/subscriptions' },
+    { key: 'federationsThisYear',    label: 'admin.dashboard.federations',    icon: '🌍', link: '/admin/federations' },
+    { key: 'clubsThisYear',          label: 'admin.dashboard.clubs',          icon: '🏟️', link: '/admin/clubs' },
+    { key: 'usersThisYear',          label: 'admin.dashboard.users',          icon: '👥', link: '/admin/users' },
+    { key: 'fanciersThisYear',       label: 'admin.dashboard.fanciers',       icon: '🕊️', link: '/admin/fanciers' },
+    { key: 'pigeonsThisYear',        label: 'admin.dashboard.pigeons',        icon: '🐦', link: '/admin/pigeons' },
+    { key: 'federationSubsThisYear', label: 'admin.dashboard.federationSubs', icon: '💳', link: '/admin/subscriptions' },
+    { key: 'clubSubsThisYear',       label: 'admin.dashboard.clubSubs',       icon: '🏷️', link: '/admin/subscriptions' },
   ];
 
   kpiPeople = [
-    { key: 'totalFederations',        label: 'Federations',      icon: '🌍', link: '/admin/federations' },
-    { key: 'totalClubs',              label: 'Clubs',            icon: '🏟️', link: '/admin/clubs' },
-    { key: 'totalUsers',              label: 'Users',            icon: '👥', link: '/admin/users' },
-    { key: 'totalFanciers',           label: 'Fanciers',         icon: '🕊️', link: '/admin/fanciers' },
-    { key: 'totalPigeons',            label: 'Pigeons',          icon: '🐦', link: '/admin/pigeons' },
-    { key: 'federationSubscriptions', label: 'Federation Subs',  icon: '💳', link: '/admin/subscriptions' },
-    { key: 'clubSubscriptions',       label: 'Club Subs',        icon: '🏷️', link: '/admin/subscriptions' },
+    { key: 'totalFederations',        label: 'admin.dashboard.federations',    icon: '🌍', link: '/admin/federations' },
+    { key: 'totalClubs',              label: 'admin.dashboard.clubs',          icon: '🏟️', link: '/admin/clubs' },
+    { key: 'totalUsers',              label: 'admin.dashboard.users',          icon: '👥', link: '/admin/users' },
+    { key: 'totalFanciers',           label: 'admin.dashboard.fanciers',       icon: '🕊️', link: '/admin/fanciers' },
+    { key: 'totalPigeons',            label: 'admin.dashboard.pigeons',        icon: '🐦', link: '/admin/pigeons' },
+    { key: 'federationSubscriptions', label: 'admin.dashboard.federationSubs', icon: '💳', link: '/admin/subscriptions' },
+    { key: 'clubSubscriptions',       label: 'admin.dashboard.clubSubs',       icon: '🏷️', link: '/admin/subscriptions' },
   ];
 
   kpiActivity = [
-    { key: 'totalProgrammes',      label: 'Programmes',     icon: '📋', link: '/admin/programmes' },
-    { key: 'totalRaces',           label: 'Races',          icon: '🏁', link: '/admin/races' },
-    { key: 'totalResults',         label: 'Race Results',   icon: '📊', link: '/admin/races' },
-    { key: 'totalAceResults',      label: 'Ace Results',    icon: '🥇', link: '/admin/results/ace' },
-    { key: 'totalSuperAceResults', label: 'Super Ace',      icon: '🏆', link: '/admin/results/super-ace' },
-    { key: 'totalBestLoftResults', label: 'Best Loft',      icon: '🎖️', link: '/admin/results/best-loft' },
+    { key: 'totalProgrammes',      label: 'admin.dashboard.programmes', icon: '📋', link: '/admin/programmes' },
+    { key: 'totalRaces',           label: 'admin.dashboard.races',      icon: '🏁', link: '/admin/races' },
+    { key: 'totalResults',         label: 'admin.dashboard.raceResults',icon: '📊', link: '/admin/races' },
+    { key: 'totalAceResults',      label: 'admin.dashboard.aceResults', icon: '🥇', link: '/admin/results/ace' },
+    { key: 'totalSuperAceResults', label: 'admin.dashboard.superAce',   icon: '🏆', link: '/admin/results/super-ace' },
+    { key: 'totalBestLoftResults', label: 'admin.dashboard.bestLoft',   icon: '🎖️', link: '/admin/results/best-loft' },
   ];
 
   kpiThisYear = [
-    { key: 'programmesThisYear',       label: 'Programmes',  icon: '📋', link: '/admin/programmes' },
-    { key: 'racesThisYear',            label: 'Races',       icon: '🏁', link: '/admin/races' },
-    { key: 'resultsThisYear',          label: 'Race Results',icon: '📊', link: '/admin/races' },
-    { key: 'aceResultsThisYear',       label: 'Ace Results', icon: '🥇', link: '/admin/results/ace' },
-    { key: 'superAceResultsThisYear',  label: 'Super Ace',   icon: '🏆', link: '/admin/results/super-ace' },
-    { key: 'bestLoftResultsThisYear',  label: 'Best Loft',   icon: '🎖️', link: '/admin/results/best-loft' },
+    { key: 'programmesThisYear',       label: 'admin.dashboard.programmes', icon: '📋', link: '/admin/programmes' },
+    { key: 'racesThisYear',            label: 'admin.dashboard.races',      icon: '🏁', link: '/admin/races' },
+    { key: 'resultsThisYear',          label: 'admin.dashboard.raceResults',icon: '📊', link: '/admin/races' },
+    { key: 'aceResultsThisYear',       label: 'admin.dashboard.aceResults', icon: '🥇', link: '/admin/results/ace' },
+    { key: 'superAceResultsThisYear',  label: 'admin.dashboard.superAce',   icon: '🏆', link: '/admin/results/super-ace' },
+    { key: 'bestLoftResultsThisYear',  label: 'admin.dashboard.bestLoft',   icon: '🎖️', link: '/admin/results/best-loft' },
   ];
 
   ngOnInit() {

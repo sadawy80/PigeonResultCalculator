@@ -3,11 +3,12 @@ import { DatePipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-subscriptions',
   standalone: true,
-  imports: [DatePipe, FormsModule, NgClass],
+  imports: [DatePipe, FormsModule, NgClass, TranslatePipe],
   templateUrl: './admin-subscriptions.component.html',
   styleUrls: ['./admin-subscriptions.component.scss']
 })

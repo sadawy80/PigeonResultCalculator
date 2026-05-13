@@ -1,9 +1,9 @@
 <div class="pr-page-header">
   <div>
-    <h1 class="pr-page-header__title">Plans</h1>
-    <p class="pr-page-header__subtitle">Manage subscription plans and pricing</p>
+    <h1 class="pr-page-header__title">{{ 'admin.plans.title' | translate }}</h1>
+    <p class="pr-page-header__subtitle">{{ 'admin.plans.subtitle' | translate }}</p>
   </div>
-  <button class="pr-btn pr-btn--primary" (click)="openCreate()">+ New Plan</button>
+  <button class="pr-btn pr-btn--primary" (click)="openCreate()">{{ 'admin.plans.newPlan' | translate }}</button>
 </div>
 
 @if (error()) {

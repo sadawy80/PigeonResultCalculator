@@ -3,11 +3,12 @@ import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { getCountriesWithFlags, CountryOption } from '../../core/constants/countries';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-federations',
   standalone: true,
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, TranslatePipe],
   templateUrl: './admin-federations.component.html',
   styleUrls: ['./admin-federations.component.scss']
 })

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { ToasterService } from '../../core/services/toaster.service';
 import { ModalService } from '../../core/services/modal.service';
+import { TranslatePipe } from '../../core/i18n';
 
 interface BackupEntry {
   id:               string;
@@ -33,21 +34,21 @@ interface BackupEntry {
 @Component({
   selector: 'app-admin-backups',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, TranslatePipe],
   template: `
     <header class="bk-header">
-      <h1 class="bk-header__title">Database Backups</h1>
-      <p class="bk-header__subtitle">Daily automated backups to MinIO and pCloud. Restore individual records or full database.</p>
+      <h1 class="bk-header__title">{{ 'admin.backups.title' | translate }}</h1>
+      <p class="bk-header__subtitle">{{ 'admin.backups.subtitle' | translate }}</p>
     </header>
 
     <div class="bk-toolbar">
       <label class="bk-search">
         <span class="bk-search__icon" aria-hidden="true">🔍</span>
-        <input class="pr-input" type="search" placeholder="Search filename…" [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
+        <input class="pr-input" type="search" [placeholder]="'admin.backups.searchFilename' | translate" [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
       </label>
       <label class="bk-date">
         <input class="pr-input" type="date" [(ngModel)]="filterDate" (ngModelChange)="onFilterChange()" />
-        <span class="bk-date__hint">Filter by date</span>
+        <span class="bk-date__hint">{{ 'admin.backups.filterByDate' | translate }}</span>
       </label>
     </div>
 
@@ -56,7 +57,7 @@ interface BackupEntry {
       class="bk-cta"
       [disabled]="triggering()"
       (click)="triggerNow()">
-      {{ triggering() ? 'Starting…' : 'Backup Now' }}
+      {{ (triggering() ? 'admin.backups.starting' : 'admin.backups.backupNow') | translate }}
     </button>
 
     @if (error()) { <div class="pr-alert pr-alert--error mt-4">{{ error() }}</div> }
@@ -64,11 +65,11 @@ interface BackupEntry {
     <section class="bk-card mt-6">
       <div class="bk-table">
         <div class="bk-table__head" role="row">
-          <span>Backup file</span>
-          <span>Date</span>
-          <span>Size</span>
-          <span>Stored in</span>
-          <span class="bk-actions-col">Actions</span>
+          <span>{{ 'admin.backups.fileHeader' | translate }}</span>
+          <span>{{ 'admin.backups.dateHeader' | translate }}</span>
+          <span>{{ 'admin.backups.sizeHeader' | translate }}</span>
+          <span>{{ 'admin.backups.storedHeader' | translate }}</span>
+          <span class="bk-actions-col">{{ 'admin.common.actions' | translate }}</span>
         </div>
 
         @if (loading()) {

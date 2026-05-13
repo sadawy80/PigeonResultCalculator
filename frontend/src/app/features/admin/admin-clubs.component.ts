@@ -1,13 +1,14 @@
 import { Component, signal, OnInit, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { getCountriesWithFlags, CountryOption } from '../../core/constants/countries';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-clubs',
   standalone: true,
-  imports: [FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, TranslatePipe],
   templateUrl: './admin-clubs.component.html',
   styleUrls: ['./admin-clubs.component.scss']
 })

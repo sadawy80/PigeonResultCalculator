@@ -1,9 +1,9 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
-    <h1 class="pr-page-header__title">Federations</h1>
-    <p class="pr-page-header__subtitle">{{ federations().length }} federations registered</p>
+    <h1 class="pr-page-header__title">{{ 'admin.federations.title' | translate }}</h1>
+    <p class="pr-page-header__subtitle">{{ 'admin.federations.subtitle' | translate:{ count: federations().length } }}</p>
   </div>
-  <button class="pr-btn pr-btn--primary" (click)="openAdd()">+ Add Federation</button>
+  <button class="pr-btn pr-btn--primary" (click)="openAdd()">{{ 'admin.federations.addFederation' | translate }}</button>
 </div>
 
 @if (error()) {
@@ -13,34 +13,41 @@
 <div class="pr-card mb-4">
   <div class="flex flex-wrap gap-4 items-end">
     <div class="pr-form-group" style="flex:2;min-width:180px">
-      <label class="pr-label">Search</label>
-      <input class="pr-input" [(ngModel)]="listSearch" placeholder="Name, country code, manager email…" (keyup.enter)="onListSearch()">
+      <label class="pr-label">{{ 'admin.common.search' | translate }}</label>
+      <input class="pr-input" [(ngModel)]="listSearch" [placeholder]="'admin.federations.searchPlaceholder' | translate" (keyup.enter)="onListSearch()">
     </div>
     <div class="pr-form-group" style="flex:1;min-width:140px">
-      <label class="pr-label">Status</label>
+      <label class="pr-label">{{ 'admin.common.status' | translate }}</label>
       <select class="pr-select" [(ngModel)]="listStatus" (change)="onListSearch()">
-        <option value="">All</option>
-        <option value="true">Active</option>
-        <option value="false">Inactive</option>
+        <option value="">{{ 'admin.common.all' | translate }}</option>
+        <option value="true">{{ 'admin.common.active' | translate }}</option>
+        <option value="false">{{ 'admin.common.inactive' | translate }}</option>
       </select>
     </div>
-    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="onListSearch()">Search</button>
-    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="listSearch = ''; listStatus = ''; onListSearch()">Reset</button>
+    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="onListSearch()">{{ 'admin.common.search' | translate }}</button>
+    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="listSearch = ''; listStatus = ''; onListSearch()">{{ 'admin.common.reset' | translate }}</button>
   </div>
 </div>
 
 <div class="pr-card">
   @if (loading()) {
-    <div class="text-center py-8 text-muted">Loading...</div>
+    <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
   } @else {
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
-          <tr><th>Federation</th><th>Code</th><th>Slug</th><th>Manager</th><th>Status</th><th>Actions</th></tr>
+          <tr>
+            <th>{{ 'admin.common.federation' | translate }}</th>
+            <th>{{ 'admin.common.code' | translate }}</th>
+            <th>{{ 'admin.common.slug' | translate }}</th>
+            <th>{{ 'admin.common.manager' | translate }}</th>
+            <th>{{ 'admin.common.status' | translate }}</th>
+            <th>{{ 'admin.common.actions' | translate }}</th>
+          </tr>
         </thead>
         <tbody>
           @if (listPaged().length === 0) {
-            <tr><td colspan="6" class="text-center py-6 text-muted">No federations found.</td></tr>
+            <tr><td colspan="6" class="text-center py-6 text-muted">{{ 'admin.federations.noFederations' | translate }}</td></tr>
           }
           @for (c of listPaged(); track c.id) {
             <tr>
@@ -48,17 +55,17 @@
               <td><code style="font-size:0.8rem;background:var(--pr-surface-2);padding:2px 8px;border-radius:4px">{{ c.code }}</code></td>
               <td class="text-muted text-sm">{{ c.slug }}</td>
               <td class="text-sm">{{ c.managerEmail ?? '—' }}</td>
-              <td><span [ngClass]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">{{ c.isActive ? 'Active' : 'Inactive' }}</span></td>
+              <td><span [ngClass]="c.isActive ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">{{ (c.isActive ? 'admin.common.active' : 'admin.common.inactive') | translate }}</span></td>
               <td>
                 <div class="row-actions">
                   <button class="pr-btn pr-btn--outline pr-btn--sm" (click)="openManager(c)">
-                    {{ c.managerEmail ? 'Change Manager' : 'Assign Manager' }}
+                    {{ (c.managerEmail ? 'admin.clubs.changeManager' : 'admin.clubs.assignManager') | translate }}
                   </button>
                   <button class="pr-btn pr-btn--sm" [class]="c.isActive ? 'pr-btn--danger' : 'pr-btn--primary'" (click)="toggleFederation(c.id)">
-                    {{ c.isActive ? 'Deactivate' : 'Activate' }}
+                    {{ (c.isActive ? 'admin.common.deactivate' : 'admin.common.activate') | translate }}
                   </button>
                   @if (!c.isActive) {
-                    <button class="pr-btn pr-btn--danger pr-btn--sm btn-icon-only" title="Delete federation" (click)="openDelete(c)">✕</button>
+                    <button class="pr-btn pr-btn--danger pr-btn--sm btn-icon-only" [title]="'admin.federations.deleteFederation' | translate" (click)="openDelete(c)">✕</button>
                   }
                 </div>
               </td>
@@ -69,16 +76,16 @@
     </div>
 
     <div class="pagination-row">
-      <span class="text-muted text-sm">{{ listFiltered().length }} federations · page {{ listPage() }} of {{ listTotalPages() }}</span>
+      <span class="text-muted text-sm">{{ 'admin.federations.federationsCount' | translate:{ n: listFiltered().length } }} · {{ 'admin.common.page' | translate }} {{ listPage() }} {{ 'admin.common.of' | translate }} {{ listTotalPages() }}</span>
       <div class="flex gap-2 items-center">
         <select class="pr-select" style="width:auto" [ngModel]="listSize()" (ngModelChange)="listSize.set($event); onListSizeChange()">
-          <option [ngValue]="10">10 / page</option>
-          <option [ngValue]="25">25 / page</option>
-          <option [ngValue]="50">50 / page</option>
-          <option [ngValue]="100">100 / page</option>
+          <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+          <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+          <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+          <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
         </select>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="listPage() === 1" (click)="listPage.set(listPage() - 1)">Prev</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="listPage() >= listTotalPages()" (click)="listPage.set(listPage() + 1)">Next</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="listPage() === 1" (click)="listPage.set(listPage() - 1)">{{ 'admin.common.prev' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="listPage() >= listTotalPages()" (click)="listPage.set(listPage() + 1)">{{ 'admin.common.next' | translate }}</button>
       </div>
     </div>
   }
@@ -89,19 +96,19 @@
   <div class="modal-backdrop" (click)="closeAdd()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">New Federation</h2>
+        <h2 class="modal-title">{{ 'admin.federations.newFederation' | translate }}</h2>
         <button class="modal-close" (click)="closeAdd()">✕</button>
       </div>
       <div class="modal-body">
         <div class="pr-form-group">
-          <label class="pr-label">Country <span class="req">*</span></label>
+          <label class="pr-label">{{ 'admin.common.country' | translate }} <span class="req">*</span></label>
           <div class="country-combo">
             <input class="pr-input"
               [value]="fedDisplay()"
               (input)="onFedSearch($any($event.target).value)"
               (focus)="fedDropOpen.set(true)"
               (blur)="onFedBlur()"
-              placeholder="Search country…"
+              [placeholder]="'admin.clubs.searchCountry' | translate"
               autocomplete="off">
             @if (selectedFed()) {
               <span class="country-flag">{{ selectedFed()!.flag }}</span>
@@ -109,7 +116,7 @@
             @if (fedDropOpen()) {
               <div class="country-dropdown">
                 @if (filteredFeds().length === 0) {
-                  <div class="country-option country-option--empty">No countries found</div>
+                  <div class="country-option country-option--empty">{{ 'admin.clubs.noCountriesFound' | translate }}</div>
                 }
                 @for (c of filteredFeds(); track c.code) {
                   <button type="button" class="country-option"
@@ -123,24 +130,24 @@
           </div>
         </div>
         <div class="pr-form-group">
-          <label class="pr-label">Federation Name <span class="req">*</span></label>
-          <input class="pr-input" [(ngModel)]="newFed.name" placeholder="e.g. Belgium">
+          <label class="pr-label">{{ 'admin.common.name' | translate }} <span class="req">*</span></label>
+          <input class="pr-input" [(ngModel)]="newFed.name" [placeholder]="'admin.federations.federationNamePlaceholder' | translate">
         </div>
         <div class="form-row">
           <div class="pr-form-group">
-            <label class="pr-label">Code (ISO) <span class="req">*</span></label>
+            <label class="pr-label">{{ 'admin.federations.codeIso' | translate }} <span class="req">*</span></label>
             <input class="pr-input" [(ngModel)]="newFed.code" placeholder="BE" maxlength="3" style="text-transform:uppercase">
           </div>
           <div class="pr-form-group">
-            <label class="pr-label">Slug <span class="req">*</span></label>
+            <label class="pr-label">{{ 'admin.common.slug' | translate }} <span class="req">*</span></label>
             <input class="pr-input" [(ngModel)]="newFed.slug" placeholder="belgium">
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="pr-btn pr-btn--ghost" (click)="closeAdd()">Cancel</button>
+        <button class="pr-btn pr-btn--ghost" (click)="closeAdd()">{{ 'admin.common.cancel' | translate }}</button>
         <button class="pr-btn pr-btn--primary" [disabled]="saving() || !newFed.name || !newFed.code || !newFed.slug" (click)="saveFederation()">
-          {{ saving() ? 'Saving…' : 'Create Federation' }}
+          {{ (saving() ? 'admin.common.saving' : 'admin.federations.createFederation') | translate }}
         </button>
       </div>
     </div>
@@ -152,17 +159,17 @@
   <div class="modal-backdrop" (click)="closeDelete()">
     <div class="modal-card modal-card--danger" (click)="$event.stopPropagation()">
       <div class="modal-header modal-header--danger">
-        <h2 class="modal-title">Delete Federation</h2>
+        <h2 class="modal-title">{{ 'admin.federations.deleteFederation' | translate }}</h2>
         <button class="modal-close" (click)="closeDelete()">✕</button>
       </div>
       <div class="modal-body">
-        <p class="delete-warning">This action is <strong>permanent and irreversible</strong>. All data associated with this federation — including results, pages, and linked records — will be permanently deleted.</p>
+        <p class="delete-warning"><strong>{{ 'admin.common.permanent' | translate }}</strong> {{ 'admin.federations.deleteWarning' | translate }}</p>
         <p class="delete-target-name">{{ deleteTarget()?.name }}</p>
       </div>
       <div class="modal-footer">
-        <button class="pr-btn pr-btn--ghost" (click)="closeDelete()">No, Keep It</button>
+        <button class="pr-btn pr-btn--ghost" (click)="closeDelete()">{{ 'admin.common.noKeep' | translate }}</button>
         <button class="pr-btn pr-btn--danger" [disabled]="deleting()" (click)="confirmDelete()">
-          {{ deleting() ? 'Deleting…' : 'Yes, Delete' }}
+          {{ (deleting() ? 'admin.common.deleting' : 'admin.common.yesDelete') | translate }}
         </button>
       </div>
     </div>
@@ -174,24 +181,24 @@
   <div class="modal-backdrop" (click)="closeManager()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">{{ managerTarget()?.managerEmail ? 'Change Federation Manager' : 'Assign Federation Manager' }}</h2>
+        <h2 class="modal-title">{{ (managerTarget()?.managerEmail ? 'admin.federations.changeFederationManager' : 'admin.federations.assignFederationManager') | translate }}</h2>
         <button class="modal-close" (click)="closeManager()">✕</button>
       </div>
       <div class="modal-body">
-        <p class="modal-subtitle">Federation: <strong>{{ managerTarget()?.name }}</strong></p>
+        <p class="modal-subtitle">{{ 'admin.common.federation' | translate }}: <strong>{{ managerTarget()?.name }}</strong></p>
         @if (managerTarget()?.managerEmail) {
           <p style="font-size:0.85rem;color:var(--pr-text-muted);background:var(--pr-surface-2);border-radius:6px;padding:8px 12px;margin-bottom:12px">
-            Current manager: <strong>{{ managerTarget()?.managerEmail }}</strong>
+            {{ 'admin.clubs.currentManager' | translate:{ email: managerTarget()?.managerEmail } }}
           </p>
         }
 
         <div class="pr-form-group">
-          <label class="pr-label">User Email</label>
+          <label class="pr-label">{{ 'admin.common.userEmail' | translate }}</label>
           <div class="input-row">
             <input class="pr-input" type="email" [(ngModel)]="managerEmail" placeholder="user@example.com"
               (keyup.enter)="lookupUser()">
             <button class="pr-btn pr-btn--outline pr-btn--sm" [disabled]="!managerEmail || managerLooking()" (click)="lookupUser()">
-              {{ managerLooking() ? 'Looking…' : 'Look Up' }}
+              {{ (managerLooking() ? 'admin.common.looking' : 'admin.common.lookUp') | translate }}
             </button>
           </div>
         </div>
@@ -204,16 +211,16 @@
           <div class="lookup-card">
             <div class="lookup-card__name">{{ managerLookup().firstName }} {{ managerLookup().lastName }}</div>
             <div class="lookup-card__meta">{{ managerLookup().email }}</div>
-            <div class="lookup-card__role">Current role: <strong>{{ roleName(managerLookup().role) }}</strong></div>
+            <div class="lookup-card__role">{{ 'admin.clubs.currentRole' | translate:{ role: roleName(managerLookup().role) } }}</div>
           </div>
         }
       </div>
       <div class="modal-footer">
-        <button class="pr-btn pr-btn--ghost" (click)="closeManager()">Cancel</button>
+        <button class="pr-btn pr-btn--ghost" (click)="closeManager()">{{ 'admin.common.cancel' | translate }}</button>
         <button class="pr-btn pr-btn--primary"
           [disabled]="!managerLookup() || managerSaving()"
           (click)="assignManager()">
-          {{ managerSaving() ? 'Saving…' : (managerTarget()?.managerEmail ? 'Change Manager' : 'Assign as Manager') }}
+          {{ (managerSaving() ? 'admin.common.saving' : (managerTarget()?.managerEmail ? 'admin.clubs.changeManager' : 'admin.clubs.assignAsManager')) | translate }}
         </button>
       </div>
     </div>

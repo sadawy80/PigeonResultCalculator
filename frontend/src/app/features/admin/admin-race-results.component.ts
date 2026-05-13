@@ -4,18 +4,24 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { PrintApiService } from '../../core/services/print-api.service';
-import { TranslationService } from '../../core/i18n';
+import { TranslationService, TranslatePipe } from '../../core/i18n';
 
-const RACE_STATUSES: Record<number, string> = { 1: 'Draft', 2: 'Open', 3: 'Closed', 4: 'Published', 5: 'Cancelled' };
+const RACE_STATUSES: Record<number, string> = {
+  1: 'admin.races.statusDraft',
+  2: 'admin.races.statusOpen',
+  3: 'admin.races.statusClosed',
+  4: 'admin.races.statusPublished',
+  5: 'admin.races.statusCancelled'
+};
 
 @Component({
   selector: 'app-admin-race-results',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, TranslatePipe],
   template: `
     <div class="pr-page-header">
-      <h1 class="pr-page-header__title">Race Results</h1>
-      <p class="pr-page-header__subtitle">View and manage all club races</p>
+      <h1 class="pr-page-header__title">{{ 'admin.races.title' | translate }}</h1>
+      <p class="pr-page-header__subtitle">{{ 'admin.races.subtitle' | translate }}</p>
     </div>
 
     @if (error()) {
@@ -25,56 +31,61 @@ const RACE_STATUSES: Record<number, string> = { 1: 'Draft', 2: 'Open', 3: 'Close
     <div class="pr-card mb-4">
       <div class="flex flex-wrap gap-4 items-end">
         <div class="pr-form-group" style="flex:1;min-width:200px">
-          <label class="pr-label">Search</label>
-          <input class="pr-input" [(ngModel)]="search" placeholder="Race or club name…" (keyup.enter)="loadPage(1)">
+          <label class="pr-label">{{ 'admin.common.search' | translate }}</label>
+          <input class="pr-input" [(ngModel)]="search" [placeholder]="'admin.races.searchPlaceholder' | translate" (keyup.enter)="loadPage(1)">
         </div>
         <div class="pr-form-group" style="min-width:140px">
-          <label class="pr-label">Status</label>
+          <label class="pr-label">{{ 'admin.common.status' | translate }}</label>
           <select class="pr-select" [(ngModel)]="statusFilter">
-            <option [value]="null">All statuses</option>
-            <option [value]="1">Draft</option>
-            <option [value]="2">Open</option>
-            <option [value]="3">Closed</option>
-            <option [value]="4">Published</option>
-            <option [value]="5">Cancelled</option>
+            <option [value]="null">{{ 'admin.common.allStatuses' | translate }}</option>
+            <option [value]="1">{{ 'admin.races.statusDraft' | translate }}</option>
+            <option [value]="2">{{ 'admin.races.statusOpen' | translate }}</option>
+            <option [value]="3">{{ 'admin.races.statusClosed' | translate }}</option>
+            <option [value]="4">{{ 'admin.races.statusPublished' | translate }}</option>
+            <option [value]="5">{{ 'admin.races.statusCancelled' | translate }}</option>
           </select>
         </div>
         <div class="pr-form-group" style="min-width:180px">
-          <label class="pr-label">Period</label>
+          <label class="pr-label">{{ 'admin.common.filter' | translate }}</label>
           <select class="pr-select" [(ngModel)]="periodPreset" (ngModelChange)="onPeriodChange($event)">
-            <option value="">All time</option>
-            <option value="today">Today</option>
-            <option value="week">This week</option>
-            <option value="month">This month</option>
-            <option value="year">This year</option>
-            <option value="custom">Custom range</option>
+            <option value="">{{ 'admin.common.allTime' | translate }}</option>
+            <option value="today">{{ 'admin.common.today' | translate }}</option>
+            <option value="week">{{ 'admin.common.thisWeek' | translate }}</option>
+            <option value="month">{{ 'admin.common.thisMonth' | translate }}</option>
+            <option value="year">{{ 'admin.common.thisYear' | translate }}</option>
+            <option value="custom">{{ 'admin.common.customRange' | translate }}</option>
           </select>
         </div>
         @if (periodPreset === 'custom') {
           <div class="pr-form-group" style="min-width:150px">
-            <label class="pr-label">From</label>
+            <label class="pr-label">{{ 'admin.common.from' | translate }}</label>
             <input class="pr-input" type="date" [(ngModel)]="dateFrom">
           </div>
           <div class="pr-form-group" style="min-width:150px">
-            <label class="pr-label">To</label>
+            <label class="pr-label">{{ 'admin.common.to' | translate }}</label>
             <input class="pr-input" type="date" [(ngModel)]="dateTo">
           </div>
         }
-        <button class="pr-btn pr-btn--primary pr-btn--field" (click)="loadPage(1)" [disabled]="loading()">Search</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="reset()">Reset</button>
+        <button class="pr-btn pr-btn--primary pr-btn--field" (click)="loadPage(1)" [disabled]="loading()">{{ 'admin.common.search' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="reset()">{{ 'admin.common.reset' | translate }}</button>
       </div>
     </div>
 
     <div class="pr-card">
       @if (loading()) {
-        <div class="text-center py-8 text-muted">Loading…</div>
+        <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
               <tr>
-                <th>Race</th><th>Club</th><th>Status</th>
-                <th>Scheduled</th><th>Published</th><th>Results</th><th>Actions</th>
+                <th>{{ 'admin.common.race' | translate }}</th>
+                <th>{{ 'admin.common.club' | translate }}</th>
+                <th>{{ 'admin.common.status' | translate }}</th>
+                <th>{{ 'admin.common.scheduledAt' | translate }}</th>
+                <th>{{ 'admin.common.publishedAt' | translate }}</th>
+                <th>{{ 'admin.common.results' | translate }}</th>
+                <th>{{ 'admin.common.actions' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -82,39 +93,39 @@ const RACE_STATUSES: Record<number, string> = { 1: 'Draft', 2: 'Open', 3: 'Close
                 <tr>
                   <td class="font-bold">{{ r.name }}</td>
                   <td class="text-muted text-sm">{{ r.clubName }}</td>
-                  <td><span [class]="statusBadgeClass(r.status)">{{ statusLabel(r.status) }}</span></td>
+                  <td><span [class]="statusBadgeClass(r.status)">{{ statusLabel(r.status) | translate }}</span></td>
                   <td class="text-muted text-sm">{{ r.scheduledAt | date:'dd MMM yyyy' }}</td>
                   <td class="text-muted text-sm">{{ r.publishedAt | date:'dd MMM yyyy' }}</td>
                   <td class="text-sm">{{ r.resultCount }}</td>
                   <td>
                     <div class="flex gap-1 flex-wrap">
-                      <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="viewResult(r)" title="Open race detail">👁 View</button>
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="viewResult(r)" [title]="'admin.races.viewRace' | translate">👁 {{ 'admin.common.view' | translate }}</button>
                       <button class="pr-btn pr-btn--ghost pr-btn--sm"
-                        [disabled]="pdfBusy() === r.id" (click)="downloadPdf(r)" title="Download results PDF">
-                        {{ pdfBusy() === r.id ? '…' : '⬇ PDF' }}
+                        [disabled]="pdfBusy() === r.id" (click)="downloadPdf(r)" [title]="'admin.races.downloadRacePdf' | translate">
+                        {{ pdfBusy() === r.id ? '…' : ('admin.common.downloadPdf' | translate) }}
                       </button>
                       <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error,#dc2626)"
-                        (click)="confirmDelete(r)">🗑️ Delete</button>
+                        (click)="confirmDelete(r)">🗑️ {{ 'admin.common.delete' | translate }}</button>
                     </div>
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="7" class="text-center text-muted py-6">No races found</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-6">{{ 'admin.races.noRaces' | translate }}</td></tr>
               }
             </tbody>
           </table>
         </div>
         <div class="pagination-row">
-          <span class="text-muted text-sm">{{ totalCount() }} races · page {{ page() }} of {{ totalPages() }}</span>
+          <span class="text-muted text-sm">{{ 'admin.races.racesCount' | translate:{ n: totalCount() } }} · {{ 'admin.common.page' | translate }} {{ page() }} {{ 'admin.common.of' | translate }} {{ totalPages() }}</span>
           <div class="flex gap-2 items-center">
             <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-              <option [ngValue]="10">10 / page</option>
-              <option [ngValue]="25">25 / page</option>
-              <option [ngValue]="50">50 / page</option>
-              <option [ngValue]="100">100 / page</option>
+              <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+              <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+              <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+              <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
             </select>
-            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1" (click)="loadPage(page() - 1)">Prev</button>
-            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() >= totalPages()" (click)="loadPage(page() + 1)">Next</button>
+            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1" (click)="loadPage(page() - 1)">{{ 'admin.common.prev' | translate }}</button>
+            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() >= totalPages()" (click)="loadPage(page() + 1)">{{ 'admin.common.next' | translate }}</button>
           </div>
         </div>
       }
@@ -123,19 +134,18 @@ const RACE_STATUSES: Record<number, string> = { 1: 'Draft', 2: 'Open', 3: 'Close
     @if (deleteTarget()) {
       <div class="pr-modal-backdrop" (click)="deleteTarget.set(null)">
         <div class="pr-modal pr-modal--sm" (click)="$event.stopPropagation()">
-          <h3 class="pr-modal__title">Delete Race</h3>
+          <h3 class="pr-modal__title">{{ 'admin.races.deleteRaceTitle' | translate }}</h3>
           <p class="pr-modal__subtitle" style="margin-top:8px">
-            Are you sure you want to delete <strong>{{ deleteTarget()!.name }}</strong>?
-            All results for this race will also be removed and the club managers will be notified.
+            {{ 'admin.races.deleteRaceBody' | translate:{ name: deleteTarget()!.name } }}
           </p>
           @if (deleteError()) {
             <div class="pr-alert pr-alert--error mt-3">{{ deleteError() }}</div>
           }
           <div class="flex gap-3 justify-end mt-6">
-            <button class="pr-btn pr-btn--ghost" (click)="deleteTarget.set(null)">Cancel</button>
+            <button class="pr-btn pr-btn--ghost" (click)="deleteTarget.set(null)">{{ 'admin.common.cancel' | translate }}</button>
             <button class="pr-btn pr-btn--primary" style="background:var(--pr-error,#dc2626);border-color:var(--pr-error,#dc2626)"
               [disabled]="deleting()" (click)="executeDelete()">
-              {{ deleting() ? 'Deleting…' : 'Delete Race' }}
+              {{ (deleting() ? 'admin.common.deleting' : 'admin.races.deleteRace') | translate }}
             </button>
           </div>
         </div>
@@ -190,7 +200,7 @@ export class AdminRaceResultsComponent implements OnInit {
         this.page.set(p);
         this.loading.set(false);
       },
-      error: () => { this.error.set('Failed to load races.'); this.loading.set(false); }
+      error: () => { this.error.set(this.i18n.t('admin.races.loadFailed')); this.loading.set(false); }
     });
   }
 
@@ -239,7 +249,7 @@ export class AdminRaceResultsComponent implements OnInit {
         this.loadPage(this.page());
       },
       error: () => {
-        this.deleteError.set('Failed to delete race. Please try again.');
+        this.deleteError.set(this.i18n.t('admin.ace.deleteFail'));
         this.deleting.set(false);
       }
     });
@@ -262,12 +272,12 @@ export class AdminRaceResultsComponent implements OnInit {
       },
       error: () => {
         this.pdfBusy.set(null);
-        this.error.set('Failed to render PDF for this race.');
+        this.error.set(this.i18n.t('admin.races.renderPdfFail'));
       }
     });
   }
 
-  statusLabel(s: number) { return RACE_STATUSES[s] ?? 'Unknown'; }
+  statusLabel(s: number) { return RACE_STATUSES[s] ?? 'admin.races.statusDraft'; }
 
   statusBadgeClass(s: number) {
     const map: Record<number, string> = {

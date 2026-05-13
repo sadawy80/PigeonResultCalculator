@@ -4,16 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { PrintApiService } from '../../core/services/print-api.service';
-import { TranslationService } from '../../core/i18n';
+import { TranslationService, TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-ace-results',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="pr-page-header">
-      <h1 class="pr-page-header__title">Ace Pigeon Results</h1>
-      <p class="pr-page-header__subtitle">All ace pigeon rankings across clubs and programmes</p>
+      <h1 class="pr-page-header__title">{{ 'admin.ace.title' | translate }}</h1>
+      <p class="pr-page-header__subtitle">{{ 'admin.ace.subtitle' | translate }}</p>
     </div>
 
     @if (error()) {
@@ -23,24 +23,32 @@ import { TranslationService } from '../../core/i18n';
     <div class="pr-card mb-4">
       <div class="flex flex-wrap gap-4 items-end">
         <div class="pr-form-group" style="flex:1;min-width:200px">
-          <label class="pr-label">Search</label>
-          <input class="pr-input" [(ngModel)]="search" placeholder="Fancier name or ring number…" (keyup.enter)="loadPage(1)">
+          <label class="pr-label">{{ 'admin.common.search' | translate }}</label>
+          <input class="pr-input" [(ngModel)]="search" [placeholder]="'admin.ace.searchPlaceholder' | translate" (keyup.enter)="loadPage(1)">
         </div>
-        <button class="pr-btn pr-btn--primary pr-btn--field" (click)="loadPage(1)" [disabled]="loading()">Search</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="reset()">Reset</button>
+        <button class="pr-btn pr-btn--primary pr-btn--field" (click)="loadPage(1)" [disabled]="loading()">{{ 'admin.common.search' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="reset()">{{ 'admin.common.reset' | translate }}</button>
       </div>
     </div>
 
     <div class="pr-card">
       @if (loading()) {
-        <div class="text-center py-8 text-muted">Loading…</div>
+        <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
               <tr>
-                <th>Rank</th><th>Fancier</th><th>Ring #</th><th>Pigeon</th>
-                <th>Programme</th><th>Year</th><th>Club</th><th>Score</th><th>Races</th><th>Actions</th>
+                <th>{{ 'admin.common.rank' | translate }}</th>
+                <th>{{ 'admin.common.fancier' | translate }}</th>
+                <th>{{ 'admin.common.ringNumber' | translate }}</th>
+                <th>{{ 'admin.common.pigeon' | translate }}</th>
+                <th>{{ 'admin.common.programme' | translate }}</th>
+                <th>{{ 'admin.common.year' | translate }}</th>
+                <th>{{ 'admin.common.club' | translate }}</th>
+                <th>{{ 'admin.common.score' | translate }}</th>
+                <th>{{ 'admin.common.racesCount' | translate }}</th>
+                <th>{{ 'admin.common.actions' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -57,33 +65,33 @@ import { TranslationService } from '../../core/i18n';
                   <td class="text-sm text-muted">{{ r.racesEntered }}</td>
                   <td>
                     <div class="flex gap-1 flex-wrap">
-                      <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="viewResult(r)" title="Open programme results">👁 View</button>
+                      <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="viewResult(r)" [title]="'admin.ace.viewProgramme' | translate">👁 {{ 'admin.common.view' | translate }}</button>
                       <button class="pr-btn pr-btn--ghost pr-btn--sm"
-                        [disabled]="pdfBusy() === r.programmeId" (click)="downloadPdf(r)" title="Download programme PDF">
-                        {{ pdfBusy() === r.programmeId ? '…' : '⬇ PDF' }}
+                        [disabled]="pdfBusy() === r.programmeId" (click)="downloadPdf(r)" [title]="'admin.ace.downloadProgrammePdf' | translate">
+                        {{ pdfBusy() === r.programmeId ? '…' : ('admin.common.downloadPdf' | translate) }}
                       </button>
                       <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error,#dc2626)"
-                        (click)="confirmDelete(r)" title="Delete underlying programme (cascade)">🗑️ Delete</button>
+                        (click)="confirmDelete(r)" [title]="'admin.ace.deleteProgramme' | translate">🗑️ {{ 'admin.common.delete' | translate }}</button>
                     </div>
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="10" class="text-center text-muted py-6">No ace pigeon results found</td></tr>
+                <tr><td colspan="10" class="text-center text-muted py-6">{{ 'admin.ace.noResults' | translate }}</td></tr>
               }
             </tbody>
           </table>
         </div>
         <div class="pagination-row">
-          <span class="text-muted text-sm">{{ totalCount() }} results · page {{ page() }} of {{ totalPages() }}</span>
+          <span class="text-muted text-sm">{{ 'admin.ace.resultsCount' | translate:{ n: totalCount() } }} · {{ 'admin.common.page' | translate }} {{ page() }} {{ 'admin.common.of' | translate }} {{ totalPages() }}</span>
           <div class="flex gap-2 items-center">
             <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-              <option [ngValue]="10">10 / page</option>
-              <option [ngValue]="25">25 / page</option>
-              <option [ngValue]="50">50 / page</option>
-              <option [ngValue]="100">100 / page</option>
+              <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+              <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+              <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+              <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
             </select>
-            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1" (click)="loadPage(page() - 1)">Prev</button>
-            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() >= totalPages()" (click)="loadPage(page() + 1)">Next</button>
+            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1" (click)="loadPage(page() - 1)">{{ 'admin.common.prev' | translate }}</button>
+            <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() >= totalPages()" (click)="loadPage(page() + 1)">{{ 'admin.common.next' | translate }}</button>
           </div>
         </div>
       }
@@ -92,19 +100,18 @@ import { TranslationService } from '../../core/i18n';
     @if (deleteTarget()) {
       <div class="pr-modal-backdrop" (click)="deleteTarget.set(null)">
         <div class="pr-modal pr-modal--sm" (click)="$event.stopPropagation()">
-          <h3 class="pr-modal__title">Delete Programme</h3>
+          <h3 class="pr-modal__title">{{ 'admin.ace.deleteProgramme' | translate }}</h3>
           <p class="pr-modal__subtitle" style="margin-top:8px">
-            This row belongs to programme <strong>{{ deleteTarget()!.programmeName }} ({{ deleteTarget()!.programmeYear }})</strong>.
-            Deleting it removes all ace, super-ace and best-loft rankings derived from it.
+            {{ 'admin.ace.deleteProgrammeBody' | translate:{ name: deleteTarget()!.programmeName, year: deleteTarget()!.programmeYear } }}
           </p>
           @if (deleteError()) {
             <div class="pr-alert pr-alert--error mt-3">{{ deleteError() }}</div>
           }
           <div class="flex gap-3 justify-end mt-6">
-            <button class="pr-btn pr-btn--ghost" (click)="deleteTarget.set(null)">Cancel</button>
+            <button class="pr-btn pr-btn--ghost" (click)="deleteTarget.set(null)">{{ 'admin.common.cancel' | translate }}</button>
             <button class="pr-btn pr-btn--primary" style="background:var(--pr-error,#dc2626);border-color:var(--pr-error,#dc2626)"
               [disabled]="deleting()" (click)="executeDelete()">
-              {{ deleting() ? 'Deleting…' : 'Delete Programme' }}
+              {{ (deleting() ? 'admin.common.deleting' : 'admin.ace.deleteProgramme') | translate }}
             </button>
           </div>
         </div>
@@ -151,7 +158,7 @@ export class AdminAceResultsComponent implements OnInit {
         this.page.set(p);
         this.loading.set(false);
       },
-      error: () => { this.error.set('Failed to load ace pigeon results.'); this.loading.set(false); }
+      error: () => { this.error.set(this.i18n.t('admin.ace.loadFailed')); this.loading.set(false); }
     });
   }
 
@@ -173,7 +180,7 @@ export class AdminAceResultsComponent implements OnInit {
       },
       error: () => {
         this.pdfBusy.set(null);
-        this.error.set('Failed to render PDF.');
+        this.error.set(this.i18n.t('admin.ace.renderPdfFail'));
       }
     });
   }
@@ -195,7 +202,7 @@ export class AdminAceResultsComponent implements OnInit {
         this.loadPage(this.page());
       },
       error: () => {
-        this.deleteError.set('Failed to delete programme. Please try again.');
+        this.deleteError.set(this.i18n.t('admin.ace.deleteFail'));
         this.deleting.set(false);
       }
     });

@@ -2,11 +2,12 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-link-requests',
   standalone: true,
-  imports: [DatePipe, FormsModule, NgClass],
+  imports: [DatePipe, FormsModule, NgClass, TranslatePipe],
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-title  { font-size: 1.5rem; font-weight: 700; margin: 0; }
@@ -45,7 +46,7 @@ import { ApiService } from '../../core/services/api.service';
   `],
   template: `
     <div class="page-header">
-      <h1 class="page-title">PigeonLoftManager Link Requests</h1>
+      <h1 class="page-title">{{ 'admin.links.title' | translate }}</h1>
     </div>
 
     @if (error()) {
@@ -55,9 +56,9 @@ import { ApiService } from '../../core/services/api.service';
     <div class="pr-card mb-4">
       <div class="flex flex-wrap gap-4 items-end">
         <div class="pr-form-group" style="flex:1;min-width:160px">
-          <label class="pr-label">Status</label>
+          <label class="pr-label">{{ 'admin.common.status' | translate }}</label>
           <select class="pr-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
-            <option value="">All</option>
+            <option value="">{{ 'admin.common.all' | translate }}</option>
             <option value="0">Pending</option>
             <option value="1">Approved</option>
             <option value="2">Rejected</option>

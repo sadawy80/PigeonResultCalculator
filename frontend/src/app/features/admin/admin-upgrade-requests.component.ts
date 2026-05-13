@@ -2,11 +2,12 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-upgrade-requests',
   standalone: true,
-  imports: [DatePipe, FormsModule, NgClass],
+  imports: [DatePipe, FormsModule, NgClass, TranslatePipe],
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-title  { font-size: 1.5rem; font-weight: 700; margin: 0; }
@@ -48,7 +49,7 @@ import { ApiService } from '../../core/services/api.service';
   `],
   template: `
     <div class="page-header">
-      <h1 class="page-title">Role Upgrade Requests</h1>
+      <h1 class="page-title">{{ 'admin.upgrades.title' | translate }}</h1>
     </div>
 
     @if (error()) {
@@ -58,26 +59,26 @@ import { ApiService } from '../../core/services/api.service';
     <div class="pr-card mb-4">
       <div class="flex flex-wrap gap-4 items-end">
         <div class="pr-form-group" style="flex:1;min-width:160px">
-          <label class="pr-label">Federation</label>
+          <label class="pr-label">{{ 'admin.common.federation' | translate }}</label>
           <select class="pr-select" [(ngModel)]="fedFilter" (change)="onFilterChange()">
-            <option value="">All Federations</option>
+            <option value="">{{ 'admin.common.allFederations' | translate }}</option>
             @for (f of federations(); track f.id) {
               <option [value]="f.id">{{ f.name }}</option>
             }
           </select>
         </div>
         <div class="pr-form-group" style="flex:1;min-width:140px">
-          <label class="pr-label">Status</label>
+          <label class="pr-label">{{ 'admin.common.status' | translate }}</label>
           <select class="pr-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
-            <option value="">All</option>
-            <option value="0">Pending</option>
-            <option value="1">Approved</option>
-            <option value="2">Rejected</option>
-            <option value="3">Revoked</option>
+            <option value="">{{ 'admin.common.all' | translate }}</option>
+            <option value="0">{{ 'admin.upgrades.pending' | translate }}</option>
+            <option value="1">{{ 'admin.upgrades.approved' | translate }}</option>
+            <option value="2">{{ 'admin.upgrades.rejected' | translate }}</option>
+            <option value="3">{{ 'admin.links.revoked' | translate }}</option>
             <option value="4">Admin Revoked</option>
           </select>
         </div>
-        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="fedFilter=''; statusFilter=''; onFilterChange()">Reset</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="fedFilter=''; statusFilter=''; onFilterChange()">{{ 'admin.common.reset' | translate }}</button>
       </div>
     </div>
 

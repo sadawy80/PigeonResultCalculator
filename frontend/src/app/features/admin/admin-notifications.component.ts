@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 type Severity = 'success' | 'info' | 'warning' | 'alert';
 
@@ -17,11 +18,11 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
 @Component({
   selector: 'app-admin-notifications',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, TranslatePipe],
   template: `
     <div class="pr-page-header notif-page-header">
       <div>
-        <h1 class="pr-page-header__title">Notifications</h1>
+        <h1 class="pr-page-header__title">{{ 'admin.notifications.title' | translate }}</h1>
         <p class="pr-page-header__subtitle">{{ unreadCount() }} unread · {{ total() }} total</p>
       </div>
       <div class="notif-header-actions">
@@ -30,7 +31,7 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
           <span>Unread only</span>
         </label>
         @if (unreadCount() > 0) {
-          <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="markAllRead()" [disabled]="busy()">Mark all read</button>
+          <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="markAllRead()" [disabled]="busy()">{{ 'admin.notifications.markAllRead' | translate }}</button>
         }
       </div>
     </div>

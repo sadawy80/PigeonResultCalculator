@@ -2,11 +2,12 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, TranslatePipe],
   templateUrl: './admin-users.component.html',
   styleUrls: ['./admin-users.component.scss']
 })

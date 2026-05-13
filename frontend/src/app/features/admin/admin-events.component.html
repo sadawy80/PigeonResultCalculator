@@ -1,6 +1,6 @@
 <div class="pr-page-header">
-  <h1 class="pr-page-header__title">Event Log</h1>
-  <p class="pr-page-header__subtitle">Immutable audit trail of all platform domain events</p>
+  <h1 class="pr-page-header__title">{{ 'admin.events.title' | translate }}</h1>
+  <p class="pr-page-header__subtitle">{{ 'admin.events.subtitle' | translate }}</p>
 </div>
 
 @if (error()) {
@@ -10,9 +10,9 @@
 <div class="pr-card mb-4">
   <div class="flex flex-wrap gap-4 items-end">
     <div class="pr-form-group" style="flex:2;min-width:200px">
-      <label class="pr-label">Action</label>
+      <label class="pr-label">{{ 'admin.events.action' | translate }}</label>
       <select class="pr-select" [(ngModel)]="actionFilter" (change)="onFilter()">
-        <option value="">All Actions</option>
+        <option value="">{{ 'admin.common.all' | translate }}</option>
         <option value="LOGIN">Login</option>
         <option value="LOGIN_FAILED">Login Failed</option>
         <option value="FEDERATION_CREATED">Federation Created</option>
@@ -27,29 +27,35 @@
       </select>
     </div>
     <div class="pr-form-group" style="flex:1;min-width:160px">
-      <label class="pr-label">Entity Type</label>
+      <label class="pr-label">{{ 'admin.events.entity' | translate }}</label>
       <select class="pr-select" [(ngModel)]="entityTypeFilter" (change)="onFilter()">
-        <option value="">All Types</option>
-        <option value="User">User</option>
-        <option value="Federation">Federation</option>
-        <option value="Club">Club</option>
-        <option value="Subscription">Subscription</option>
-        <option value="UpgradeRequest">Upgrade Request</option>
+        <option value="">{{ 'admin.common.all' | translate }}</option>
+        <option value="User">{{ 'admin.dashboard.users' | translate }}</option>
+        <option value="Federation">{{ 'admin.common.federation' | translate }}</option>
+        <option value="Club">{{ 'admin.common.club' | translate }}</option>
+        <option value="Subscription">{{ 'admin.common.subscription' | translate }}</option>
+        <option value="UpgradeRequest">{{ 'admin.upgrades.title' | translate }}</option>
       </select>
     </div>
-    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="actionFilter=''; entityTypeFilter=''; onFilter()">Reset</button>
-    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="load()">↻ Refresh</button>
+    <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="actionFilter=''; entityTypeFilter=''; onFilter()">{{ 'admin.common.reset' | translate }}</button>
+    <button class="pr-btn pr-btn--primary pr-btn--field" (click)="load()">↻ {{ 'admin.common.search' | translate }}</button>
   </div>
 </div>
 
 <div class="pr-card">
   @if (loading()) {
-    <div class="text-center py-8 text-muted">Loading...</div>
+    <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
   } @else {
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
-          <tr><th>Event</th><th>Triggered By</th><th>Aggregate</th><th>Timestamp</th><th>Status</th></tr>
+          <tr>
+            <th>{{ 'admin.events.action' | translate }}</th>
+            <th>{{ 'admin.events.triggeredBy' | translate }}</th>
+            <th>{{ 'admin.events.entity' | translate }}</th>
+            <th>{{ 'admin.events.when' | translate }}</th>
+            <th>{{ 'admin.events.severity' | translate }}</th>
+          </tr>
         </thead>
         <tbody>
           @for (ev of events(); track ev.id) {
@@ -70,16 +76,16 @@
     </div>
 
     <div class="flex justify-between items-center mt-4">
-      <span class="text-muted text-sm">{{ total() }} events · page {{ page }} of {{ totalPages }}</span>
+      <span class="text-muted text-sm">{{ 'admin.dashboard.eventsCount' | translate:{ n: total() } }} · {{ 'admin.common.page' | translate }} {{ page }} {{ 'admin.common.of' | translate }} {{ totalPages }}</span>
       <div class="flex gap-2 items-center">
         <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-          <option [ngValue]="10">10 / page</option>
-          <option [ngValue]="25">25 / page</option>
-          <option [ngValue]="50">50 / page</option>
-          <option [ngValue]="100">100 / page</option>
+          <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+          <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+          <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+          <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
         </select>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">{{ 'admin.common.prev' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">{{ 'admin.common.next' | translate }}</button>
       </div>
     </div>
   }

@@ -2,6 +2,7 @@ import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 interface PlanCard {
   id: string;
@@ -63,7 +64,7 @@ function groupByTier(cards: PlanCard[]): TierGroup[] {
 @Component({
   selector: 'app-admin-plans',
   standalone: true,
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, TranslatePipe],
   templateUrl: './admin-plans.component.html',
   styleUrls: ['./admin-plans.component.scss']
 })
