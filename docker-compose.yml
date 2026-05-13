@@ -6,6 +6,22 @@ name: prc
 #  Infrastructure:  rabbitmq, sqlserver, redis, seq
 #  Services:        api-gateway + 9 domain services + notification worker
 #  Observability:   prometheus, grafana, loki, promtail, alertmanager
+#
+#  Multi-arch (linux/amd64 + linux/arm64):
+#    All .NET service images use mcr.microsoft.com/dotnet/{sdk,aspnet}:9.0-alpine
+#    which ship multi-arch manifests. RenderingService stays on the debian-based
+#    aspnet:9.0 image (Chromium + fonts) — also multi-arch via apt.
+#
+#    Single-arch host build (default — matches the host CPU):
+#      docker compose build
+#
+#    Cross-build for ARM64 from an x86_64 dev box (requires QEMU + buildx):
+#      docker buildx create --use --name prc-builder           # one-time
+#      docker buildx bake -f docker-compose.yml --set "*.platform=linux/arm64" --load
+#
+#    Multi-arch publish (push both archs in one manifest):
+#      docker buildx bake -f docker-compose.yml \
+#        --set "*.platform=linux/amd64,linux/arm64" --push
 # ─────────────────────────────────────────────────────────────────────────────
 
 x-svc-env: &svc-env
@@ -21,6 +37,25 @@ x-svc-env: &svc-env
   Consul__Address: http://consul:8500
   Serilog__MinimumLevel__Override__MassTransit: Warning
   App__FrontendUrl: https://localhost:4300
+  # ── .NET runtime memory tuning (applies to every PRC service) ───────────────
+  #   GCDynamicAdaptationMode=1 → DATAS: server-GC heap auto-tunes to container limit
+  #   GCConserveMemory=9       → most aggressive heap shrinkage (range 0-9)
+  #   TieredPGO=1              → dynamic profile-guided JIT (default in .NET 9, explicit here)
+  DOTNET_GCDynamicAdaptationMode: "1"
+  DOTNET_GCConserveMemory: "9"
+  DOTNET_TieredPGO: "1"
+
+# Shared resource cap for every .NET microservice. 512M is plenty for a
+# right-sized ASP.NET Core process at idle (~60-150M) and leaves headroom
+# for bursts. Honored by docker-compose v2 in both swarm and non-swarm
+# modes; per-service overrides in docker-compose.prod.yml take precedence.
+x-svc-resources: &svc-resources
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+      reservations:
+        memory: 96M
 
 x-logging: &default-logging
   driver: json-file
@@ -154,6 +189,7 @@ services:
     restart: unless-stopped
     ports:
       - "9500:9500"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9500
@@ -167,7 +203,7 @@ services:
       logging: promtail
       service: api-gateway
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9500'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9500" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -182,6 +218,7 @@ services:
     restart: unless-stopped
     ports:
       - "9501:9501"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9501
@@ -195,7 +232,7 @@ services:
       logging: promtail
       service: identity-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9501'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9501" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -210,6 +247,7 @@ services:
     restart: unless-stopped
     ports:
       - "9502:9502"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9502
@@ -225,7 +263,7 @@ services:
       logging: promtail
       service: club-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9502'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9502" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -240,6 +278,7 @@ services:
     restart: unless-stopped
     ports:
       - "9503:9503"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9503
@@ -253,7 +292,7 @@ services:
       logging: promtail
       service: race-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9503'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9503" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -268,6 +307,7 @@ services:
     restart: unless-stopped
     ports:
       - "9504:9504"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9504
@@ -283,7 +323,7 @@ services:
       logging: promtail
       service: federation-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9504'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9504" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -298,6 +338,7 @@ services:
     restart: unless-stopped
     ports:
       - "9505:9505"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9505
@@ -311,7 +352,7 @@ services:
       logging: promtail
       service: rendering-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9505'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9505" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -326,6 +367,7 @@ services:
     restart: unless-stopped
     ports:
       - "9506:9506"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9506
@@ -339,7 +381,7 @@ services:
       logging: promtail
       service: integration-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9506'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9506" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -354,6 +396,7 @@ services:
     restart: unless-stopped
     ports:
       - "9507:9507"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9507
@@ -370,7 +413,7 @@ services:
       logging: promtail
       service: admin-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9507'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9507" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -385,6 +428,7 @@ services:
     restart: unless-stopped
     ports:
       - "9509:9509"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9509
@@ -398,7 +442,7 @@ services:
       logging: promtail
       service: subscription-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9509'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9509" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -413,6 +457,7 @@ services:
     restart: unless-stopped
     ports:
       - "9510:9510"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9510
@@ -437,7 +482,7 @@ services:
       logging: promtail
       service: backup-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9510'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9510" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -452,6 +497,7 @@ services:
     restart: unless-stopped
     ports:
       - "9512:9512"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9512
@@ -471,7 +517,7 @@ services:
       logging: promtail
       service: file-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9512'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9512" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -486,6 +532,7 @@ services:
     restart: unless-stopped
     ports:
       - "9511:9511"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9511
@@ -499,7 +546,7 @@ services:
       logging: promtail
       service: audit-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9511'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9511" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -512,6 +559,7 @@ services:
       dockerfile: NotificationService/Dockerfile
     container_name: prc-notifications
     restart: unless-stopped
+    <<: *svc-resources
     environment:
       <<: *svc-env
       Email__Host: ${SMTP_HOST:-localhost}
@@ -536,6 +584,7 @@ services:
     restart: unless-stopped
     ports:
       - "9508:9508"
+    <<: *svc-resources
     environment:
       <<: *svc-env
       ASPNETCORE_URLS: http://+:9508
@@ -548,7 +597,7 @@ services:
       logging: promtail
       service: public-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9508'" ]
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 9508" ]
       interval: 15s
       timeout: 5s
       retries: 5

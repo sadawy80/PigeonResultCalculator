@@ -1,20 +1,22 @@
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /app
-
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# syntax=docker/dockerfile:1.7
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
+
 COPY ["Common/Common.csproj", "Common/"]
 COPY ["NotificationService/NotificationService.csproj", "NotificationService/"]
-RUN dotnet restore "NotificationService/NotificationService.csproj"
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore "NotificationService/NotificationService.csproj"
+
 COPY Common/ Common/
 COPY NotificationService/ NotificationService/
-WORKDIR "/src/NotificationService"
-RUN dotnet build "NotificationService.csproj" -c Release -o /app/build
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet publish "NotificationService/NotificationService.csproj" \
+        -c Release \
+        -o /app/publish \
+        --no-restore \
+        /p:UseAppHost=false
 
-FROM build AS publish
-RUN dotnet publish "NotificationService.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "PRC.NotificationService.dll"]

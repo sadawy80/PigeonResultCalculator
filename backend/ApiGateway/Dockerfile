@@ -1,20 +1,23 @@
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+# syntax=docker/dockerfile:1.7
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
+WORKDIR /src
+
+COPY ["Common/Common.csproj", "Common/"]
+COPY ["ApiGateway/ApiGateway.csproj", "ApiGateway/"]
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore "ApiGateway/ApiGateway.csproj"
+
+COPY Common/ Common/
+COPY ApiGateway/ ApiGateway/
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet publish "ApiGateway/ApiGateway.csproj" \
+        -c Release \
+        -o /app/publish \
+        --no-restore \
+        /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
 WORKDIR /app
 EXPOSE 9500
-
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-COPY ["ApiGateway/ApiGateway.csproj", "ApiGateway/"]
-COPY ["Common/Common.csproj", "Common/"]
-RUN dotnet restore "ApiGateway/ApiGateway.csproj"
-COPY . .
-WORKDIR "/src/ApiGateway"
-RUN dotnet build "ApiGateway.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "ApiGateway.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "PRC.ApiGateway.dll"]
