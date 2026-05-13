@@ -4,52 +4,53 @@ import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { NgIf, NgClass, NgFor } from '@angular/common';
 import { AuthService } from '../../core/services/services';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe, TranslationService } from '../../core/i18n';
 
 // ── Login Component ───────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgIf, NgClass],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="auth-shell">
       <div class="auth-panel">
         <div class="auth-brand">
           <div class="auth-brand__icon">🕊️</div>
           <h1 class="auth-brand__title">Pigeon Result Calculator</h1>
-          <p class="auth-brand__sub">Professional results management for racing clubs</p>
+          <p class="auth-brand__sub">{{ 'auth.professionalMgmt' | translate }}</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
-          <h2 class="auth-form__heading">Sign In</h2>
+          <h2 class="auth-form__heading">{{ 'auth.signIn' | translate }}</h2>
 
           @if (error()) {
             <div class="pr-alert pr-alert--error">{{ error() }}</div>
           }
 
           <div class="pr-form-group">
-            <label class="pr-label">Email</label>
+            <label class="pr-label">{{ 'auth.email' | translate }}</label>
             <input class="pr-input" type="email" formControlName="email" placeholder="you@example.com" autocomplete="email">
           </div>
 
           <div class="pr-form-group">
-            <label class="pr-label">Password</label>
+            <label class="pr-label">{{ 'auth.password' | translate }}</label>
             <input class="pr-input" type="password" formControlName="password" placeholder="••••••••" autocomplete="current-password">
           </div>
 
           <div style="display:flex;justify-content:flex-end">
-            <a routerLink="/auth/forgot-password" class="pr-link" style="font-size:0.875rem">Forgot password?</a>
+            <a routerLink="/auth/forgot-password" class="pr-link" style="font-size:0.875rem">{{ 'auth.forgotPassword' | translate }}</a>
           </div>
 
           <button class="pr-btn pr-btn--primary w-full"
                   type="submit"
                   [disabled]="loading() || form.invalid">
             @if (loading()) { <span class="pr-spinner" style="width:16px;height:16px"></span> }
-            Sign In
+            {{ 'auth.signIn' | translate }}
           </button>
 
           <p class="auth-form__footer">
-            Have an invitation? <a routerLink="/auth/accept-invitation">Accept it here</a>
+            {{ 'auth.invitationPrompt' | translate }} <a routerLink="/auth/accept-invitation">{{ 'auth.acceptHere' | translate }}</a>
           </p>
         </form>
       </div>
@@ -57,7 +58,7 @@ import { ApiService } from '../../core/services/api.service';
       <div class="auth-visual">
         <div class="auth-visual__content">
           <blockquote class="auth-quote">
-            "Speed, precision, glory — every second counts."
+            {{ 'auth.signInQuote' | translate }}
           </blockquote>
           <div class="auth-visual__dots">
             @for (d of [1,2,3,4,5]; track d) {
@@ -119,8 +120,9 @@ import { ApiService } from '../../core/services/api.service';
   `]
 })
 export class LoginComponent {
-  private fb = inject(FormBuilder);
+  private fb   = inject(FormBuilder);
   private auth = inject(AuthService);
+  private i18n = inject(TranslationService);
 
   form = this.fb.group({
     email:    ['', [Validators.required, Validators.email]],
@@ -138,7 +140,7 @@ export class LoginComponent {
     this.auth.login(email!, password!).subscribe({
       next: () => this.loading.set(false),
       error: (err) => {
-        this.error.set(err?.error?.message ?? 'Invalid email or password.');
+        this.error.set(err?.error?.message ?? this.i18n.t('auth.loginError'));
         this.loading.set(false);
       }
     });
@@ -150,31 +152,30 @@ export class LoginComponent {
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="auth-shell">
       <div class="auth-panel">
         <div class="auth-brand">
           <div class="auth-brand__icon">🕊️</div>
           <h1 class="auth-brand__title">Pigeon Result Calculator</h1>
-          <p class="auth-brand__sub">Create your account</p>
+          <p class="auth-brand__sub">{{ 'auth.createYourAccount' | translate }}</p>
         </div>
 
         @if (submitted()) {
           <div class="pending-card">
             <div class="pending-card__icon">✅</div>
-            <h2 class="pending-card__title">Account created!</h2>
+            <h2 class="pending-card__title">{{ 'auth.accountCreated' | translate }}</h2>
             <p class="pending-card__body">
-              You're signed up as a viewer — you can browse and view race results right away.
-              Want to manage a club or federation? Submit a role upgrade request after signing in.
+              {{ 'auth.accountCreatedBody' | translate }}
             </p>
             <a routerLink="/auth/login" class="pr-btn pr-btn--primary" style="margin-top:8px">
-              Sign In
+              {{ 'auth.signIn' | translate }}
             </a>
           </div>
         } @else {
           <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
-            <h2 class="auth-form__heading">Get Started</h2>
+            <h2 class="auth-form__heading">{{ 'auth.getStarted' | translate }}</h2>
 
             @if (error()) {
               <div class="pr-alert pr-alert--error">{{ error() }}</div>
@@ -182,37 +183,37 @@ export class LoginComponent {
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
               <div class="pr-form-group">
-                <label class="pr-label">First Name</label>
-                <input class="pr-input" formControlName="firstName" placeholder="John" autocomplete="given-name">
+                <label class="pr-label">{{ 'auth.firstName' | translate }}</label>
+                <input class="pr-input" formControlName="firstName" autocomplete="given-name">
               </div>
               <div class="pr-form-group">
-                <label class="pr-label">Last Name</label>
-                <input class="pr-input" formControlName="lastName" placeholder="Smith" autocomplete="family-name">
+                <label class="pr-label">{{ 'auth.lastName' | translate }}</label>
+                <input class="pr-input" formControlName="lastName" autocomplete="family-name">
               </div>
             </div>
 
             <div class="pr-form-group">
-              <label class="pr-label">Email</label>
+              <label class="pr-label">{{ 'auth.email' | translate }}</label>
               <input class="pr-input" type="email" formControlName="email" placeholder="you@example.com" autocomplete="email">
             </div>
 
             <div class="pr-form-group">
-              <label class="pr-label">Password</label>
-              <input class="pr-input" type="password" formControlName="password" placeholder="Min 8 characters" autocomplete="new-password">
+              <label class="pr-label">{{ 'auth.password' | translate }}</label>
+              <input class="pr-input" type="password" formControlName="password" autocomplete="new-password">
             </div>
 
             <button class="pr-btn pr-btn--primary w-full"
                     type="submit"
                     [disabled]="loading() || form.invalid">
               @if (loading()) { <span class="pr-spinner" style="width:16px;height:16px"></span> }
-              Create Account
+              {{ 'auth.registerSubmit' | translate }}
             </button>
 
             <p class="auth-form__footer">
-              Already have an account? <a routerLink="/auth/login">Sign in</a>
+              {{ 'auth.haveAccount' | translate }} <a routerLink="/auth/login">{{ 'auth.signIn' | translate }}</a>
             </p>
             <p class="auth-form__footer">
-              Have an invitation? <a routerLink="/auth/accept-invitation">Accept it here</a>
+              {{ 'auth.invitationPrompt' | translate }} <a routerLink="/auth/accept-invitation">{{ 'auth.acceptHere' | translate }}</a>
             </p>
           </form>
         }
@@ -221,7 +222,7 @@ export class LoginComponent {
       <div class="auth-visual">
         <div class="auth-visual__content">
           <blockquote class="auth-quote">
-            "Manage your club, publish results, celebrate champions."
+            {{ 'auth.registerQuote' | translate }}
           </blockquote>
           <div class="auth-visual__dots">
             @for (d of [1,2,3,4,5]; track d) {
@@ -277,8 +278,9 @@ export class LoginComponent {
   `]
 })
 export class RegisterComponent {
-  private fb  = inject(FormBuilder);
-  private api = inject(ApiService);
+  private fb   = inject(FormBuilder);
+  private api  = inject(ApiService);
+  private i18n = inject(TranslationService);
 
   form = this.fb.group({
     firstName: ['', Validators.required],
@@ -303,7 +305,7 @@ export class RegisterComponent {
     }).subscribe({
       next: () => { this.submitted.set(true); },
       error: (e: any) => {
-        this.error.set(e?.error?.message ?? 'Registration failed. Please try again.');
+        this.error.set(e?.error?.message ?? this.i18n.t('errors.serverError'));
         this.loading.set(false);
       }
     });
@@ -315,14 +317,14 @@ export class RegisterComponent {
 @Component({
   selector: 'app-accept-invitation',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="auth-shell">
       <div class="auth-panel">
         <div class="auth-brand">
           <div class="auth-brand__icon">🕊️</div>
-          <h1 class="auth-brand__title">Join the Club</h1>
-          <p class="auth-brand__sub">Complete your registration</p>
+          <h1 class="auth-brand__title">{{ 'auth.acceptInviteTitle' | translate }}</h1>
+          <p class="auth-brand__sub">{{ 'auth.acceptInviteSub' | translate }}</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
@@ -330,36 +332,36 @@ export class RegisterComponent {
           @if (success()) { <div class="pr-alert pr-alert--success">{{ success() }}</div> }
 
           <div class="pr-form-group">
-            <label class="pr-label">Invitation Token</label>
-            <input class="pr-input" formControlName="token" placeholder="Paste your invitation token">
+            <label class="pr-label">{{ 'auth.acceptHere' | translate }}</label>
+            <input class="pr-input" formControlName="token">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
             <div class="pr-form-group">
-              <label class="pr-label">First Name</label>
-              <input class="pr-input" formControlName="firstName" placeholder="John">
+              <label class="pr-label">{{ 'auth.firstName' | translate }}</label>
+              <input class="pr-input" formControlName="firstName">
             </div>
             <div class="pr-form-group">
-              <label class="pr-label">Last Name</label>
-              <input class="pr-input" formControlName="lastName" placeholder="Smith">
+              <label class="pr-label">{{ 'auth.lastName' | translate }}</label>
+              <input class="pr-input" formControlName="lastName">
             </div>
           </div>
           <div class="pr-form-group">
-            <label class="pr-label">Email</label>
+            <label class="pr-label">{{ 'auth.email' | translate }}</label>
             <input class="pr-input" type="email" formControlName="email" placeholder="you@example.com">
           </div>
           <div class="pr-form-group">
-            <label class="pr-label">Password</label>
-            <input class="pr-input" type="password" formControlName="password" placeholder="Min 8 characters">
+            <label class="pr-label">{{ 'auth.password' | translate }}</label>
+            <input class="pr-input" type="password" formControlName="password">
           </div>
 
           <button class="pr-btn pr-btn--primary w-full"
                   type="submit" [disabled]="loading() || form.invalid">
             @if (loading()) { <span class="pr-spinner" style="width:16px;height:16px"></span> }
-            Create Account
+            {{ 'auth.acceptInviteSubmit' | translate }}
           </button>
 
           <p class="auth-form__footer">
-            Already have an account? <a routerLink="/auth/login">Sign in</a>
+            {{ 'auth.haveAccount' | translate }} <a routerLink="/auth/login">{{ 'auth.signIn' | translate }}</a>
           </p>
         </form>
       </div>
@@ -377,8 +379,9 @@ export class RegisterComponent {
   `]
 })
 export class AcceptInvitationComponent {
-  private fb = inject(FormBuilder);
+  private fb   = inject(FormBuilder);
   private auth = inject(AuthService);
+  private i18n = inject(TranslationService);
 
   form = this.fb.group({
     token:     ['', Validators.required],
@@ -403,8 +406,8 @@ export class AcceptInvitationComponent {
       role: 4, // Fancier
       invitationToken: v.token!
     }).subscribe({
-      next: () => { this.success.set('Account created! Signing you in...'); },
-      error: (e: any) => { this.error.set(e?.error?.message ?? 'Registration failed.'); this.loading.set(false); }
+      next: () => { this.success.set(this.i18n.t('auth.accountCreated')); },
+      error: (e: any) => { this.error.set(e?.error?.message ?? this.i18n.t('auth.acceptInviteFailed')); this.loading.set(false); }
     });
   }
 }
@@ -414,7 +417,7 @@ export class AcceptInvitationComponent {
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="auth-shell-center">
       <div class="auth-card">
@@ -426,19 +429,19 @@ export class AcceptInvitationComponent {
         @if (sent()) {
           <div class="auth-success">
             <div class="success-icon">✉️</div>
-            <h2>Check your email</h2>
-            <p>If an account exists for <strong>{{ emailSent() }}</strong>, you will receive a password reset link shortly.</p>
-            <a routerLink="/auth/login" class="pr-btn pr-btn--secondary" style="margin-top:16px">Back to Sign In</a>
+            <h2>{{ 'auth.resetSent' | translate }}</h2>
+            <p>{{ 'auth.resetSent' | translate }} — <strong>{{ emailSent() }}</strong></p>
+            <a routerLink="/auth/login" class="pr-btn pr-btn--secondary" style="margin-top:16px">{{ 'auth.backToLogin' | translate }}</a>
           </div>
         } @else {
           <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
-            <h2 class="auth-form__heading">Forgot Password</h2>
-            <p class="auth-form__sub">Enter your email address and we'll send you a reset link.</p>
+            <h2 class="auth-form__heading">{{ 'auth.forgotTitle' | translate }}</h2>
+            <p class="auth-form__sub">{{ 'auth.forgotSub' | translate }}</p>
 
             @if (error()) { <div class="pr-alert pr-alert--error">{{ error() }}</div> }
 
             <div class="pr-form-group">
-              <label class="pr-label">Email Address</label>
+              <label class="pr-label">{{ 'auth.email' | translate }}</label>
               <input class="pr-input" type="email" formControlName="email"
                      placeholder="you@example.com" autocomplete="email">
             </div>
@@ -446,11 +449,11 @@ export class AcceptInvitationComponent {
             <button class="pr-btn pr-btn--primary w-full"
                     type="submit" [disabled]="loading() || form.invalid">
               @if (loading()) { <span class="pr-spinner" style="width:16px;height:16px"></span> }
-              Send Reset Link
+              {{ 'auth.sendResetLink' | translate }}
             </button>
 
             <p class="auth-form__footer">
-              <a routerLink="/auth/login">Back to Sign In</a>
+              <a routerLink="/auth/login">{{ 'auth.backToLogin' | translate }}</a>
             </p>
           </form>
         }
@@ -519,7 +522,7 @@ export class ForgotPasswordComponent {
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="auth-shell-center">
       <div class="auth-card">
@@ -531,35 +534,32 @@ export class ForgotPasswordComponent {
         @if (done()) {
           <div class="auth-success">
             <div class="success-icon">✅</div>
-            <h2>Password updated</h2>
-            <p>Your password has been changed successfully. You can now sign in with your new password.</p>
-            <a routerLink="/auth/login" class="pr-btn pr-btn--primary" style="margin-top:16px">Sign In</a>
+            <h2>{{ 'auth.resetSuccess' | translate }}</h2>
+            <a routerLink="/auth/login" class="pr-btn pr-btn--primary" style="margin-top:16px">{{ 'auth.signIn' | translate }}</a>
           </div>
         } @else {
           <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
-            <h2 class="auth-form__heading">Set New Password</h2>
+            <h2 class="auth-form__heading">{{ 'auth.resetTitle' | translate }}</h2>
 
             @if (error()) { <div class="pr-alert pr-alert--error">{{ error() }}</div> }
 
             <div class="pr-form-group">
-              <label class="pr-label">New Password</label>
-              <input class="pr-input" type="password" formControlName="password"
-                     placeholder="Min 8 characters" autocomplete="new-password">
+              <label class="pr-label">{{ 'auth.newPassword' | translate }}</label>
+              <input class="pr-input" type="password" formControlName="password" autocomplete="new-password">
             </div>
 
             <div class="pr-form-group">
-              <label class="pr-label">Confirm Password</label>
-              <input class="pr-input" type="password" formControlName="confirmPassword"
-                     placeholder="Repeat your password" autocomplete="new-password">
+              <label class="pr-label">{{ 'auth.confirmPassword' | translate }}</label>
+              <input class="pr-input" type="password" formControlName="confirmPassword" autocomplete="new-password">
               @if (form.hasError('mismatch') && form.get('confirmPassword')?.touched) {
-                <span class="pr-field-error">Passwords do not match</span>
+                <span class="pr-field-error">{{ 'errors.passwordMismatch' | translate }}</span>
               }
             </div>
 
             <button class="pr-btn pr-btn--primary w-full"
                     type="submit" [disabled]="loading() || form.invalid">
               @if (loading()) { <span class="pr-spinner" style="width:16px;height:16px"></span> }
-              Update Password
+              {{ 'auth.resetSubmit' | translate }}
             </button>
           </form>
         }
@@ -1393,13 +1393,13 @@ export class UpgradeRequestComponent implements OnInit {
 @Component({
   selector: 'app-admin-login',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
   template: `
     <div class="adm-shell">
       <div class="adm-card">
         <div class="adm-brand">
           <div class="adm-brand__icon">🛡️</div>
-          <div class="adm-brand__title">Administration Portal</div>
+          <div class="adm-brand__title">{{ 'auth.adminPortal' | translate }}</div>
           <div class="adm-brand__sub">Pigeon Result Calculator</div>
         </div>
 
@@ -1408,12 +1408,12 @@ export class UpgradeRequestComponent implements OnInit {
             <div class="adm-error">{{ error() }}</div>
           }
           <div class="adm-field">
-            <label class="adm-label">Email</label>
+            <label class="adm-label">{{ 'auth.email' | translate }}</label>
             <input class="adm-input" type="email" formControlName="email"
                    placeholder="admin@prc.local" autocomplete="username">
           </div>
           <div class="adm-field">
-            <label class="adm-label">Password</label>
+            <label class="adm-label">{{ 'auth.password' | translate }}</label>
             <input class="adm-input" type="password" formControlName="password"
                    placeholder="••••••••" autocomplete="current-password">
           </div>
@@ -1421,12 +1421,12 @@ export class UpgradeRequestComponent implements OnInit {
             @if (loading()) {
               <span class="adm-spinner"></span>
             } @else {
-              Sign In
+              {{ 'auth.signIn' | translate }}
             }
           </button>
         </form>
 
-        <div class="adm-footer">Restricted access — authorised personnel only</div>
+        <div class="adm-footer">{{ 'auth.adminSignInSub' | translate }}</div>
       </div>
     </div>
   `,

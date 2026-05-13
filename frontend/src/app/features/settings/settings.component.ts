@@ -5,26 +5,26 @@ import { RouterLink } from '@angular/router';
 import { AuthService, ThemeService } from '../../core/services/services';
 import { ApiService } from '../../core/services/api.service';
 import { SiteTheme, UserRole } from '../../core/models';
-import { TranslationService, SUPPORTED_LOCALES } from '../../core/i18n';
+import { TranslationService, SUPPORTED_LOCALES, TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, RouterLink, TranslatePipe],
   template: `
     <div class="settings-page">
       <div class="settings-header">
-        <h1 class="settings-title">Settings</h1>
-        <p class="settings-subtitle">Manage your account and preferences</p>
+        <h1 class="settings-title">{{ 'settings.title' | translate }}</h1>
+        <p class="settings-subtitle">{{ 'settings.subtitle' | translate }}</p>
       </div>
 
       <!-- Tabs -->
       <div class="settings-tabs">
-        <button class="settings-tab" [class.settings-tab--active]="tab() === 'profile'"       (click)="tab.set('profile')">Profile</button>
-        <button class="settings-tab" [class.settings-tab--active]="tab() === 'account'"       (click)="tab.set('account')">Account</button>
-        <button class="settings-tab" [class.settings-tab--active]="tab() === 'security'"      (click)="tab.set('security')">Security</button>
-        <button class="settings-tab" [class.settings-tab--active]="tab() === 'notifications'" (click)="tab.set('notifications')">Notifications</button>
-        <button class="settings-tab" [class.settings-tab--active]="tab() === 'appearance'"    (click)="tab.set('appearance')">Appearance</button>
+        <button class="settings-tab" [class.settings-tab--active]="tab() === 'profile'"       (click)="tab.set('profile')">{{ 'settings.tabProfile' | translate }}</button>
+        <button class="settings-tab" [class.settings-tab--active]="tab() === 'account'"       (click)="tab.set('account')">{{ 'settings.tabAccount' | translate }}</button>
+        <button class="settings-tab" [class.settings-tab--active]="tab() === 'security'"      (click)="tab.set('security')">{{ 'settings.tabSecurity' | translate }}</button>
+        <button class="settings-tab" [class.settings-tab--active]="tab() === 'notifications'" (click)="tab.set('notifications')">{{ 'settings.tabNotifications' | translate }}</button>
+        <button class="settings-tab" [class.settings-tab--active]="tab() === 'appearance'"    (click)="tab.set('appearance')">{{ 'settings.tabAppearance' | translate }}</button>
       </div>
 
       <!-- ── Profile Tab ───────────────────────────────────────── -->
@@ -33,7 +33,7 @@ import { TranslationService, SUPPORTED_LOCALES } from '../../core/i18n';
           <div class="settings-card__header">
             <div class="settings-avatar">{{ initials() }}</div>
             <div>
-              <div class="settings-card__title">Personal Information</div>
+              <div class="settings-card__title">{{ 'settings.personalInfo' | translate }}</div>
               <div class="settings-card__sub">{{ roleName() }}</div>
             </div>
           </div>
@@ -41,18 +41,18 @@ import { TranslationService, SUPPORTED_LOCALES } from '../../core/i18n';
           <div class="settings-form">
             <div class="form-row">
               <div class="form-group">
-                <label class="pr-label">First Name</label>
-                <input class="pr-input" [(ngModel)]="firstName" placeholder="First name">
+                <label class="pr-label">{{ 'auth.firstName' | translate }}</label>
+                <input class="pr-input" [(ngModel)]="firstName">
               </div>
               <div class="form-group">
-                <label class="pr-label">Last Name</label>
-                <input class="pr-input" [(ngModel)]="lastName" placeholder="Last name">
+                <label class="pr-label">{{ 'auth.lastName' | translate }}</label>
+                <input class="pr-input" [(ngModel)]="lastName">
               </div>
             </div>
             <div class="form-group">
-              <label class="pr-label">Email</label>
+              <label class="pr-label">{{ 'auth.email' | translate }}</label>
               <input class="pr-input" [value]="auth.currentUser()?.email ?? ''" disabled>
-              <span class="form-hint">Email address cannot be changed</span>
+              <span class="form-hint">{{ 'settings.emailCannotChange' | translate }}</span>
             </div>
 
             @if (profileMsg()) {
@@ -63,7 +63,7 @@ import { TranslationService, SUPPORTED_LOCALES } from '../../core/i18n';
 
             <div class="form-actions">
               <button class="pr-btn pr-btn--primary" (click)="saveProfile()" [disabled]="profileSaving()">
-                {{ profileSaving() ? 'Saving…' : 'Save Changes' }}
+                {{ (profileSaving() ? 'settings.saving' : 'settings.saveChanges') | translate }}
               </button>
             </div>
           </div>
@@ -258,21 +258,21 @@ import { TranslationService, SUPPORTED_LOCALES } from '../../core/i18n';
       @if (tab() === 'security') {
         <div class="settings-card">
           <div class="settings-card__header">
-            <div class="settings-card__title">Change Password</div>
+            <div class="settings-card__title">{{ 'settings.changePassword' | translate }}</div>
           </div>
 
           <div class="settings-form">
             <div class="form-group">
-              <label class="pr-label">Current Password</label>
-              <input class="pr-input" type="password" [(ngModel)]="currentPassword" placeholder="Current password">
+              <label class="pr-label">{{ 'settings.currentPassword' | translate }}</label>
+              <input class="pr-input" type="password" [(ngModel)]="currentPassword">
             </div>
             <div class="form-group">
-              <label class="pr-label">New Password</label>
-              <input class="pr-input" type="password" [(ngModel)]="newPassword" placeholder="Min 8 characters">
+              <label class="pr-label">{{ 'settings.newPassword' | translate }}</label>
+              <input class="pr-input" type="password" [(ngModel)]="newPassword">
             </div>
             <div class="form-group">
-              <label class="pr-label">Confirm New Password</label>
-              <input class="pr-input" type="password" [(ngModel)]="confirmPassword" placeholder="Repeat new password">
+              <label class="pr-label">{{ 'settings.confirmNewPassword' | translate }}</label>
+              <input class="pr-input" type="password" [(ngModel)]="confirmPassword">
             </div>
 
             @if (pwMsg()) {
@@ -283,7 +283,7 @@ import { TranslationService, SUPPORTED_LOCALES } from '../../core/i18n';
 
             <div class="form-actions">
               <button class="pr-btn pr-btn--primary" (click)="changePassword()" [disabled]="pwSaving()">
-                {{ pwSaving() ? 'Saving…' : 'Update Password' }}
+                {{ (pwSaving() ? 'settings.saving' : 'settings.updatePassword') | translate }}
               </button>
             </div>
           </div>
@@ -291,12 +291,9 @@ import { TranslationService, SUPPORTED_LOCALES } from '../../core/i18n';
 
         <div class="settings-card" style="margin-top:16px">
           <div class="settings-card__header">
-            <div class="settings-card__title">Session</div>
+            <div class="settings-card__title">{{ 'auth.logout' | translate }}</div>
           </div>
-          <p class="text-muted" style="padding: 0 0 16px;font-size:0.875rem">
-            Signing out clears your session on this device.
-          </p>
-          <button class="pr-btn pr-btn--danger" (click)="auth.logout()">Sign Out</button>
+          <button class="pr-btn pr-btn--danger" (click)="auth.logout()">{{ 'settings.signOut' | translate }}</button>
         </div>
       }
 

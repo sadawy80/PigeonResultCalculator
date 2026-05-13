@@ -3,13 +3,14 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/services';
+import { TranslatePipe } from '../../core/i18n';
 
 const WIND_DIRECTIONS = ['N','NE','E','SE','S','SW','W','NW'];
 
 @Component({
   selector: 'app-race-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './race-form.component.html',
   styleUrls: ['./race-form.component.scss']
 })

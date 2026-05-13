@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/services';
 import { Notification, NotificationStatus, NotificationType, UserRole } from '../../core/models';
+import { TranslatePipe } from '../../core/i18n';
 
 type Severity = 'success' | 'info' | 'warning' | 'alert';
 
@@ -21,20 +22,20 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, TranslatePipe],
   template: `
     <div class="pr-page-header notif-page-header">
       <div>
-        <h1 class="pr-page-header__title">Notifications</h1>
-        <p class="pr-page-header__subtitle">{{ unreadCount() }} unread · {{ totalCount() }} total</p>
+        <h1 class="pr-page-header__title">{{ 'admin.notifications.title' | translate }}</h1>
+        <p class="pr-page-header__subtitle">{{ unreadCount() }} · {{ totalCount() }}</p>
       </div>
       <div class="notif-header-actions">
         <label class="notif-filter-check">
           <input type="checkbox" [(ngModel)]="unreadOnlyValue" (change)="onUnreadOnlyChange()">
-          <span>Unread only</span>
+          <span>{{ 'admin.upgrades.pending' | translate }}</span>
         </label>
         @if (unreadCount() > 0) {
-          <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="markAllRead()" [disabled]="busy()">Mark all read</button>
+          <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="markAllRead()" [disabled]="busy()">{{ 'admin.notifications.markAllRead' | translate }}</button>
         }
       </div>
     </div>
@@ -45,10 +46,7 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
       } @else if (notifications().length === 0) {
         <div class="pr-empty">
           <div class="pr-empty__icon">🔔</div>
-          <div class="pr-empty__title">{{ unreadOnlyValue ? 'No unread notifications' : 'No notifications yet' }}</div>
-          @if (!unreadOnlyValue) {
-            <p class="pr-empty__desc">Race result publications and club updates will appear here.</p>
-          }
+          <div class="pr-empty__title">{{ 'admin.notifications.noNotifications' | translate }}</div>
         </div>
       } @else {
         @for (n of notifications(); track n.id) {
@@ -69,7 +67,7 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
 
             <div class="notif-right">
               <span class="notif-badge notif-badge--{{ sev }}">{{ SEV_LABEL[sev] }}</span>
-              <button class="notif-dismiss" title="Dismiss" (click)="dismiss(n, $event)">✕</button>
+              <button class="notif-dismiss" [title]="'admin.notifications.delete' | translate" (click)="dismiss(n, $event)">✕</button>
             </div>
           </div>
         }
@@ -78,7 +76,7 @@ const SEV_LABEL: Record<Severity, string> = { success: 'Success', info: 'Info', 
           <div class="notif-load-more">
             <button class="pr-btn pr-btn--ghost" [disabled]="loadingMore()" (click)="loadMore()">
               @if (loadingMore()) { <span class="pr-spinner" style="width:14px;height:14px"></span> }
-              Load more
+              {{ 'admin.common.next' | translate }}
             </button>
           </div>
         }

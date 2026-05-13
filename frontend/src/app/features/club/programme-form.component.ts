@@ -5,19 +5,19 @@ import { NgClass } from '@angular/common';
 import { ProgrammeApiService } from '../../core/services/programme-api.service';
 import { AuthService } from '../../core/services/services';
 import { ScoringMethod, SuperAceQualification } from '../../core/models/programme.models';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-programme-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgClass],
+  imports: [ReactiveFormsModule, RouterLink, NgClass, TranslatePipe],
   template: `
     <div class="flex items-center gap-3 mb-6">
-      <a routerLink="/club/programmes" class="pr-btn pr-btn--ghost pr-btn--sm">← Programmes</a>
+      <a routerLink="/club/programmes" class="pr-btn pr-btn--ghost pr-btn--sm">← {{ 'programme.programmes' | translate }}</a>
     </div>
 
     <div class="pr-page-header">
-      <h1 class="pr-page-header__title">{{ isEdit() ? 'Edit Programme' : 'Create Programme' }}</h1>
-      <p class="pr-page-header__subtitle">Configure the season/series, scoring rules, and qualification thresholds</p>
+      <h1 class="pr-page-header__title">{{ (isEdit() ? 'programme.editProgramme' : 'programme.newProgramme') | translate }}</h1>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()">
@@ -26,31 +26,30 @@ import { ScoringMethod, SuperAceQualification } from '../../core/models/programm
         <!-- Left: basics -->
         <div>
           <div class="pr-card mb-6">
-            <h3 style="margin-bottom:20px">Programme Details</h3>
+            <h3 style="margin-bottom:20px">{{ 'programme.programmeDetails' | translate }}</h3>
             <div style="display:flex;flex-direction:column;gap:16px">
               <div class="pr-form-group">
-                <label class="pr-label">Name *</label>
-                <input class="pr-input" formControlName="name" placeholder="e.g. 2025 Club Season">
+                <label class="pr-label">{{ 'common.name' | translate }} *</label>
+                <input class="pr-input" formControlName="name">
               </div>
               <div class="pr-form-group">
-                <label class="pr-label">Description</label>
-                <textarea class="pr-textarea" formControlName="description" rows="2"
-                          placeholder="Optional details..."></textarea>
+                <label class="pr-label">{{ 'common.description' | translate }}</label>
+                <textarea class="pr-textarea" formControlName="description" rows="2"></textarea>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 <div class="pr-form-group">
-                  <label class="pr-label">Year *</label>
+                  <label class="pr-label">{{ 'common.year' | translate }} *</label>
                   <input class="pr-input" type="number" formControlName="year" min="2000" max="2100">
                 </div>
                 <div></div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 <div class="pr-form-group">
-                  <label class="pr-label">Start Date</label>
+                  <label class="pr-label">{{ 'race.releaseDate' | translate }}</label>
                   <input class="pr-input" type="date" formControlName="startDate">
                 </div>
                 <div class="pr-form-group">
-                  <label class="pr-label">End Date</label>
+                  <label class="pr-label">{{ 'common.date' | translate }}</label>
                   <input class="pr-input" type="date" formControlName="endDate">
                 </div>
               </div>
@@ -59,8 +58,7 @@ import { ScoringMethod, SuperAceQualification } from '../../core/models/programm
 
           <!-- Scoring method -->
           <div class="pr-card mb-6">
-            <h3 style="margin-bottom:6px">Scoring Method</h3>
-            <p class="text-muted text-sm mb-4">How scores are calculated across races for all result types.</p>
+            <h3 style="margin-bottom:6px">{{ 'programme.scoringMethod' | translate }}</h3>
 
             <div class="scoring-options">
               @for (opt of scoringOptions; track opt.value) {
@@ -78,11 +76,11 @@ import { ScoringMethod, SuperAceQualification } from '../../core/models/programm
             @if (form.get('scoringMethod')?.value == ScoringMethod.PointsByRank) {
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
                 <div class="pr-form-group">
-                  <label class="pr-label">Points for 1st Place</label>
+                  <label class="pr-label">{{ 'programme.pointsForFirst' | translate }}</label>
                   <input class="pr-input" type="number" formControlName="pointsForFirst" min="1" max="100">
                 </div>
                 <div class="pr-form-group">
-                  <label class="pr-label">Max Paid Positions (0 = all)</label>
+                  <label class="pr-label">{{ 'programme.maxPaidPositions' | translate }}</label>
                   <input class="pr-input" type="number" formControlName="maxPointPositions" min="0">
                 </div>
               </div>
@@ -93,53 +91,49 @@ import { ScoringMethod, SuperAceQualification } from '../../core/models/programm
         <!-- Right: qualification thresholds -->
         <div>
           <div class="pr-card mb-6">
-            <h3 style="margin-bottom:6px">🏠 Best Loft</h3>
-            <p class="text-muted text-sm mb-4">How fancier loft performance is measured across races.</p>
+            <h3 style="margin-bottom:6px">🏠 {{ 'programme.bestLoft' | translate }}</h3>
             <div style="display:flex;flex-direction:column;gap:14px">
               <div class="pr-form-group">
-                <label class="pr-label">Pigeons per race counted (0 = all)</label>
+                <label class="pr-label">{{ 'programme.pigeonsPerRace' | translate }}</label>
                 <input class="pr-input" type="number" formControlName="bestLoftPigeonsPerRace" min="0">
-                <span class="field-hint">e.g. 3 means only the top 3 velocities from each loft count per race</span>
               </div>
               <div class="pr-form-group">
-                <label class="pr-label">Minimum races to qualify</label>
+                <label class="pr-label">{{ 'programme.minRacesQualify' | translate }}</label>
                 <input class="pr-input" type="number" formControlName="bestLoftMinRaces" min="1">
               </div>
             </div>
           </div>
 
           <div class="pr-card mb-6">
-            <h3 style="margin-bottom:6px">🕊️ Ace Pigeon</h3>
-            <p class="text-muted text-sm mb-4">Qualification threshold for individual pigeons.</p>
+            <h3 style="margin-bottom:6px">🕊️ {{ 'programme.acePigeon' | translate }}</h3>
             <div class="pr-form-group">
-              <label class="pr-label">Minimum races a pigeon must enter</label>
+              <label class="pr-label">{{ 'programme.minRacesPigeon' | translate }}</label>
               <input class="pr-input" type="number" formControlName="acePigeonMinRaces" min="1">
             </div>
           </div>
 
           <div class="pr-card mb-6">
-            <h3 style="margin-bottom:6px">⭐ Super Ace Pigeon</h3>
-            <p class="text-muted text-sm mb-4">Stricter qualification — elite pigeons only.</p>
+            <h3 style="margin-bottom:6px">⭐ {{ 'programme.superAce' | translate }}</h3>
 
             <div class="pr-form-group mb-4">
-              <label class="pr-label">Qualification Rule</label>
+              <label class="pr-label">{{ 'programme.qualificationRule' | translate }}</label>
               <select class="pr-select" formControlName="superAceQualification">
-                <option [value]="SuperAceQualification.AllRacesRequired">Must enter ALL races in the programme</option>
-                <option [value]="SuperAceQualification.MinimumRaceCount">Must enter at least N races</option>
-                <option [value]="SuperAceQualification.MinimumRacePercentage">Must enter at least X% of races</option>
+                <option [value]="SuperAceQualification.AllRacesRequired">{{ 'programme.allRacesRequired' | translate }}</option>
+                <option [value]="SuperAceQualification.MinimumRaceCount">{{ 'programme.minimumRaceCount' | translate }}</option>
+                <option [value]="SuperAceQualification.MinimumRacePercentage">{{ 'programme.minimumRacePercentage' | translate }}</option>
               </select>
             </div>
 
             @if (form.get('superAceQualification')?.value == SuperAceQualification.MinimumRaceCount) {
               <div class="pr-form-group">
-                <label class="pr-label">Minimum race count</label>
+                <label class="pr-label">{{ 'programme.superAceMinRaceCount' | translate }}</label>
                 <input class="pr-input" type="number" formControlName="superAceMinRaceCount" min="1">
               </div>
             }
 
             @if (form.get('superAceQualification')?.value == SuperAceQualification.MinimumRacePercentage) {
               <div class="pr-form-group">
-                <label class="pr-label">Minimum participation % (0–100)</label>
+                <label class="pr-label">{{ 'programme.superAceMinRacePerc' | translate }}</label>
                 <input class="pr-input" type="number" formControlName="superAceMinRacePercentage" min="0" max="100" step="5">
               </div>
             }
@@ -151,10 +145,10 @@ import { ScoringMethod, SuperAceQualification } from '../../core/models/programm
       <div class="submit-bar">
         @if (error()) { <div class="pr-alert pr-alert--error" style="flex:1">{{ error() }}</div> }
         <div class="flex gap-3 ml-auto">
-          <a routerLink="/club/programmes" class="pr-btn pr-btn--ghost">Cancel</a>
+          <a routerLink="/club/programmes" class="pr-btn pr-btn--ghost">{{ 'admin.common.cancel' | translate }}</a>
           <button type="submit" class="pr-btn pr-btn--primary" [disabled]="saving() || form.invalid">
             @if (saving()) { <span class="pr-spinner" style="width:14px;height:14px"></span> }
-            {{ isEdit() ? 'Save Changes' : 'Create Programme' }}
+            {{ (isEdit() ? 'settings.saveChanges' : 'programme.newProgramme') | translate }}
           </button>
         </div>
       </div>

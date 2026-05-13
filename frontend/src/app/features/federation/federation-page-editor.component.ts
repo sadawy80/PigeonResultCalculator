@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 interface Announcement {
   title: string;
@@ -12,7 +13,7 @@ interface Announcement {
 @Component({
   selector: 'app-federation-page-editor',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, TranslatePipe],
   templateUrl: './federation-page-editor.component.html',
   styleUrls: ['./federation-page-editor.component.scss']
 })

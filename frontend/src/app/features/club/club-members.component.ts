@@ -4,18 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/services';
 import { ClubMember, Invitation, InvitationStatus } from '../../core/models';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-club-members',
   standalone: true,
-  imports: [DatePipe, NgClass, FormsModule],
+  imports: [DatePipe, NgClass, FormsModule, TranslatePipe],
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>
-        <h1 class="pr-page-header__title">Members</h1>
-        <p class="pr-page-header__subtitle">{{ members().length }} active members in your club</p>
+        <h1 class="pr-page-header__title">{{ 'club.members' | translate }}</h1>
+        <p class="pr-page-header__subtitle">{{ members().length }} {{ 'club.members' | translate }}</p>
       </div>
-      <button class="pr-btn pr-btn--primary" (click)="activeTab.set('invite')">+ Invite Member</button>
+      <button class="pr-btn pr-btn--primary" (click)="activeTab.set('invite')">+ {{ 'club.invite' | translate }}</button>
     </div>
 
     <!-- Tabs -->

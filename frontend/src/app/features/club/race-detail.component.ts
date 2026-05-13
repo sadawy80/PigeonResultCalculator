@@ -5,15 +5,16 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService, LiveRaceService } from '../../core/services/services';
 import { Race, RaceResult, RaceStatus } from '../../core/models';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-race-detail',
   standalone: true,
-  imports: [RouterLink, DatePipe, DecimalPipe, NgClass, FormsModule],
+  imports: [RouterLink, DatePipe, DecimalPipe, NgClass, FormsModule, TranslatePipe],
   template: `
     <!-- Back nav -->
     <div class="flex items-center gap-3 mb-6">
-      <a routerLink="/club/races" class="pr-btn pr-btn--ghost pr-btn--sm">← Races</a>
+      <a routerLink="/club/races" class="pr-btn pr-btn--ghost pr-btn--sm">← {{ 'user.races' | translate }}</a>
       <span class="text-muted">/</span>
       <span class="text-sm">{{ race()?.name }}</span>
     </div>
@@ -26,7 +27,7 @@ import { Race, RaceResult, RaceStatus } from '../../core/models';
         <div>
           <div class="flex items-center gap-3 mb-2">
             <h1 class="pr-page-header__title" style="margin:0">{{ race()!.name }}</h1>
-            <span [class]="'pr-badge ' + statusBadge(race()!.status)">{{ statusLabel(race()!.status) }}</span>
+            <span [class]="'pr-badge ' + statusBadge(race()!.status)">{{ statusLabel(race()!.status) | translate }}</span>
             @if (race()!.isLiveTracking) {
               <span class="live-indicator">
                 <span class="live-dot"></span> LIVE
@@ -456,7 +457,17 @@ export class RaceDetailComponent implements OnInit, OnDestroy {
     const m: Record<number, string> = { 1:'pr-badge--muted', 2:'pr-badge--info', 3:'pr-badge--warning', 4:'pr-badge--info', 5:'pr-badge--success', 6:'pr-badge--error' };
     return m[s] ?? 'pr-badge--muted';
   }
-  statusLabel(s: RaceStatus) { return RaceStatus[s]; }
+  statusLabel(s: RaceStatus) {
+    const map: Record<RaceStatus, string> = {
+      [RaceStatus.Draft]:      'admin.races.statusDraft',
+      [RaceStatus.Scheduled]:  'admin.races.statusOpen',
+      [RaceStatus.InProgress]: 'race.inProgress',
+      [RaceStatus.Completed]:  'race.completed',
+      [RaceStatus.Published]:  'admin.races.statusPublished',
+      [RaceStatus.Cancelled]:  'admin.races.statusCancelled'
+    };
+    return map[s] ?? RaceStatus[s];
+  }
 
   resultStatusBadge(s: number) {
     const m: Record<number, string> = { 1:'pr-badge--muted', 2:'pr-badge--info', 3:'pr-badge--success', 4:'pr-badge--error' };

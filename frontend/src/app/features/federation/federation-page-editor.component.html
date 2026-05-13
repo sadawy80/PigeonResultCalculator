@@ -1,11 +1,11 @@
 <div class="pr-page-header flex justify-between items-center">
   <div>
-    <h1 class="pr-page-header__title">Federation Public Page</h1>
-    <p class="pr-page-header__subtitle">Manage your federation's public-facing page</p>
+    <h1 class="pr-page-header__title">{{ 'user.federationDashboard' | translate }}</h1>
+    <p class="pr-page-header__subtitle">{{ 'user.federationOverview' | translate }}</p>
   </div>
   @if (page()?.slug) {
     <a [routerLink]="['/c', page().slug]" target="_blank" class="pr-btn pr-btn--ghost pr-btn--sm">
-      ↗ Preview Page
+      ↗ {{ 'admin.common.view' | translate }}
     </a>
   }
 </div>
@@ -14,26 +14,26 @@
 @if (success()) { <div class="pr-alert pr-alert--success mb-4">{{ success() }}</div> }
 
 @if (loading()) {
-  <div class="text-center py-12 text-muted">Loading...</div>
+  <div class="text-center py-12 text-muted">{{ 'admin.common.loading' | translate }}</div>
 } @else {
   <div class="flex flex-col gap-6">
 
     <!-- Publish toggle -->
     <div class="pr-card flex justify-between items-center">
       <div>
-        <div class="font-bold">Page Status</div>
-        <div class="text-muted text-sm">{{ isPublished ? 'Your page is live at /c/' + page()?.slug : 'Your page is not published yet' }}</div>
+        <div class="font-bold">{{ 'admin.common.status' | translate }}</div>
+        <div class="text-muted text-sm">{{ isPublished ? '/c/' + page()?.slug : '' }}</div>
       </div>
       <label class="pr-toggle">
         <input type="checkbox" [(ngModel)]="isPublished">
         <span class="pr-toggle__track"></span>
-        <span class="pr-toggle__label">{{ isPublished ? 'Published' : 'Draft' }}</span>
+        <span class="pr-toggle__label">{{ (isPublished ? 'admin.races.statusPublished' : 'admin.races.statusDraft') | translate }}</span>
       </label>
     </div>
 
     <!-- Theme selector -->
     <div class="pr-card">
-      <h3 class="mb-4">Theme</h3>
+      <h3 class="mb-4">{{ 'settings.themeLabel' | translate }}</h3>
       <div class="pr-grid-3" style="gap:12px">
         @for (t of themes; track t.value) {
           <label class="theme-option" [class.theme-option--selected]="selectedTheme === t.value">
@@ -48,18 +48,18 @@
     <!-- Announcements -->
     <div class="pr-card">
       <div class="flex justify-between items-center mb-4">
-        <h3>Announcements</h3>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="addAnnouncement()">+ Add</button>
+        <h3>{{ 'admin.notifications.title' | translate }}</h3>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="addAnnouncement()">+ {{ 'admin.common.add' | translate }}</button>
       </div>
       @if (announcements().length === 0) {
-        <p class="text-muted text-sm">No announcements yet. Click "Add" to create one.</p>
+        <p class="text-muted text-sm">{{ 'admin.notifications.noNotifications' | translate }}</p>
       }
       @for (a of announcements(); track $index; let i = $index) {
         <div class="announcement-row mb-4">
           <div class="flex gap-3 items-start">
             <div class="flex flex-col gap-2 flex-1">
-              <input class="pr-input" placeholder="Title *" [(ngModel)]="a.title">
-              <textarea class="pr-input" rows="2" placeholder="Body (optional)" [(ngModel)]="a.body"
+              <input class="pr-input" [placeholder]="('admin.common.title' | translate) + ' *'" [(ngModel)]="a.title">
+              <textarea class="pr-input" rows="2" [placeholder]="'admin.notifications.bodyLabel' | translate" [(ngModel)]="a.body"
                 style="resize:vertical;min-height:60px"></textarea>
               <input type="date" class="pr-input" [(ngModel)]="a.date" style="max-width:200px">
             </div>
@@ -76,7 +76,7 @@
     <!-- Save button -->
     <div class="flex gap-3">
       <button class="pr-btn pr-btn--primary" [disabled]="saving()" (click)="save()">
-        {{ saving() ? 'Saving...' : 'Save Changes' }}
+        {{ (saving() ? 'settings.saving' : 'settings.saveChanges') | translate }}
       </button>
     </div>
 
