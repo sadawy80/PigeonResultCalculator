@@ -110,11 +110,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lowercase image name
+      - name: Compute image name (prc-<kebab-service>)
         id: img
-        run: echo "name=${REGISTRY}/${IMAGE_BASE,,}-${SERVICE,,}" >> "$GITHUB_OUTPUT"
         env:
           SERVICE: ${{ matrix.service }}
+        run: |
+          KEBAB=$(echo "$SERVICE" | sed -E 's/([a-z0-9])([A-Z])/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+          echo "name=${REGISTRY}/${IMAGE_BASE,,}-${KEBAB}" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
