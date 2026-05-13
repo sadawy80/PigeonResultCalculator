@@ -4,24 +4,25 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/services';
 import { RaceResult, ResultStatus } from '../../core/models';
+import { TranslatePipe, TranslationService } from '../../core/i18n';
 
 // ── Fancier Dashboard ─────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-fancier-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe, DecimalPipe],
+  imports: [RouterLink, DatePipe, DecimalPipe, TranslatePipe],
   template: `
     <div class="pr-page-header">
-      <h1 class="pr-page-header__title">Welcome, {{ auth.currentUser()?.firstName }}</h1>
-      <p class="pr-page-header__subtitle">Your pigeon racing performance at a glance</p>
+      <h1 class="pr-page-header__title">{{ 'user.welcome' | translate:{ name: (auth.currentUser()?.firstName ?? '') } }}</h1>
+      <p class="pr-page-header__subtitle">{{ 'user.fancierProfile' | translate }}</p>
     </div>
 
     <div class="pr-grid-4 mb-8">
-      @for (s of stats(); track s.label) {
+      @for (s of stats(); track s.labelKey) {
         <div class="pr-card pr-card--flat pr-stat">
           <div class="pr-stat__value">{{ s.value }}</div>
-          <div class="pr-stat__label">{{ s.label }}</div>
+          <div class="pr-stat__label">{{ s.labelKey | translate }}</div>
         </div>
       }
     </div>
@@ -29,21 +30,27 @@ import { RaceResult, ResultStatus } from '../../core/models';
     <!-- Recent results -->
     <div class="pr-card">
       <div class="flex justify-between items-center mb-6">
-        <h3 style="margin:0">Recent Results</h3>
-        <a routerLink="/fancier/results" class="pr-btn pr-btn--ghost pr-btn--sm">View All</a>
+        <h3 style="margin:0">{{ 'user.recentRaces' | translate }}</h3>
+        <a routerLink="/fancier/results" class="pr-btn pr-btn--ghost pr-btn--sm">{{ 'user.viewAll' | translate }}</a>
       </div>
 
       @if (recentResults().length === 0) {
         <div class="pr-empty">
           <div class="pr-empty__icon">🕊️</div>
-          <div class="pr-empty__title">No results yet</div>
-          <p class="pr-empty__desc">Your pigeon race results will appear here once published by your club.</p>
+          <div class="pr-empty__title">{{ 'user.noMyResults' | translate }}</div>
         </div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
-              <tr><th>Race</th><th>Pigeon</th><th>Rank</th><th>Speed</th><th>Distance</th><th>Date</th></tr>
+              <tr>
+                <th>{{ 'user.race' | translate }}</th>
+                <th>{{ 'admin.common.pigeon' | translate }}</th>
+                <th>{{ 'user.rank' | translate }}</th>
+                <th>{{ 'user.speed' | translate }}</th>
+                <th>{{ 'result.distanceKm' | translate }}</th>
+                <th>{{ 'common.date' | translate }}</th>
+              </tr>
             </thead>
             <tbody>
               @for (r of recentResults(); track r.id) {
@@ -70,11 +77,11 @@ export class FancierDashboardComponent implements OnInit {
   auth = inject(AuthService);
 
   recentResults = signal<RaceResult[]>([]);
-  stats = signal<{ label: string; value: string | number }[]>([
-    { label: 'Total Races',  value: '—' },
-    { label: 'Best Rank',    value: '—' },
-    { label: 'Avg Speed', value: '—' },
-    { label: 'Pigeons',      value: '—' },
+  stats = signal<{ labelKey: string; value: string | number }[]>([
+    { labelKey: 'user.totalResults',    value: '—' },
+    { labelKey: 'user.rank',            value: '—' },
+    { labelKey: 'user.speed',           value: '—' },
+    { labelKey: 'user.registeredPigeons', value: '—' },
   ]);
 
   ngOnInit() {
@@ -87,10 +94,10 @@ export class FancierDashboardComponent implements OnInit {
         const bestRank = Math.min(...items.filter(r => r.clubRank).map(r => r.clubRank!));
         const avgVel = items.reduce((a, b) => a + b.speedMperMin, 0) / items.length;
         this.stats.set([
-          { label: 'Total Races',  value: p.totalCount },
-          { label: 'Best Rank',    value: `#${bestRank}` },
-          { label: 'Avg Speed', value: `${avgVel.toFixed(0)} m/min` },
-          { label: 'Pigeons',      value: new Set(items.map(r => r.ringNumber)).size },
+          { labelKey: 'user.totalResults',      value: p.totalCount },
+          { labelKey: 'user.rank',              value: `#${bestRank}` },
+          { labelKey: 'user.speed',             value: `${avgVel.toFixed(0)} m/min` },
+          { labelKey: 'user.registeredPigeons', value: new Set(items.map(r => r.ringNumber)).size },
         ]);
       }
     });
@@ -110,11 +117,11 @@ export class FancierDashboardComponent implements OnInit {
 @Component({
   selector: 'app-fancier-results',
   standalone: true,
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe, DecimalPipe, TranslatePipe],
   template: `
     <div class="pr-page-header">
-      <h1 class="pr-page-header__title">My Results</h1>
-      <p class="pr-page-header__subtitle">Complete race history for all your pigeons</p>
+      <h1 class="pr-page-header__title">{{ 'user.myResults' | translate }}</h1>
+      <p class="pr-page-header__subtitle">{{ 'user.fancierProfile' | translate }}</p>
     </div>
 
     <div class="pr-card">
@@ -123,16 +130,20 @@ export class FancierDashboardComponent implements OnInit {
       } @else if (results().length === 0) {
         <div class="pr-empty">
           <div class="pr-empty__icon">📋</div>
-          <div class="pr-empty__title">No published results yet</div>
+          <div class="pr-empty__title">{{ 'user.noMyResults' | translate }}</div>
         </div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
               <tr>
-                <th>Race</th><th>Ring #</th><th>Pigeon</th>
-                <th>Club Rank</th><th>Speed</th><th>Distance</th>
-                <th>Arrival</th>
+                <th>{{ 'user.race' | translate }}</th>
+                <th>{{ 'user.ringNumber' | translate }}</th>
+                <th>{{ 'admin.common.pigeon' | translate }}</th>
+                <th>{{ 'user.rank' | translate }}</th>
+                <th>{{ 'user.speed' | translate }}</th>
+                <th>{{ 'result.distanceKm' | translate }}</th>
+                <th>{{ 'result.arrival' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -180,17 +191,16 @@ export class FancierResultsComponent implements OnInit {
 @Component({
   selector: 'app-fancier-pigeons',
   standalone: true,
-  imports: [],
+  imports: [TranslatePipe],
   template: `
     <div class="pr-page-header">
-      <h1 class="pr-page-header__title">My Pigeons</h1>
-      <p class="pr-page-header__subtitle">Pigeons linked to your account by your club manager</p>
+      <h1 class="pr-page-header__title">{{ 'user.myPigeons' | translate }}</h1>
+      <p class="pr-page-header__subtitle">{{ 'user.fancierProfile' | translate }}</p>
     </div>
 
     <div class="pr-empty">
       <div class="pr-empty__icon">🕊️</div>
-      <div class="pr-empty__title">Pigeons linked by your club manager will appear here</div>
-      <p class="pr-empty__desc">Contact your club manager to link your pigeons to your account.</p>
+      <div class="pr-empty__title">{{ 'user.noPigeons' | translate }}</div>
     </div>
   `
 })

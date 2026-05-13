@@ -16,43 +16,47 @@
   <div class="sub-filters">
     <div class="sub-filter-search">
       <span class="search-icon">🔍</span>
-      <input class="pr-input" type="text" placeholder="Search by name or plan…"
+      <input class="pr-input" type="text" [placeholder]="'admin.common.searchPlaceholder' | translate"
              [(ngModel)]="searchValue" (ngModelChange)="onSearchInput()">
     </div>
 
     <div class="sub-filter-group">
-      <label>Billing Cycle</label>
+      <label>{{ 'admin.plans.billingCycle' | translate }}</label>
       <select class="pr-select" [(ngModel)]="filterCycle" (ngModelChange)="onFilterChange()">
-        <option value="">All cycles</option>
-        <option value="Monthly">Monthly</option>
-        <option value="Seasonal">Seasonal</option>
-        <option value="Annual">Annual</option>
+        <option value="">{{ 'admin.common.all' | translate }}</option>
+        <option value="Monthly">{{ 'admin.plans.monthly' | translate }}</option>
+        <option value="Seasonal">{{ 'admin.plans.seasonal' | translate }}</option>
+        <option value="Annual">{{ 'admin.plans.annual' | translate }}</option>
       </select>
     </div>
 
     <div class="sub-filter-group">
-      <label>Start Date Range</label>
+      <label>{{ 'admin.subscriptions.startedAt' | translate }}</label>
       <div class="date-range-picker">
-        <input type="date" [(ngModel)]="filterDateFrom" (ngModelChange)="onFilterChange()" placeholder="From">
+        <input type="date" [(ngModel)]="filterDateFrom" (ngModelChange)="onFilterChange()">
         <span class="date-range-sep">→</span>
-        <input type="date" [(ngModel)]="filterDateTo" (ngModelChange)="onFilterChange()" placeholder="To">
+        <input type="date" [(ngModel)]="filterDateTo" (ngModelChange)="onFilterChange()">
       </div>
     </div>
 
     @if (hasFilters) {
-      <button class="pr-btn pr-btn--ghost pr-btn--sm" style="align-self:flex-end" (click)="clearFilters()">✕ Clear</button>
+      <button class="pr-btn pr-btn--ghost pr-btn--sm" style="align-self:flex-end" (click)="clearFilters()">✕ {{ 'admin.common.reset' | translate }}</button>
     }
   </div>
 
   @if (loading()) {
-    <div class="text-center py-8 text-muted">Loading…</div>
+    <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
   } @else {
     <div class="pr-table-wrapper">
       <table class="pr-table">
         <thead>
           <tr>
-            <th>Federation</th><th>Plan</th><th>Billing</th>
-            <th>Started</th><th>Expires</th><th>Status</th>
+            <th>{{ 'admin.common.federation' | translate }}</th>
+            <th>{{ 'admin.subscriptions.plan' | translate }}</th>
+            <th>{{ 'admin.plans.billingCycle' | translate }}</th>
+            <th>{{ 'admin.subscriptions.startedAt' | translate }}</th>
+            <th>{{ 'admin.subscriptions.endsAt' | translate }}</th>
+            <th>{{ 'admin.common.status' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -65,14 +69,14 @@
               <td class="text-muted text-sm">{{ s.expiresAt | date:'dd MMM yyyy' }}</td>
               <td>
                 <span [ngClass]="s.status === 1 ? 'pr-badge pr-badge--success' : s.status === 4 ? 'pr-badge pr-badge--info' : 'pr-badge pr-badge--error'">
-                  {{ s.status === 1 ? 'Active' : s.status === 4 ? 'Trial' : s.status === 2 ? 'Expired' : 'Cancelled' }}
+                  {{ (s.status === 1 ? 'admin.subscriptions.active' : s.status === 4 ? 'admin.common.thisYear' : s.status === 2 ? 'admin.subscriptions.expired' : 'admin.races.statusCancelled') | translate }}
                 </span>
               </td>
             </tr>
           } @empty {
             <tr>
               <td colspan="6" class="text-center text-muted py-6">
-                {{ hasFilters ? 'No subscriptions match your filters' : 'No subscriptions yet' }}
+                {{ 'admin.subscriptions.noSubs' | translate }}
               </td>
             </tr>
           }
@@ -81,16 +85,16 @@
     </div>
 
     <div class="flex justify-between items-center" style="padding:12px 16px">
-      <span class="text-muted text-sm">{{ total() }} subscriptions · page {{ page }} of {{ totalPages }}</span>
+      <span class="text-muted text-sm">{{ total() }} · {{ 'admin.common.page' | translate }} {{ page }} {{ 'admin.common.of' | translate }} {{ totalPages }}</span>
       <div class="flex gap-2 items-center">
         <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-          <option [ngValue]="10">10 / page</option>
-          <option [ngValue]="25">25 / page</option>
-          <option [ngValue]="50">50 / page</option>
-          <option [ngValue]="100">100 / page</option>
+          <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+          <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+          <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+          <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
         </select>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">Prev</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page === 1" (click)="prevPage()">{{ 'admin.common.prev' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page >= totalPages" (click)="nextPage()">{{ 'admin.common.next' | translate }}</button>
       </div>
     </div>
   }
@@ -100,10 +104,10 @@
 @if (showNewSubModal()) {
   <div class="pr-modal-backdrop" (click)="showNewSubModal.set(false)">
     <div class="pr-modal" (click)="$event.stopPropagation()">
-      <h3 class="pr-modal__title">New Federation Subscription</h3>
+      <h3 class="pr-modal__title">{{ 'admin.common.add' | translate }} — {{ 'admin.common.subscription' | translate }}</h3>
       <div class="flex flex-col gap-4 mt-4">
         <div class="pr-form-group">
-          <label class="pr-label">Billing Cycle</label>
+          <label class="pr-label">{{ 'admin.plans.billingCycle' | translate }}</label>
           <div class="cycle-toggle">
             @for (c of cycles; track c) {
               <button class="cycle-btn" [class.cycle-btn--active]="newSubCycle === c" (click)="newSubCycle = c">{{ c }}</button>
@@ -111,18 +115,18 @@
           </div>
         </div>
         <div class="pr-form-group">
-          <label class="pr-label">Federation</label>
+          <label class="pr-label">{{ 'admin.common.federation' | translate }}</label>
           <select class="pr-select w-full" [(ngModel)]="newSubFederation">
-            <option value="">— Select federation —</option>
+            <option value="">—</option>
             @for (f of federations(); track f.id) {
               <option [value]="f.id">{{ f.name }}</option>
             }
           </select>
         </div>
         <div class="pr-form-group">
-          <label class="pr-label">Plan</label>
+          <label class="pr-label">{{ 'admin.subscriptions.plan' | translate }}</label>
           <select class="pr-select w-full" [(ngModel)]="newSubPlan">
-            <option value="">— Select plan —</option>
+            <option value="">—</option>
             @for (p of allPlansForNewSub(); track p.id) {
               <option [value]="p.id">{{ p.name }} — €{{ p.price }}{{ cycleLabels[newSubCycle] }}</option>
             }
@@ -130,9 +134,9 @@
         </div>
       </div>
       <div class="flex gap-3 justify-end mt-6">
-        <button class="pr-btn pr-btn--ghost" (click)="showNewSubModal.set(false)">Cancel</button>
+        <button class="pr-btn pr-btn--ghost" (click)="showNewSubModal.set(false)">{{ 'admin.common.cancel' | translate }}</button>
         <button class="pr-btn pr-btn--primary" [disabled]="newSubSaving() || !newSubFederation || !newSubPlan" (click)="createSubscription()">
-          {{ newSubSaving() ? 'Creating…' : 'Create Subscription' }}
+          {{ (newSubSaving() ? 'admin.common.saving' : 'admin.common.save') | translate }}
         </button>
       </div>
     </div>

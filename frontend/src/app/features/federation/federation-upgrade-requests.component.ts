@@ -2,11 +2,12 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n';
 
 @Component({
   selector: 'app-federation-upgrade-requests',
   standalone: true,
-  imports: [DatePipe, FormsModule, NgClass],
+  imports: [DatePipe, FormsModule, NgClass, TranslatePipe],
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-title  { font-size: 1.5rem; font-weight: 700; margin: 0; }
@@ -47,7 +48,7 @@ import { ApiService } from '../../core/services/api.service';
   `],
   template: `
     <div class="page-header">
-      <h1 class="page-title">Role Upgrade Requests</h1>
+      <h1 class="page-title">{{ 'admin.upgrades.title' | translate }}</h1>
     </div>
 
     @if (error()) {
@@ -55,14 +56,14 @@ import { ApiService } from '../../core/services/api.service';
     }
 
     <div class="toolbar">
-      <label>Status</label>
+      <label>{{ 'admin.common.status' | translate }}</label>
       <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
-        <option value="">All</option>
-        <option value="0">Pending</option>
-        <option value="1">Approved</option>
-        <option value="2">Rejected</option>
-        <option value="3">Revoked</option>
-        <option value="4">Admin Revoked</option>
+        <option value="">{{ 'admin.common.all' | translate }}</option>
+        <option value="0">{{ 'admin.upgrades.pending' | translate }}</option>
+        <option value="1">{{ 'admin.upgrades.approved' | translate }}</option>
+        <option value="2">{{ 'admin.upgrades.rejected' | translate }}</option>
+        <option value="3">{{ 'admin.links.revoked' | translate }}</option>
+        <option value="4">{{ 'admin.links.revoked' | translate }}</option>
       </select>
     </div>
 
@@ -70,19 +71,19 @@ import { ApiService } from '../../core/services/api.service';
       <table>
         <thead>
           <tr>
-            <th>User</th>
-            <th>Requested Role</th>
-            <th>Notes</th>
-            <th>Status</th>
-            <th>Submitted</th>
-            <th>Actions</th>
+            <th>{{ 'admin.dashboard.users' | translate }}</th>
+            <th>{{ 'admin.upgrades.requestedRole' | translate }}</th>
+            <th>{{ 'admin.upgrades.notes' | translate }}</th>
+            <th>{{ 'admin.common.status' | translate }}</th>
+            <th>{{ 'admin.common.createdAt' | translate }}</th>
+            <th>{{ 'admin.common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @if (loading()) {
-            <tr><td colspan="6" class="empty">Loading…</td></tr>
+            <tr><td colspan="6" class="empty">{{ 'admin.common.loading' | translate }}</td></tr>
           } @else if (items().length === 0) {
-            <tr><td colspan="6" class="empty">No upgrade requests found.</td></tr>
+            <tr><td colspan="6" class="empty">{{ 'admin.upgrades.noRequests' | translate }}</td></tr>
           } @else {
             @for (item of items(); track item.id) {
               <tr>
@@ -90,11 +91,11 @@ import { ApiService } from '../../core/services/api.service';
                   <strong>{{ item.userFullName }}</strong><br>
                   <small>{{ item.userEmail }}</small>
                 </td>
-                <td>{{ roleLabel(item.requestedRole) }}</td>
+                <td>{{ roleLabel(item.requestedRole) | translate }}</td>
                 <td>{{ item.notes || '—' }}</td>
                 <td>
                   <span class="badge" [ngClass]="badgeClass(item.status)">
-                    {{ statusLabel(item.status) }}
+                    {{ statusLabel(item.status) | translate }}
                   </span>
                   @if (item.rejectionReason) {
                     <br><small>{{ item.rejectionReason }}</small>
@@ -104,22 +105,22 @@ import { ApiService } from '../../core/services/api.service';
                 <td>
                   @if (item.status === 0) {
                     <div class="actions">
-                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Approve</button>
-                      <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">Reject</button>
+                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">{{ 'admin.upgrades.approve' | translate }}</button>
+                      <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">{{ 'admin.upgrades.reject' | translate }}</button>
                     </div>
                   }
                   @if (item.status === 1) {
                     <div class="actions">
-                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">Revoke</button>
+                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">{{ 'admin.links.revoke' | translate }}</button>
                     </div>
                   }
                   @if (item.status === 3) {
                     <div class="actions">
-                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Re-approve</button>
+                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">{{ 'admin.upgrades.approve' | translate }}</button>
                     </div>
                   }
                   @if (item.status === 4) {
-                    <span class="locked-note">Locked by admin</span>
+                    <span class="locked-note">{{ 'admin.common.suspended' | translate }}</span>
                   }
                 </td>
               </tr>
@@ -130,23 +131,23 @@ import { ApiService } from '../../core/services/api.service';
     </div>
 
     <div class="pagination">
-      <button class="page-btn" (click)="prevPage()" [disabled]="page === 1">‹ Prev</button>
-      <span>Page {{ page }} / {{ totalPages() }}</span>
-      <button class="page-btn" (click)="nextPage()" [disabled]="page >= totalPages()">Next ›</button>
+      <button class="page-btn" (click)="prevPage()" [disabled]="page === 1">‹ {{ 'admin.common.prev' | translate }}</button>
+      <span>{{ 'admin.common.page' | translate }} {{ page }} / {{ totalPages() }}</span>
+      <button class="page-btn" (click)="nextPage()" [disabled]="page >= totalPages()">{{ 'admin.common.next' | translate }} ›</button>
     </div>
 
     @if (showRejectModal()) {
       <div class="modal-backdrop" (click)="cancelReject()">
         <div class="modal-card" (click)="$event.stopPropagation()">
-          <p class="modal-title">Reject Upgrade Request</p>
-          <p>User: <strong>{{ rejectTarget()?.userFullName }}</strong> — {{ roleLabel(rejectTarget()?.requestedRole) }}</p>
+          <p class="modal-title">{{ 'admin.dashboard.rejectTitle' | translate }}</p>
+          <p>{{ 'admin.dashboard.users' | translate }}: <strong>{{ rejectTarget()?.userFullName }}</strong> — {{ roleLabel(rejectTarget()?.requestedRole) | translate }}</p>
           <div class="form-group">
-            <label>Reason (optional)</label>
-            <textarea [(ngModel)]="rejectReason" rows="3" placeholder="Explain why the request is being rejected…"></textarea>
+            <label>{{ 'admin.dashboard.reason' | translate }}</label>
+            <textarea [(ngModel)]="rejectReason" rows="3" [placeholder]="'admin.dashboard.reasonPlaceholder' | translate"></textarea>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="cancelReject()">Cancel</button>
-            <button class="btn btn-reject" (click)="confirmReject()" [disabled]="busy()">Confirm Reject</button>
+            <button class="btn btn-secondary" (click)="cancelReject()">{{ 'admin.common.cancel' | translate }}</button>
+            <button class="btn btn-reject" (click)="confirmReject()" [disabled]="busy()">{{ 'admin.upgrades.reject' | translate }}</button>
           </div>
         </div>
       </div>
@@ -226,12 +227,15 @@ export class FederationUpgradeRequestsComponent implements OnInit {
   }
 
   roleLabel(role: number | undefined): string {
-    const map: Record<number, string> = { 2: 'Federation Manager', 3: 'Club Manager' };
+    const map: Record<number, string> = { 2: 'admin.users.federationManager', 3: 'admin.users.clubManager' };
     return role != null ? (map[role] ?? String(role)) : '—';
   }
 
   statusLabel(status: number): string {
-    const map: Record<number, string> = { 0: 'Pending', 1: 'Approved', 2: 'Rejected', 3: 'Revoked', 4: 'Admin Revoked' };
+    const map: Record<number, string> = {
+      0: 'admin.upgrades.pending', 1: 'admin.upgrades.approved', 2: 'admin.upgrades.rejected',
+      3: 'admin.links.revoked', 4: 'admin.links.revoked'
+    };
     return map[status] ?? String(status);
   }
 

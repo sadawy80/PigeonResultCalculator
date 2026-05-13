@@ -86,20 +86,20 @@ import { TranslatePipe } from '../../core/i18n';
       <table>
         <thead>
           <tr>
-            <th>User</th>
-            <th>Requested Role</th>
-            <th>Federation</th>
-            <th>Notes</th>
-            <th>Status</th>
-            <th>Submitted</th>
-            <th>Actions</th>
+            <th>{{ 'admin.dashboard.users' | translate }}</th>
+            <th>{{ 'admin.upgrades.requestedRole' | translate }}</th>
+            <th>{{ 'admin.common.federation' | translate }}</th>
+            <th>{{ 'admin.upgrades.notes' | translate }}</th>
+            <th>{{ 'admin.common.status' | translate }}</th>
+            <th>{{ 'admin.common.createdAt' | translate }}</th>
+            <th>{{ 'admin.common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @if (loading()) {
-            <tr><td colspan="7" class="empty">Loading…</td></tr>
+            <tr><td colspan="7" class="empty">{{ 'admin.common.loading' | translate }}</td></tr>
           } @else if (items().length === 0) {
-            <tr><td colspan="7" class="empty">No upgrade requests found.</td></tr>
+            <tr><td colspan="7" class="empty">{{ 'admin.upgrades.noRequests' | translate }}</td></tr>
           } @else {
             @for (item of items(); track item.id) {
               <tr>
@@ -107,12 +107,12 @@ import { TranslatePipe } from '../../core/i18n';
                   <strong>{{ item.userFullName }}</strong><br>
                   <small>{{ item.userEmail }}</small>
                 </td>
-                <td>{{ roleLabel(item.requestedRole) }}</td>
+                <td>{{ roleLabel(item.requestedRole) | translate }}</td>
                 <td>{{ federationName(item.federationId) }}</td>
                 <td>{{ item.notes || '—' }}</td>
                 <td>
                   <span class="badge" [ngClass]="badgeClass(item.status)">
-                    {{ statusLabel(item.status) }}
+                    {{ statusLabel(item.status) | translate }}
                   </span>
                   @if (item.rejectionReason) {
                     <br><small>{{ item.rejectionReason }}</small>
@@ -122,18 +122,18 @@ import { TranslatePipe } from '../../core/i18n';
                 <td>
                   @if (item.status === 0) {
                     <div class="actions">
-                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Approve</button>
-                      <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">Reject</button>
+                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">{{ 'admin.upgrades.approve' | translate }}</button>
+                      <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">{{ 'admin.upgrades.reject' | translate }}</button>
                     </div>
                   }
                   @if (item.status === 1) {
                     <div class="actions">
-                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">Revoke</button>
+                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">{{ 'admin.links.revoke' | translate }}</button>
                     </div>
                   }
                   @if (item.status === 3) {
                     <div class="actions">
-                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Re-approve</button>
+                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">{{ 'admin.upgrades.approve' | translate }}</button>
                     </div>
                   }
                 </td>
@@ -145,31 +145,31 @@ import { TranslatePipe } from '../../core/i18n';
     </div>
 
     <div class="pagination-row">
-      <span class="text-muted text-sm">{{ total() }} requests · page {{ page }} of {{ totalPages() }}</span>
+      <span class="text-muted text-sm">{{ 'admin.upgrades.requestsCount' | translate:{ n: total() } }} · {{ 'admin.common.page' | translate }} {{ page }} {{ 'admin.common.of' | translate }} {{ totalPages() }}</span>
       <div class="flex gap-2 items-center">
         <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-          <option [ngValue]="10">10 / page</option>
-          <option [ngValue]="25">25 / page</option>
-          <option [ngValue]="50">50 / page</option>
-          <option [ngValue]="100">100 / page</option>
+          <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+          <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+          <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+          <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
         </select>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="prevPage()" [disabled]="page === 1">Prev</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="nextPage()" [disabled]="page >= totalPages()">Next</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="prevPage()" [disabled]="page === 1">{{ 'admin.common.prev' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="nextPage()" [disabled]="page >= totalPages()">{{ 'admin.common.next' | translate }}</button>
       </div>
     </div>
 
     @if (showRejectModal()) {
       <div class="modal-backdrop" (click)="cancelReject()">
         <div class="modal-card" (click)="$event.stopPropagation()">
-          <p class="modal-title">Reject Upgrade Request</p>
-          <p>User: <strong>{{ rejectTarget()?.userFullName }}</strong> — {{ roleLabel(rejectTarget()?.requestedRole) }}</p>
+          <p class="modal-title">{{ 'admin.dashboard.rejectTitle' | translate }}</p>
+          <p>{{ 'admin.dashboard.users' | translate }}: <strong>{{ rejectTarget()?.userFullName }}</strong> — {{ roleLabel(rejectTarget()?.requestedRole) | translate }}</p>
           <div class="form-group">
-            <label>Reason (optional)</label>
-            <textarea [(ngModel)]="rejectReason" rows="3" placeholder="Explain why the request is being rejected…"></textarea>
+            <label>{{ 'admin.dashboard.reason' | translate }}</label>
+            <textarea [(ngModel)]="rejectReason" rows="3" [placeholder]="'admin.dashboard.reasonPlaceholder' | translate"></textarea>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="cancelReject()">Cancel</button>
-            <button class="btn btn-reject" (click)="confirmReject()" [disabled]="busy()">Confirm Reject</button>
+            <button class="btn btn-secondary" (click)="cancelReject()">{{ 'admin.common.cancel' | translate }}</button>
+            <button class="btn btn-reject" (click)="confirmReject()" [disabled]="busy()">{{ 'admin.upgrades.reject' | translate }}</button>
           </div>
         </div>
       </div>
@@ -259,12 +259,15 @@ export class AdminUpgradeRequestsComponent implements OnInit {
   }
 
   roleLabel(role: number | undefined): string {
-    const map: Record<number, string> = { 2: 'Federation Manager', 3: 'Club Manager' };
+    const map: Record<number, string> = { 2: 'admin.users.federationManager', 3: 'admin.users.clubManager' };
     return role != null ? (map[role] ?? String(role)) : '—';
   }
 
   statusLabel(status: number): string {
-    const map: Record<number, string> = { 0: 'Pending', 1: 'Approved', 2: 'Rejected', 3: 'Revoked', 4: 'Admin Revoked' };
+    const map: Record<number, string> = {
+      0: 'admin.upgrades.pending', 1: 'admin.upgrades.approved', 2: 'admin.upgrades.rejected',
+      3: 'admin.links.revoked', 4: 'admin.links.revoked'
+    };
     return map[status] ?? String(status);
   }
 

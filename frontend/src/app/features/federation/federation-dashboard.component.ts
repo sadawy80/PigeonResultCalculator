@@ -5,29 +5,30 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/services';
 import { FederationResult, FederationResultStatus } from '../../core/models';
+import { TranslatePipe } from '../../core/i18n';
 
 // ── Federation Dashboard ──────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-federation-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, TranslatePipe],
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>
-        <h1 class="pr-page-header__title">Federation Dashboard</h1>
-        <p class="pr-page-header__subtitle">Monitor all clubs and generate national results</p>
+        <h1 class="pr-page-header__title">{{ 'user.federationDashboard' | translate }}</h1>
+        <p class="pr-page-header__subtitle">{{ 'user.federationOverview' | translate }}</p>
       </div>
     </div>
 
     <!-- Activity stats -->
-    <div class="kpi-section-label">Activity</div>
+    <div class="kpi-section-label">{{ 'user.activity' | translate }}</div>
     <div class="kpi-grid mb-2">
       <div class="pr-card pr-card--flat kpi-card">
         <div class="kpi-icon">🏆</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ activityStats().totalResults ?? '—' }}</div>
-          <div class="kpi-label">Total Results</div>
+          <div class="kpi-label">{{ 'user.totalResults' | translate }}</div>
         </div>
         <a routerLink="/federation/results" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
       </div>
@@ -35,44 +36,52 @@ import { FederationResult, FederationResultStatus } from '../../core/models';
         <div class="kpi-icon">📅</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ thisYear }}</div>
-          <div class="kpi-label">Active Season</div>
+          <div class="kpi-label">{{ 'common.season' | translate }}</div>
         </div>
       </div>
     </div>
-    <div class="kpi-section-label kpi-section-label--sub">↳ This Year ({{ thisYear }})</div>
+    <div class="kpi-section-label kpi-section-label--sub">↳ {{ 'user.thisYear' | translate:{ year: thisYear } }}</div>
     <div class="kpi-grid mb-8">
       <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
         <div class="kpi-icon">🏆</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ activityStats().resultsThisYear ?? '—' }}</div>
-          <div class="kpi-label">Results This Year</div>
+          <div class="kpi-label">{{ 'user.totalResults' | translate }} {{ 'user.thisYear' | translate:{ year: thisYear } }}</div>
         </div>
       </div>
     </div>
 
     <div class="pr-card">
-      <h3 style="margin-bottom:24px">Recent National Results</h3>
+      <h3 style="margin-bottom:24px">{{ 'user.recentRaces' | translate }}</h3>
       @if (results().length === 0) {
         <div class="pr-empty">
           <div class="pr-empty__icon">🏆</div>
-          <div class="pr-empty__title">No national results yet</div>
-          <p class="pr-empty__desc">Aggregate club results to publish national standings.</p>
+          <div class="pr-empty__title">{{ 'user.noMyResults' | translate }}</div>
         </div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
-            <thead><tr><th>Name</th><th>Status</th><th>Clubs</th><th>Entries</th><th>Published</th><th></th></tr></thead>
+            <thead>
+              <tr>
+                <th>{{ 'user.name' | translate }}</th>
+                <th>{{ 'user.status' | translate }}</th>
+                <th>{{ 'user.totalClubs' | translate }}</th>
+                <th>{{ 'user.entries' | translate }}</th>
+                <th>{{ 'admin.common.publishedAt' | translate }}</th>
+                <th></th>
+              </tr>
+            </thead>
             <tbody>
               @for (r of results(); track r.id) {
                 <tr>
                   <td class="font-bold">{{ r.name }}</td>
                   <td><span [class]="r.status === FederationResultStatus.Published ? 'pr-badge pr-badge--success' : 'pr-badge pr-badge--muted'">
-                    {{ r.status === FederationResultStatus.Published ? 'Published' : 'Draft' }}
+                    {{ (r.status === FederationResultStatus.Published ? 'admin.races.statusPublished' : 'admin.races.statusDraft') | translate }}
                   </span></td>
                   <td>{{ r.totalClubsCount }}</td>
                   <td>{{ r.totalEntriesCount }}</td>
                   <td class="text-muted text-sm">{{ r.publishedAt | date:'dd MMM yyyy' }}</td>
-                  <td><button class="pr-btn pr-btn--ghost pr-btn--sm">View</button></td>
+                  <td><button class="pr-btn pr-btn--ghost pr-btn--sm">{{ 'user.view' | translate }}</button></td>
                 </tr>
               }
             </tbody>

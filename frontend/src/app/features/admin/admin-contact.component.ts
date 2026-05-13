@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToasterService } from '../../core/services/toaster.service';
 import { ModalService } from '../../core/services/modal.service';
-import { TranslatePipe } from '../../core/i18n';
+import { TranslatePipe, TranslationService } from '../../core/i18n';
 
 interface ContactItem {
   id: string;
@@ -52,13 +52,13 @@ interface ContactItem {
           type="button"
           class="filter-pill"
           [class.active]="activeFilter() === 'replied'"
-          (click)="setFilter('replied')">Replied</button>
+          (click)="setFilter('replied')">{{ 'admin.contact.replied' | translate }}</button>
       </div>
 
       <input
         type="search"
         class="pr-input inbox-search"
-        placeholder="Search subject, name or email…"
+        [placeholder]="'admin.common.searchPlaceholder' | translate"
         [(ngModel)]="search"
         (keyup.enter)="load()" />
     </div>
@@ -70,7 +70,7 @@ interface ContactItem {
     } @else if (visible().length === 0) {
       <div class="inbox-empty">
         <div class="inbox-empty__icon">📭</div>
-        <div>No messages match this filter.</div>
+        <div>{{ 'admin.contact.noMessages' | translate }}</div>
       </div>
     } @else {
       <div class="card-list">
@@ -82,7 +82,7 @@ interface ContactItem {
                 <div class="msg-card__email">{{ m.senderEmail }}</div>
                 <div class="msg-card__date">{{ m.createdAt | date: 'medium' }}</div>
               </div>
-              <span class="status-badge" [attr.data-status]="m.status">{{ statusLabel(m.status) }}</span>
+              <span class="status-badge" [attr.data-status]="m.status">{{ statusLabel(m.status) | translate }}</span>
             </header>
 
             <div class="msg-card__body">
@@ -92,7 +92,7 @@ interface ContactItem {
 
             @if (m.adminReply) {
               <section class="reply-block">
-                <div class="reply-block__label">Admin reply:</div>
+                <div class="reply-block__label">{{ 'admin.contact.yourReply' | translate }}:</div>
                 <p class="reply-block__text">{{ m.adminReply }}</p>
                 @if (m.repliedAt) {
                   <time class="reply-block__date">{{ m.repliedAt | date: 'short' }}</time>
@@ -107,19 +107,19 @@ interface ContactItem {
                   rows="3"
                   maxlength="5000"
                   [(ngModel)]="replyDraft[m.id]"
-                  placeholder="Type your reply…"></textarea>
+                  [placeholder]="'admin.contact.replyPlaceholder' | translate"></textarea>
                 <div class="reply-form__actions">
                   <button
                     type="button"
                     class="pr-btn pr-btn--ghost pr-btn--sm"
                     [disabled]="busyId() === m.id"
-                    (click)="closeTicket(m)">Close</button>
+                    (click)="closeTicket(m)">{{ 'admin.contact.closeTicket' | translate }}</button>
                   <button
                     type="button"
                     class="pr-btn pr-btn--primary pr-btn--sm"
                     [disabled]="busyId() === m.id || !(replyDraft[m.id] || '').trim()"
                     (click)="sendReply(m)">
-                    {{ busyId() === m.id ? 'Sending…' : (m.adminReply ? 'Send follow-up' : 'Send reply') }}
+                    {{ (busyId() === m.id ? 'admin.contact.sending' : 'admin.contact.send') | translate }}
                   </button>
                 </div>
               </footer>
@@ -242,6 +242,7 @@ export class AdminContactComponent implements OnInit {
   private api     = inject(ApiService);
   private toaster = inject(ToasterService);
   private modals  = inject(ModalService);
+  private i18n    = inject(TranslationService);
 
   items   = signal<ContactItem[]>([]);
   loading = signal(false);
@@ -286,7 +287,10 @@ export class AdminContactComponent implements OnInit {
   }
 
   statusLabel(status: string): string {
-    return status === 'Open' ? 'New' : status;
+    if (status === 'Open')    return 'admin.contact.open';
+    if (status === 'Replied') return 'admin.contact.replied';
+    if (status === 'Closed')  return 'admin.contact.closed';
+    return status;
   }
 
   sendReply(m: ContactItem) {
@@ -297,34 +301,34 @@ export class AdminContactComponent implements OnInit {
       next: () => {
         this.replyDraft[m.id] = '';
         this.busyId.set(null);
-        this.toaster.success('Reply sent.');
+        this.toaster.success(this.i18n.t('contact.replySent'));
         this.refreshOne(m.id);
       },
       error: err => {
         this.busyId.set(null);
-        this.toaster.error(err?.error?.detail || 'Failed to send reply.');
+        this.toaster.error(err?.error?.detail || this.i18n.t('admin.contact.sending'));
       }
     });
   }
 
   async closeTicket(m: ContactItem) {
     const ok = await this.modals.confirm({
-      title: 'Close ticket',
-      message: `Close the conversation with ${m.senderName}?`,
-      confirmLabel: 'Close',
-      cancelLabel: 'Cancel'
+      title:        this.i18n.t('admin.contact.closeTicket'),
+      message:      `${this.i18n.t('admin.contact.closeTicket')} — ${m.senderName}?`,
+      confirmLabel: this.i18n.t('admin.contact.closeTicket'),
+      cancelLabel:  this.i18n.t('admin.common.cancel')
     });
     if (!ok) return;
     this.busyId.set(m.id);
     this.api.adminCloseContactMessage(m.id).subscribe({
       next: () => {
         this.busyId.set(null);
-        this.toaster.info('Ticket closed.');
+        this.toaster.info(this.i18n.t('admin.contact.closeTicket'));
         this.refreshOne(m.id);
       },
       error: err => {
         this.busyId.set(null);
-        this.toaster.error(err?.error?.detail || 'Failed to close ticket.');
+        this.toaster.error(err?.error?.detail || this.i18n.t('admin.contact.closeTicket'));
       }
     });
   }

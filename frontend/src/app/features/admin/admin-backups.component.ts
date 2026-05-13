@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { ToasterService } from '../../core/services/toaster.service';
 import { ModalService } from '../../core/services/modal.service';
-import { TranslatePipe } from '../../core/i18n';
+import { TranslatePipe, TranslationService } from '../../core/i18n';
 
 interface BackupEntry {
   id:               string;
@@ -77,7 +77,7 @@ interface BackupEntry {
         } @else if (visible().length === 0) {
           <div class="bk-empty">
             <div class="bk-empty__icon">💾</div>
-            <div>No backups match.</div>
+            <div>{{ 'admin.backups.noBackups' | translate }}</div>
           </div>
         } @else {
           @for (b of visible(); track b.id) {
@@ -90,9 +90,9 @@ interface BackupEntry {
                 @if (b.uploadedToPCloud) { <span class="bk-pill bk-pill--alt">pCloud</span> }
               </div>
               <div class="bk-row__actions">
-                <button class="icon-btn"            title="Browse"  aria-label="Browse"  (click)="openBrowse(b)">🔍</button>
-                <button class="icon-btn icon-btn--success" title="Restore" aria-label="Restore" (click)="confirmRestore(b)">⟲</button>
-                <button class="icon-btn icon-btn--danger"  title="Delete"  aria-label="Delete"  (click)="confirmDelete(b)">🗑</button>
+                <button class="icon-btn"            [title]="'admin.backups.browse'  | translate" [attr.aria-label]="'admin.backups.browse'  | translate" (click)="openBrowse(b)">🔍</button>
+                <button class="icon-btn icon-btn--success" [title]="'admin.backups.restore' | translate" [attr.aria-label]="'admin.backups.restore' | translate" (click)="confirmRestore(b)">⟲</button>
+                <button class="icon-btn icon-btn--danger"  [title]="'admin.common.delete'   | translate" [attr.aria-label]="'admin.common.delete'   | translate" (click)="confirmDelete(b)">🗑</button>
               </div>
             </div>
           }
@@ -103,16 +103,16 @@ interface BackupEntry {
 
     @if (filteredCount() > 0) {
       <div class="pagination-row">
-        <span class="text-muted text-sm">{{ filteredCount() }} backups · page {{ page() }} of {{ totalPages() }}</span>
+        <span class="text-muted text-sm">{{ 'admin.backups.backupsCount' | translate:{ n: filteredCount() } }} · {{ 'admin.common.page' | translate }} {{ page() }} {{ 'admin.common.of' | translate }} {{ totalPages() }}</span>
         <div class="flex gap-2 items-center">
           <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-            <option [ngValue]="10">10 / page</option>
-            <option [ngValue]="25">25 / page</option>
-            <option [ngValue]="50">50 / page</option>
-            <option [ngValue]="100">100 / page</option>
+            <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+            <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+            <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+            <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
           </select>
-          <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1"            (click)="goPage(page() - 1)">Prev</button>
-          <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === totalPages()" (click)="goPage(page() + 1)">Next</button>
+          <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === 1"            (click)="goPage(page() - 1)">{{ 'admin.common.prev' | translate }}</button>
+          <button class="pr-btn pr-btn--ghost pr-btn--sm" [disabled]="page() === totalPages()" (click)="goPage(page() + 1)">{{ 'admin.common.next' | translate }}</button>
         </div>
       </div>
     }
@@ -122,8 +122,8 @@ interface BackupEntry {
       <div class="modal-backdrop" (click)="closeBrowse()">
         <div class="modal-card modal-card--wide" (click)="$event.stopPropagation()">
           <header class="modal-card__head">
-            <h2>Browse: <code>{{ filename(bt) }}</code></h2>
-            <button class="modal-card__close" aria-label="Close" (click)="closeBrowse()">×</button>
+            <h2>{{ 'admin.backups.browseTitle' | translate:{ name: filename(bt) } }}</h2>
+            <button class="modal-card__close" [attr.aria-label]="'admin.common.cancel' | translate" (click)="closeBrowse()">×</button>
           </header>
 
           <div class="browse-controls">
@@ -135,15 +135,15 @@ interface BackupEntry {
             <input
               class="pr-input"
               type="search"
-              placeholder="Search (band, name, ID…)"
+              [placeholder]="'admin.backups.searchRecord' | translate"
               [(ngModel)]="browseSearch"
               (keyup.enter)="runBrowse()" />
             <button class="pr-btn pr-btn--primary" (click)="runBrowse()" [disabled]="browseLoading()">
-              {{ browseLoading() ? 'Searching…' : 'Search' }}
+              {{ (browseLoading() ? 'admin.common.loading' : 'admin.common.search') | translate }}
             </button>
           </div>
 
-          <p class="browse-count">{{ browseResults().length }} record(s) found</p>
+          <p class="browse-count">{{ 'admin.backups.recordsFound' | translate:{ n: browseResults().length } }}</p>
 
           @if (browseNotice()) {
             <div class="pr-alert pr-alert--info mb-4">{{ browseNotice() }}</div>
@@ -156,12 +156,12 @@ interface BackupEntry {
                 <code class="browse-row__json">{{ r.preview }}</code>
                 <button class="pr-btn pr-btn--outline pr-btn--sm browse-row__btn"
                         (click)="confirmRestoreRecord(bt, r)">
-                  Restore this record
+                  {{ 'admin.backups.restoreThisRecord' | translate }}
                 </button>
               </div>
             }
             @if (browseResults().length === 0 && !browseLoading() && !browseNotice()) {
-              <div class="bk-empty">No matching records.</div>
+              <div class="bk-empty">{{ 'admin.backups.noMatchingRecords' | translate }}</div>
             }
           </div>
         </div>
@@ -327,6 +327,7 @@ export class AdminBackupsComponent implements OnInit {
   private http    = inject(HttpClient);
   private toaster = inject(ToasterService);
   private modals  = inject(ModalService);
+  private i18n    = inject(TranslationService);
   private base    = `${environment.apiUrl}/backups`;
 
   items      = signal<BackupEntry[]>([]);
@@ -382,7 +383,7 @@ export class AdminBackupsComponent implements OnInit {
         this.loading.set(false);
       },
       error: err => {
-        this.error.set(err?.error?.detail || err?.error?.title || 'Failed to load backups.');
+        this.error.set(err?.error?.detail || err?.error?.title || this.i18n.t('admin.backups.loadFailed'));
         this.loading.set(false);
       }
     });
@@ -398,12 +399,12 @@ export class AdminBackupsComponent implements OnInit {
     this.http.post<any>(`${this.base}/trigger`, {}).subscribe({
       next: r => {
         this.triggering.set(false);
-        this.toaster.success(r?.message ?? 'Backup started.');
+        this.toaster.success(r?.message ?? this.i18n.t('admin.backups.backupStarted'));
         setTimeout(() => this.load(), 1200);
       },
       error: err => {
         this.triggering.set(false);
-        this.toaster.error(err?.error?.detail || 'Failed to trigger backup.');
+        this.toaster.error(err?.error?.detail || this.i18n.t('admin.backups.backupTriggerFailed'));
       }
     });
   }
@@ -443,10 +444,10 @@ export class AdminBackupsComponent implements OnInit {
         this.browseLoading.set(false);
         // 501 is expected today — render the detail as an informational notice.
         if (err?.status === 501) {
-          this.browseNotice.set(err?.error?.detail || 'Backup browsing is being implemented.');
+          this.browseNotice.set(err?.error?.detail || this.i18n.t('admin.backups.browseFailed'));
           this.browseResults.set([]);
         } else {
-          this.toaster.error(err?.error?.detail || 'Failed to browse backup.');
+          this.toaster.error(err?.error?.detail || this.i18n.t('admin.backups.browseFailed'));
         }
       }
     });
@@ -454,52 +455,52 @@ export class AdminBackupsComponent implements OnInit {
 
   async confirmRestore(b: BackupEntry) {
     const ok = await this.modals.confirm({
-      title: 'Restore entire backup',
-      message: `Restore ${this.filename(b)}? This will overwrite the current ${b.databaseName} database. The operation cannot be undone.`,
-      confirmLabel: 'Restore',
-      cancelLabel: 'Cancel',
+      title:        this.i18n.t('admin.backups.restoreBackupTitle'),
+      message:      this.i18n.t('admin.backups.restoreBackupBody', { name: this.filename(b), db: b.databaseName }),
+      confirmLabel: this.i18n.t('admin.backups.restore'),
+      cancelLabel:  this.i18n.t('admin.common.cancel'),
       variant: 'danger'
     });
     if (!ok) return;
     this.http.post<any>(`${this.base}/${b.id}/restore`, {}).subscribe({
-      next: () => this.toaster.success('Restore started.'),
+      next: () => this.toaster.success(this.i18n.t('admin.backups.restoreStarted')),
       error: err => {
-        if (err?.status === 501) this.toaster.info(err?.error?.detail || 'Restore pipeline is not yet enabled.');
-        else this.toaster.error(err?.error?.detail || 'Restore failed.');
+        if (err?.status === 501) this.toaster.info(err?.error?.detail || this.i18n.t('admin.backups.restoreFailed'));
+        else this.toaster.error(err?.error?.detail || this.i18n.t('admin.backups.restoreFailed'));
       }
     });
   }
 
   async confirmRestoreRecord(b: BackupEntry, r: { id: string; table: string }) {
     const ok = await this.modals.confirm({
-      title: 'Restore record',
-      message: `Restore record ${r.id} from table ${r.table}?`,
-      confirmLabel: 'Restore',
+      title:        this.i18n.t('admin.backups.restoreRecordTitle'),
+      message:      this.i18n.t('admin.backups.restoreRecordBody', { id: r.id, table: r.table }),
+      confirmLabel: this.i18n.t('admin.backups.restore'),
       variant: 'danger'
     });
     if (!ok) return;
     this.http.post<any>(`${this.base}/${b.id}/restore`, {
       table: r.table, recordId: r.id
     }).subscribe({
-      next: () => this.toaster.success('Record restored.'),
+      next: () => this.toaster.success(this.i18n.t('admin.backups.recordRestored')),
       error: err => {
-        if (err?.status === 501) this.toaster.info(err?.error?.detail || 'Record restore not yet enabled.');
-        else this.toaster.error(err?.error?.detail || 'Restore failed.');
+        if (err?.status === 501) this.toaster.info(err?.error?.detail || this.i18n.t('admin.backups.restoreFailed'));
+        else this.toaster.error(err?.error?.detail || this.i18n.t('admin.backups.restoreFailed'));
       }
     });
   }
 
   async confirmDelete(b: BackupEntry) {
     const ok = await this.modals.confirm({
-      title: 'Delete backup',
-      message: `Delete ${this.filename(b)} from ${b.uploadedToMinIO ? 'MinIO' : 'storage'}? This cannot be undone.`,
-      confirmLabel: 'Delete',
+      title:        this.i18n.t('admin.backups.deleteBackupTitle'),
+      message:      this.i18n.t('admin.backups.deleteBackupBody', { name: this.filename(b) }),
+      confirmLabel: this.i18n.t('admin.common.delete'),
       variant: 'danger'
     });
     if (!ok) return;
     this.http.delete(`${this.base}/${b.id}`).subscribe({
-      next: () => { this.toaster.success('Backup deleted.'); this.load(); },
-      error: err => this.toaster.error(err?.error?.detail || 'Failed to delete backup.')
+      next: () => { this.toaster.success(this.i18n.t('admin.backups.backupDeleted')); this.load(); },
+      error: err => this.toaster.error(err?.error?.detail || this.i18n.t('admin.backups.deleteFailed'))
     });
   }
 

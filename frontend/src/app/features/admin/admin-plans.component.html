@@ -16,11 +16,11 @@
   <div class="plans-header">
     <div class="type-tabs">
       <button class="type-tab" [class.type-tab--active]="selectedType() === 'Federation'" (click)="selectedType.set('Federation')">
-        Federation Plans
+        {{ 'admin.common.federation' | translate }}
         <span class="type-tab__count">{{ federationTiers().length }}</span>
       </button>
       <button class="type-tab" [class.type-tab--active]="selectedType() === 'Club'" (click)="selectedType.set('Club')">
-        Club Plans
+        {{ 'admin.common.club' | translate }}
         <span class="type-tab__count">{{ clubTiers().length }}</span>
       </button>
     </div>
@@ -40,11 +40,11 @@
 
   <!-- Plan grid -->
   @if (loading()) {
-    <div class="text-center py-8 text-muted">Loading plans…</div>
+    <div class="text-center py-8 text-muted">{{ 'admin.common.loading' | translate }}</div>
   } @else if (activeTiers().length === 0) {
     <div class="pr-empty">
       <div class="pr-empty__icon">📋</div>
-      <div class="pr-empty__title">No {{ selectedType() }} plans found</div>
+      <div class="pr-empty__title">{{ 'admin.plans.noPlans' | translate }}</div>
     </div>
   } @else {
     <div class="plans-grid">
@@ -56,7 +56,7 @@
             <div class="plan-tile__badge">⭐ Most Popular</div>
           }
           @if (card && !card.isActive) {
-            <div class="plan-tile__badge plan-tile__badge--inactive">Inactive</div>
+            <div class="plan-tile__badge plan-tile__badge--inactive">{{ 'admin.common.inactive' | translate }}</div>
           }
 
           <div class="plan-tile__header">
@@ -97,7 +97,7 @@
 
             <div class="plan-tile__actions">
               <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="openEdit(card)">
-                ✏️ Edit
+                ✏️ {{ 'admin.common.edit' | translate }}
               </button>
               <button class="pr-btn pr-btn--ghost pr-btn--sm" style="color:var(--pr-error,#dc2626)"
                 [disabled]="deletingPlanId() === card.id"
@@ -106,7 +106,7 @@
               </button>
             </div>
           } @else {
-            <div class="plan-tile__no-variant text-muted text-sm">No {{ selectedCycle() }} variant</div>
+            <div class="plan-tile__no-variant text-muted text-sm">{{ 'admin.common.noResults' | translate }}</div>
           }
         </div>
       }
@@ -119,7 +119,7 @@
   <div class="pr-modal-backdrop" (click)="closeCreate()">
     <div class="pr-modal pr-modal--lg" (click)="$event.stopPropagation()">
       <div class="edit-modal-header">
-        <h3 class="pr-modal__title">New Subscription Plan</h3>
+        <h3 class="pr-modal__title">{{ 'admin.plans.newPlan' | translate }}</h3>
         <button class="pr-btn pr-btn--icon pr-btn--ghost" (click)="closeCreate()">✕</button>
       </div>
       <hr class="pr-modal__divider">
@@ -133,11 +133,11 @@
         <!-- Row 1: Name | Description (full modal width) -->
         <div class="modal-grid">
           <div class="pr-form-group">
-            <label class="pr-label">Name</label>
+            <label class="pr-label">{{ 'admin.plans.planName' | translate }}</label>
             <input class="pr-input" [(ngModel)]="createName" placeholder="e.g. Pro Federation">
           </div>
           <div class="pr-form-group">
-            <label class="pr-label">Description <span class="pr-label-hint">pricing page</span></label>
+            <label class="pr-label">{{ 'admin.plans.description' | translate }}</label>
             <input class="pr-input" [(ngModel)]="createDescription" placeholder="e.g. For growing federations">
           </div>
         </div>
@@ -145,16 +145,16 @@
         <!-- Row 2: Billing Cycle | Currency | Price -->
         <div class="modal-grid-3">
           <div class="pr-form-group">
-            <label class="pr-label">Billing Cycle</label>
+            <label class="pr-label">{{ 'admin.plans.billingCycle' | translate }}</label>
             <select class="pr-select" [(ngModel)]="createCycle">
-              <option value="Monthly">Monthly</option>
-              <option value="Seasonal">Seasonal</option>
-              <option value="Annual">Annual</option>
+              <option value="Monthly">{{ 'admin.plans.monthly' | translate }}</option>
+              <option value="Seasonal">{{ 'admin.plans.seasonal' | translate }}</option>
+              <option value="Annual">{{ 'admin.plans.annual' | translate }}</option>
             </select>
           </div>
           <div class="pr-form-group">
-            <label class="pr-label">Currency</label>
-            <input class="pr-input" [(ngModel)]="createCurrency" list="iso-currencies" placeholder="Search currency…" autocomplete="off">
+            <label class="pr-label">{{ 'admin.plans.currency' | translate }}</label>
+            <input class="pr-input" [(ngModel)]="createCurrency" list="iso-currencies" autocomplete="off">
             <datalist id="iso-currencies">
               @for (c of isoCurrencies; track c.code) {
                 <option [value]="c.code">{{ c.code }} — {{ c.name }}</option>
@@ -162,7 +162,7 @@
             </datalist>
           </div>
           <div class="pr-form-group">
-            <label class="pr-label">Price</label>
+            <label class="pr-label">{{ 'admin.plans.price' | translate }}</label>
             <input class="pr-input" type="number" min="0" step="0.01" [(ngModel)]="createPrice">
           </div>
         </div>
@@ -171,35 +171,35 @@
         @if (createType === 'Federation') {
           <div class="modal-grid-3--bottom">
             <div class="pr-form-group">
-              <label class="pr-label">Max Clubs <span class="pr-label-hint">0 = ∞</span></label>
+              <label class="pr-label">{{ 'admin.plans.maxClubs' | translate }} <span class="pr-label-hint">0 = ∞</span></label>
               <div class="input-with-icon">
                 <span class="input-icon">🏟️</span>
                 <input class="pr-input" type="number" min="0" [(ngModel)]="createMaxClubs">
               </div>
             </div>
             <div class="pr-form-group">
-              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <label class="pr-label">{{ 'admin.plans.maxResultsPerClub' | translate }} <span class="pr-label-hint">0 = ∞</span></label>
               <div class="input-with-icon">
                 <span class="input-icon">📊</span>
                 <input class="pr-input" type="number" min="0" [(ngModel)]="createMaxResults">
               </div>
             </div>
             <div class="pr-form-group">
-              <label class="pr-label">Sort Order</label>
+              <label class="pr-label">{{ 'admin.plans.sortOrder' | translate }}</label>
               <input class="pr-input" type="number" min="1" [(ngModel)]="createSortOrder">
             </div>
           </div>
         } @else {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">
             <div class="pr-form-group">
-              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <label class="pr-label">{{ 'admin.plans.maxResultsPerClub' | translate }} <span class="pr-label-hint">0 = ∞</span></label>
               <div class="input-with-icon">
                 <span class="input-icon">📊</span>
                 <input class="pr-input" type="number" min="0" [(ngModel)]="createMaxResults">
               </div>
             </div>
             <div class="pr-form-group">
-              <label class="pr-label">Sort Order</label>
+              <label class="pr-label">{{ 'admin.plans.sortOrder' | translate }}</label>
               <input class="pr-input" type="number" min="1" [(ngModel)]="createSortOrder">
             </div>
           </div>
@@ -208,16 +208,16 @@
         <!-- Row 4: Plan Type | Most Popular -->
         <div class="create-row4">
           <div class="pr-form-group">
-            <label class="pr-label">Plan Type</label>
+            <label class="pr-label">{{ 'admin.common.type' | translate }}</label>
             <select class="pr-select" [(ngModel)]="createType">
-              <option value="Federation">Federation Plan</option>
-              <option value="Club">Club Plan</option>
+              <option value="Federation">{{ 'admin.common.federation' | translate }}</option>
+              <option value="Club">{{ 'admin.common.club' | translate }}</option>
             </select>
           </div>
           <label class="edit-flag-item" [class.edit-flag-item--on]="createHighlighted">
             <input type="checkbox" [(ngModel)]="createHighlighted">
             <div class="edit-flag-dot" [class.edit-flag-dot--gold]="createHighlighted"></div>
-            <span>⭐ Most Popular</span>
+            <span>⭐ {{ 'admin.plans.highlighted' | translate }}</span>
           </label>
         </div>
 
@@ -225,9 +225,9 @@
 
       <hr class="pr-modal__divider">
       <div class="modal-footer">
-        <button class="pr-btn pr-btn--ghost" (click)="closeCreate()">Cancel</button>
+        <button class="pr-btn pr-btn--ghost" (click)="closeCreate()">{{ 'admin.common.cancel' | translate }}</button>
         <button class="pr-btn pr-btn--primary" [disabled]="creating()" (click)="saveCreate()">
-          {{ creating() ? 'Creating…' : 'Create Plan' }}
+          {{ (creating() ? 'admin.common.saving' : 'admin.plans.createPlan') | translate }}
         </button>
       </div>
     </div>
@@ -238,21 +238,18 @@
 @if (deletePlanTarget()) {
   <div class="pr-modal-backdrop" (click)="deletePlanTarget.set(null)">
     <div class="pr-modal pr-modal--sm" (click)="$event.stopPropagation()">
-      <h3 class="pr-modal__title">Delete Plan</h3>
+      <h3 class="pr-modal__title">{{ 'admin.plans.deletePlan' | translate }}</h3>
       <p class="pr-modal__subtitle" style="margin-top:8px">
-        Delete <strong>{{ deletePlanTarget()!.name }}</strong> ({{ deletePlanTarget()!.billingCycle }})?
-      </p>
-      <p style="margin-top:.5rem;font-size:.875rem;color:var(--pr-error,#dc2626);font-weight:600">
-        Plans with active subscriptions cannot be deleted.
+        {{ 'admin.plans.deletePlanBody' | translate:{ name: (deletePlanTarget()!.name + ' (' + deletePlanTarget()!.billingCycle + ')') } }}
       </p>
       @if (deletePlanError()) {
         <div class="pr-alert pr-alert--error mt-3">{{ deletePlanError() }}</div>
       }
       <div class="modal-footer">
-        <button class="pr-btn pr-btn--ghost" (click)="deletePlanTarget.set(null)">Cancel</button>
+        <button class="pr-btn pr-btn--ghost" (click)="deletePlanTarget.set(null)">{{ 'admin.common.cancel' | translate }}</button>
         <button class="pr-btn pr-btn--primary" style="background:var(--pr-error,#dc2626);border-color:var(--pr-error,#dc2626)"
           [disabled]="!!deletingPlanId()" (click)="executeDeletePlan()">
-          {{ deletingPlanId() ? 'Deleting…' : 'Delete Plan' }}
+          {{ (deletingPlanId() ? 'admin.common.deleting' : 'admin.plans.deletePlan') | translate }}
         </button>
       </div>
     </div>
@@ -266,14 +263,14 @@
 
       <div class="edit-modal-header">
         <div>
-          <h3 class="pr-modal__title">Edit Plan Variant</h3>
+          <h3 class="pr-modal__title">{{ 'admin.plans.editPlan' | translate }}</h3>
           <p class="pr-modal__subtitle">
             {{ editingPlan()!.name }}
             <span class="edit-cycle-badge">{{ editingPlan()!.billingCycle }}</span>
             <span class="edit-type-badge">{{ editingPlan()!.type }}</span>
           </p>
         </div>
-        <button class="pr-btn pr-btn--icon pr-btn--ghost" (click)="closeEdit()" title="Close">✕</button>
+        <button class="pr-btn pr-btn--icon pr-btn--ghost" (click)="closeEdit()" [title]="'admin.common.cancel' | translate">✕</button>
       </div>
 
       <hr class="pr-modal__divider">
@@ -288,18 +285,18 @@
         @if (editingPlan()!.type === 'Federation') {
           <div class="modal-grid-3">
             <div class="pr-form-group">
-              <label class="pr-label">Price <span class="pr-label-hint">{{ editingPlan()!.currency }}</span></label>
+              <label class="pr-label">{{ 'admin.plans.price' | translate }} <span class="pr-label-hint">{{ editingPlan()!.currency }}</span></label>
               <input class="pr-input" type="number" min="0" step="0.01" [(ngModel)]="editPrice">
             </div>
             <div class="pr-form-group">
-              <label class="pr-label">Max Clubs <span class="pr-label-hint">0 = ∞</span></label>
+              <label class="pr-label">{{ 'admin.plans.maxClubs' | translate }} <span class="pr-label-hint">0 = ∞</span></label>
               <div class="input-with-icon">
                 <span class="input-icon">🏟️</span>
                 <input class="pr-input" type="number" min="0" [(ngModel)]="editMaxClubs">
               </div>
             </div>
             <div class="pr-form-group">
-              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <label class="pr-label">{{ 'admin.plans.maxResultsPerClub' | translate }} <span class="pr-label-hint">0 = ∞</span></label>
               <div class="input-with-icon">
                 <span class="input-icon">📊</span>
                 <input class="pr-input" type="number" min="0" [(ngModel)]="editMaxResults">
@@ -309,11 +306,11 @@
         } @else {
           <div class="modal-grid">
             <div class="pr-form-group">
-              <label class="pr-label">Price <span class="pr-label-hint">{{ editingPlan()!.currency }}</span></label>
+              <label class="pr-label">{{ 'admin.plans.price' | translate }} <span class="pr-label-hint">{{ editingPlan()!.currency }}</span></label>
               <input class="pr-input" type="number" min="0" step="0.01" [(ngModel)]="editPrice">
             </div>
             <div class="pr-form-group">
-              <label class="pr-label">Max Results / Club <span class="pr-label-hint">0 = ∞</span></label>
+              <label class="pr-label">{{ 'admin.plans.maxResultsPerClub' | translate }} <span class="pr-label-hint">0 = ∞</span></label>
               <div class="input-with-icon">
                 <span class="input-icon">📊</span>
                 <input class="pr-input" type="number" min="0" [(ngModel)]="editMaxResults">
@@ -325,11 +322,11 @@
         <!-- Row 2: description + sort -->
         <div class="modal-grid">
           <div class="pr-form-group">
-            <label class="pr-label">Description <span class="pr-label-hint">pricing page</span></label>
-            <input class="pr-input" [(ngModel)]="editDescription" placeholder="e.g. For growing national federations">
+            <label class="pr-label">{{ 'admin.plans.description' | translate }}</label>
+            <input class="pr-input" [(ngModel)]="editDescription">
           </div>
           <div class="pr-form-group">
-            <label class="pr-label">Sort Order <span class="pr-label-hint">display position</span></label>
+            <label class="pr-label">{{ 'admin.plans.sortOrder' | translate }}</label>
             <input class="pr-input" type="number" min="1" [(ngModel)]="editSortOrder">
           </div>
         </div>
@@ -339,12 +336,12 @@
           <label class="edit-flag-item" [class.edit-flag-item--on]="editIsActive">
             <input type="checkbox" [(ngModel)]="editIsActive">
             <div class="edit-flag-dot" [class.edit-flag-dot--green]="editIsActive"></div>
-            <span>Active</span>
+            <span>{{ 'admin.common.active' | translate }}</span>
           </label>
           <label class="edit-flag-item" [class.edit-flag-item--on]="editIsHighlighted">
             <input type="checkbox" [(ngModel)]="editIsHighlighted">
             <div class="edit-flag-dot" [class.edit-flag-dot--gold]="editIsHighlighted"></div>
-            <span>⭐ Most Popular</span>
+            <span>⭐ {{ 'admin.plans.highlighted' | translate }}</span>
           </label>
         </div>
 
@@ -353,9 +350,9 @@
       <hr class="pr-modal__divider">
 
       <div class="modal-footer">
-        <button class="pr-btn pr-btn--ghost" (click)="closeEdit()">Cancel</button>
+        <button class="pr-btn pr-btn--ghost" (click)="closeEdit()">{{ 'admin.common.cancel' | translate }}</button>
         <button class="pr-btn pr-btn--primary" [disabled]="saving()" (click)="saveEdit()">
-          {{ saving() ? 'Saving…' : 'Save Changes' }}
+          {{ (saving() ? 'admin.common.saving' : 'admin.common.save') | translate }}
         </button>
       </div>
     </div>

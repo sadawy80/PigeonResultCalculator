@@ -5,29 +5,30 @@ import { ApiService } from '../../core/services/api.service';
 import { ProgrammeApiService } from '../../core/services/programme-api.service';
 import { AuthService } from '../../core/services/services';
 import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
+import { TranslatePipe } from '../../core/i18n';
 
 // ── Club Dashboard ────────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-club-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, TranslatePipe],
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>
-        <h1 class="pr-page-header__title">{{ club()?.name ?? 'Club Dashboard' }}</h1>
+        <h1 class="pr-page-header__title">{{ club()?.name ?? ('user.dashboard' | translate) }}</h1>
         <p class="pr-page-header__subtitle">{{ club()?.city }} · {{ club()?.code }}</p>
       </div>
     </div>
 
     <!-- Activity stats -->
-    <div class="kpi-section-label">Activity</div>
+    <div class="kpi-section-label">{{ 'user.activity' | translate }}</div>
     <div class="kpi-grid mb-2">
       <div class="pr-card pr-card--flat kpi-card">
         <div class="kpi-icon">📋</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ activityStats().totalProgrammes ?? '—' }}</div>
-          <div class="kpi-label">Programmes</div>
+          <div class="kpi-label">{{ 'user.programmes' | translate }}</div>
         </div>
         <a routerLink="/club/programmes" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
       </div>
@@ -35,7 +36,7 @@ import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
         <div class="kpi-icon">🏁</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ activityStats().totalRaces ?? '—' }}</div>
-          <div class="kpi-label">Races</div>
+          <div class="kpi-label">{{ 'user.races' | translate }}</div>
         </div>
         <a routerLink="/club/races" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
       </div>
@@ -43,25 +44,25 @@ import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
         <div class="kpi-icon">👥</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ activityStats().totalMembers ?? '—' }}</div>
-          <div class="kpi-label">Members</div>
+          <div class="kpi-label">{{ 'user.members' | translate }}</div>
         </div>
         <a routerLink="/club/members" class="pr-btn pr-btn--ghost pr-btn--sm kpi-link">→</a>
       </div>
     </div>
-    <div class="kpi-section-label kpi-section-label--sub">↳ This Year ({{ thisYear }})</div>
+    <div class="kpi-section-label kpi-section-label--sub">↳ {{ 'user.thisYear' | translate:{ year: thisYear } }}</div>
     <div class="kpi-grid mb-6">
       <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
         <div class="kpi-icon">📋</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ activityStats().programmesThisYear ?? '—' }}</div>
-          <div class="kpi-label">Programmes This Year</div>
+          <div class="kpi-label">{{ 'user.programmesThisYear' | translate }}</div>
         </div>
       </div>
       <div class="pr-card pr-card--flat kpi-card kpi-card--sub">
         <div class="kpi-icon">🏁</div>
         <div class="kpi-body">
           <div class="kpi-value">{{ activityStats().racesThisYear ?? '—' }}</div>
-          <div class="kpi-label">Races This Year</div>
+          <div class="kpi-label">{{ 'user.racesThisYear' | translate }}</div>
         </div>
       </div>
     </div>
@@ -71,13 +72,13 @@ import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
       <div class="pr-card mb-6" style="border-color:var(--pr-success)">
         <div class="flex items-center gap-2 mb-4">
           <span style="width:8px;height:8px;border-radius:50%;background:var(--pr-success);animation:pulse 1.5s infinite;display:inline-block"></span>
-          <h3 style="margin:0">Live Races</h3>
+          <h3 style="margin:0">{{ 'user.liveRaces' | translate }}</h3>
         </div>
         @for (race of liveRaces(); track race.id) {
           <a [routerLink]="['/club/races', race.id, 'live']" class="live-race-item">
             <span class="font-bold">{{ race.name }}</span>
-            <span class="text-muted text-sm">{{ race.totalPigeonsEntered ?? 0 }} entries</span>
-            <span class="pr-badge pr-badge--success">Live ↗</span>
+            <span class="text-muted text-sm">{{ race.totalPigeonsEntered ?? 0 }} {{ 'user.entries' | translate }}</span>
+            <span class="pr-badge pr-badge--success">{{ 'user.live' | translate }}</span>
           </a>
         }
       </div>
@@ -86,25 +87,25 @@ import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
     <!-- Recent races -->
     <div class="pr-card">
       <div class="flex justify-between items-center mb-6">
-        <h3 style="margin:0">Recent Races</h3>
-        <a routerLink="/club/races" class="pr-btn pr-btn--ghost pr-btn--sm">View All</a>
+        <h3 style="margin:0">{{ 'user.recentRaces' | translate }}</h3>
+        <a routerLink="/club/races" class="pr-btn pr-btn--ghost pr-btn--sm">{{ 'user.viewAll' | translate }}</a>
       </div>
 
       @if (recentRaces().length === 0) {
         <div class="pr-empty">
           <div class="pr-empty__icon">🏁</div>
-          <div class="pr-empty__title">No races yet</div>
-          <p class="pr-empty__desc">Create your first race to get started.</p>
+          <div class="pr-empty__title">{{ 'user.noRacesYet' | translate }}</div>
+          <p class="pr-empty__desc">{{ 'user.createFirstRace' | translate }}</p>
         </div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
               <tr>
-                <th>Race</th>
-                <th>Status</th>
-                <th>Release</th>
-                <th>Entries</th>
+                <th>{{ 'user.race' | translate }}</th>
+                <th>{{ 'user.status' | translate }}</th>
+                <th>{{ 'user.release' | translate }}</th>
+                <th>{{ 'user.entries' | translate }}</th>
                 <th></th>
               </tr>
             </thead>
@@ -112,11 +113,11 @@ import { Race, RaceSummary, RaceStatus, Club } from '../../core/models';
               @for (race of recentRaces(); track race.id) {
                 <tr>
                   <td class="font-bold">{{ race.name }}</td>
-                  <td><span [class]="'pr-badge ' + statusBadge(race.status)">{{ statusLabel(race.status) }}</span></td>
+                  <td><span [class]="'pr-badge ' + statusBadge(race.status)">{{ statusLabel(race.status) | translate }}</span></td>
                   <td class="text-muted text-sm">{{ (race.actualReleaseTime ?? race.scheduledReleaseTime) | date:'dd MMM, HH:mm' }}</td>
                   <td>{{ race.totalPigeonsEntered ?? '—' }}</td>
                   <td>
-                    <a [routerLink]="['/club/races', race.id]" class="pr-btn pr-btn--ghost pr-btn--sm">View</a>
+                    <a [routerLink]="['/club/races', race.id]" class="pr-btn pr-btn--ghost pr-btn--sm">{{ 'user.view' | translate }}</a>
                   </td>
                 </tr>
               }
@@ -220,7 +221,17 @@ export class ClubDashboardComponent implements OnInit {
   }
 
   statusLabel(s: RaceStatus) {
-    return RaceStatus[s] ?? 'Unknown';
+    // Map race status enum → admin.races.status* translation key so the badge
+    // localises with the user's locale instead of showing the raw enum name.
+    const map: Record<RaceStatus, string> = {
+      [RaceStatus.Draft]:      'admin.races.statusDraft',
+      [RaceStatus.Scheduled]:  'admin.races.statusOpen',
+      [RaceStatus.InProgress]: 'race.inProgress',
+      [RaceStatus.Completed]:  'race.completed',
+      [RaceStatus.Published]:  'admin.races.statusPublished',
+      [RaceStatus.Cancelled]:  'admin.races.statusCancelled'
+    };
+    return map[s] ?? (RaceStatus[s] ?? 'Unknown');
   }
 }
 
@@ -229,27 +240,27 @@ export class ClubDashboardComponent implements OnInit {
 @Component({
   selector: 'app-race-list',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, TranslatePipe],
   template: `
     <div class="pr-page-header flex justify-between items-center">
       <div>
-        <h1 class="pr-page-header__title">Races</h1>
-        <p class="pr-page-header__subtitle">Manage your club's races</p>
+        <h1 class="pr-page-header__title">{{ 'user.races' | translate }}</h1>
+        <p class="pr-page-header__subtitle">{{ 'admin.races.subtitle' | translate }}</p>
       </div>
-      <a routerLink="/club/races/new" class="pr-btn pr-btn--primary">+ New Race</a>
+      <a routerLink="/club/races/new" class="pr-btn pr-btn--primary">+ {{ 'race.newRace' | translate }}</a>
     </div>
 
     <!-- Search & Filter -->
     <div class="flex gap-4 mb-6">
       <input class="pr-input" style="max-width:320px"
-             placeholder="Search races..." (input)="search($event)" />
+             [placeholder]="'admin.races.searchPlaceholder' | translate" (input)="search($event)" />
       <select class="pr-select" style="max-width:180px" (change)="filterStatus($event)">
-        <option value="">All Statuses</option>
-        <option value="1">Draft</option>
-        <option value="2">Scheduled</option>
-        <option value="3">In Progress</option>
-        <option value="4">Completed</option>
-        <option value="5">Published</option>
+        <option value="">{{ 'admin.common.allStatuses' | translate }}</option>
+        <option value="1">{{ 'admin.races.statusDraft' | translate }}</option>
+        <option value="2">{{ 'admin.races.statusOpen' | translate }}</option>
+        <option value="3">{{ 'race.inProgress' | translate }}</option>
+        <option value="4">{{ 'race.completed' | translate }}</option>
+        <option value="5">{{ 'admin.races.statusPublished' | translate }}</option>
       </select>
     </div>
 
@@ -259,22 +270,26 @@ export class ClubDashboardComponent implements OnInit {
       } @else if (races().length === 0) {
         <div class="pr-empty">
           <div class="pr-empty__icon">🏁</div>
-          <div class="pr-empty__title">No races found</div>
+          <div class="pr-empty__title">{{ 'admin.races.noRaces' | translate }}</div>
         </div>
       } @else {
         <div class="pr-table-wrapper">
           <table class="pr-table">
             <thead>
               <tr>
-                <th>Name</th><th>Status</th><th>Release Time</th>
-                <th>Location</th><th>Entries</th><th>Actions</th>
+                <th>{{ 'user.name' | translate }}</th>
+                <th>{{ 'user.status' | translate }}</th>
+                <th>{{ 'user.release' | translate }}</th>
+                <th>{{ 'admin.common.city' | translate }}</th>
+                <th>{{ 'user.entries' | translate }}</th>
+                <th>{{ 'admin.common.actions' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               @for (race of races(); track race.id) {
                 <tr>
                   <td class="font-bold">{{ race.name }}</td>
-                  <td><span [class]="'pr-badge ' + statusBadge(race.status)">{{ statusLabel(race.status) }}</span></td>
+                  <td><span [class]="'pr-badge ' + statusBadge(race.status)">{{ statusLabel(race.status) | translate }}</span></td>
                   <td class="text-muted text-sm">
                     {{ (race.actualReleaseTime ?? race.scheduledReleaseTime) | date:'dd MMM yyyy, HH:mm' }}
                   </td>
@@ -282,10 +297,10 @@ export class ClubDashboardComponent implements OnInit {
                   <td>{{ race.totalPigeonsEntered ?? '—' }}</td>
                   <td>
                     <div class="flex gap-2">
-                      <a [routerLink]="['/club/races', race.id]" class="pr-btn pr-btn--ghost pr-btn--sm">View</a>
+                      <a [routerLink]="['/club/races', race.id]" class="pr-btn pr-btn--ghost pr-btn--sm">{{ 'user.view' | translate }}</a>
                       @if (race.status === RaceStatus.InProgress) {
                         <a [routerLink]="['/club/races', race.id, 'live']" class="pr-btn pr-btn--sm"
-                           style="background:var(--pr-success);color:#000">Live</a>
+                           style="background:var(--pr-success);color:#000">{{ 'user.live' | translate }}</a>
                       }
                     </div>
                   </td>
@@ -297,15 +312,15 @@ export class ClubDashboardComponent implements OnInit {
 
         <!-- Pagination -->
         <div class="flex justify-between items-center mt-4 text-sm text-muted">
-          <span>{{ totalCount() }} total races</span>
+          <span>{{ 'admin.races.racesCount' | translate:{ n: totalCount() } }}</span>
           <div class="flex gap-2">
             <button class="pr-btn pr-btn--ghost pr-btn--sm"
                     [disabled]="currentPage() === 1"
-                    (click)="changePage(currentPage() - 1)">← Prev</button>
+                    (click)="changePage(currentPage() - 1)">← {{ 'admin.common.prev' | translate }}</button>
             <span class="flex items-center px-2">{{ currentPage() }} / {{ totalPages() }}</span>
             <button class="pr-btn pr-btn--ghost pr-btn--sm"
                     [disabled]="currentPage() >= totalPages()"
-                    (click)="changePage(currentPage() + 1)">Next →</button>
+                    (click)="changePage(currentPage() + 1)">{{ 'admin.common.next' | translate }} →</button>
           </div>
         </div>
       }
@@ -362,5 +377,15 @@ export class RaceListComponent implements OnInit {
     };
     return map[s];
   }
-  statusLabel(s: RaceStatus) { return RaceStatus[s]; }
+  statusLabel(s: RaceStatus) {
+    const map: Record<RaceStatus, string> = {
+      [RaceStatus.Draft]:      'admin.races.statusDraft',
+      [RaceStatus.Scheduled]:  'admin.races.statusOpen',
+      [RaceStatus.InProgress]: 'race.inProgress',
+      [RaceStatus.Completed]:  'race.completed',
+      [RaceStatus.Published]:  'admin.races.statusPublished',
+      [RaceStatus.Cancelled]:  'admin.races.statusCancelled'
+    };
+    return map[s] ?? RaceStatus[s];
+  }
 }

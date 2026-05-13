@@ -59,13 +59,13 @@ import { TranslatePipe } from '../../core/i18n';
           <label class="pr-label">{{ 'admin.common.status' | translate }}</label>
           <select class="pr-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
             <option value="">{{ 'admin.common.all' | translate }}</option>
-            <option value="0">Pending</option>
-            <option value="1">Approved</option>
-            <option value="2">Rejected</option>
-            <option value="3">Revoked</option>
+            <option value="0">{{ 'admin.upgrades.pending' | translate }}</option>
+            <option value="1">{{ 'admin.links.approved' | translate }}</option>
+            <option value="2">{{ 'admin.links.rejected' | translate }}</option>
+            <option value="3">{{ 'admin.links.revoked' | translate }}</option>
           </select>
         </div>
-        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="statusFilter=''; onFilterChange()">Reset</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--field" (click)="statusFilter=''; onFilterChange()">{{ 'admin.common.reset' | translate }}</button>
       </div>
     </div>
 
@@ -73,21 +73,21 @@ import { TranslatePipe } from '../../core/i18n';
       <table>
         <thead>
           <tr>
-            <th>Loft</th>
-            <th>Platform</th>
-            <th>PRC User</th>
-            <th>Club</th>
-            <th>Status</th>
-            <th>Requested</th>
-            <th>Last Access</th>
-            <th>Actions</th>
+            <th>{{ 'admin.common.club' | translate }}</th>
+            <th>{{ 'admin.links.provider' | translate }}</th>
+            <th>{{ 'admin.dashboard.users' | translate }}</th>
+            <th>{{ 'admin.common.club' | translate }}</th>
+            <th>{{ 'admin.common.status' | translate }}</th>
+            <th>{{ 'admin.links.requestedAt' | translate }}</th>
+            <th>{{ 'admin.common.updatedAt' | translate }}</th>
+            <th>{{ 'admin.common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @if (loading()) {
-            <tr><td colspan="8" class="empty">Loading…</td></tr>
+            <tr><td colspan="8" class="empty">{{ 'admin.common.loading' | translate }}</td></tr>
           } @else if (items().length === 0) {
-            <tr><td colspan="8" class="empty">No link requests found.</td></tr>
+            <tr><td colspan="8" class="empty">{{ 'admin.links.noLinks' | translate }}</td></tr>
           } @else {
             @for (item of items(); track item.id) {
               <tr>
@@ -106,7 +106,7 @@ import { TranslatePipe } from '../../core/i18n';
                 <td style="font-size:.85rem">{{ item.clubId }}</td>
                 <td>
                   <span class="badge" [ngClass]="badgeClass(item.statusLabel ?? item.status)">
-                    {{ item.statusLabel ?? statusLabel(item.status) }}
+                    {{ statusKey(item.statusLabel ?? item.status) | translate }}
                   </span>
                   @if (item.rejectionReason) {
                     <br><small>{{ item.rejectionReason }}</small>
@@ -120,13 +120,13 @@ import { TranslatePipe } from '../../core/i18n';
                 <td>
                   @if (isStatusPending(item)) {
                     <div class="actions">
-                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">Approve</button>
-                      <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">Reject</button>
+                      <button class="btn btn-approve" (click)="approve(item)" [disabled]="busy()">{{ 'admin.links.approve' | translate }}</button>
+                      <button class="btn btn-reject"  (click)="openReject(item)" [disabled]="busy()">{{ 'admin.links.reject' | translate }}</button>
                     </div>
                   }
                   @if (isStatusApproved(item)) {
                     <div class="actions">
-                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">Revoke</button>
+                      <button class="btn btn-revoke" (click)="revoke(item)" [disabled]="busy()">{{ 'admin.links.revoke' | translate }}</button>
                     </div>
                   }
                 </td>
@@ -138,31 +138,31 @@ import { TranslatePipe } from '../../core/i18n';
     </div>
 
     <div class="pagination-row">
-      <span class="text-muted text-sm">{{ total() }} links · page {{ page }} of {{ totalPages() }}</span>
+      <span class="text-muted text-sm">{{ 'admin.links.linksCount' | translate:{ n: total() } }} · {{ 'admin.common.page' | translate }} {{ page }} {{ 'admin.common.of' | translate }} {{ totalPages() }}</span>
       <div class="flex gap-2 items-center">
         <select class="pr-select" style="width:auto" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-          <option [ngValue]="10">10 / page</option>
-          <option [ngValue]="25">25 / page</option>
-          <option [ngValue]="50">50 / page</option>
-          <option [ngValue]="100">100 / page</option>
+          <option [ngValue]="10">{{ 'admin.common.perPage' | translate:{ n: 10 } }}</option>
+          <option [ngValue]="25">{{ 'admin.common.perPage' | translate:{ n: 25 } }}</option>
+          <option [ngValue]="50">{{ 'admin.common.perPage' | translate:{ n: 50 } }}</option>
+          <option [ngValue]="100">{{ 'admin.common.perPage' | translate:{ n: 100 } }}</option>
         </select>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="prevPage()" [disabled]="page === 1">Prev</button>
-        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="nextPage()" [disabled]="page >= totalPages()">Next</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="prevPage()" [disabled]="page === 1">{{ 'admin.common.prev' | translate }}</button>
+        <button class="pr-btn pr-btn--ghost pr-btn--sm" (click)="nextPage()" [disabled]="page >= totalPages()">{{ 'admin.common.next' | translate }}</button>
       </div>
     </div>
 
     @if (showRejectModal()) {
       <div class="modal-backdrop" (click)="cancelReject()">
         <div class="modal-card" (click)="$event.stopPropagation()">
-          <p class="modal-title">Reject Link Request</p>
-          <p>Loft: <strong>{{ rejectTarget()?.externalLoftName }}</strong></p>
+          <p class="modal-title">{{ 'admin.links.reject' | translate }}</p>
+          <p>{{ 'admin.common.club' | translate }}: <strong>{{ rejectTarget()?.externalLoftName }}</strong></p>
           <div class="form-group">
-            <label>Reason (optional)</label>
-            <textarea [(ngModel)]="rejectReason" rows="3" placeholder="Explain why the link request is being rejected…"></textarea>
+            <label>{{ 'admin.dashboard.reason' | translate }}</label>
+            <textarea [(ngModel)]="rejectReason" rows="3" [placeholder]="'admin.dashboard.reasonPlaceholder' | translate"></textarea>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="cancelReject()">Cancel</button>
-            <button class="btn btn-reject" (click)="confirmReject()" [disabled]="busy()">Confirm Reject</button>
+            <button class="btn btn-secondary" (click)="cancelReject()">{{ 'admin.common.cancel' | translate }}</button>
+            <button class="btn btn-reject" (click)="confirmReject()" [disabled]="busy()">{{ 'admin.links.reject' | translate }}</button>
           </div>
         </div>
       </div>
@@ -248,6 +248,18 @@ export class AdminLinkRequestsComponent implements OnInit {
   statusLabel(status: number): string {
     const map: Record<number, string> = { 0: 'Pending', 1: 'Approved', 2: 'Rejected', 3: 'Revoked' };
     return map[status] ?? String(status);
+  }
+
+  /** Translation key for a status int OR an already-resolved English label. */
+  statusKey(statusOrLabel: number | string): string {
+    const label = typeof statusOrLabel === 'string' ? statusOrLabel : this.statusLabel(statusOrLabel);
+    const map: Record<string, string> = {
+      'Pending':  'admin.upgrades.pending',
+      'Approved': 'admin.links.approved',
+      'Rejected': 'admin.links.rejected',
+      'Revoked':  'admin.links.revoked'
+    };
+    return map[label] ?? label;
   }
 
   badgeClass(statusOrLabel: number | string): string {
