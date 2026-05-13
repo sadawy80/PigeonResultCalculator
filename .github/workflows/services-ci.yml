@@ -1,0 +1,136 @@
+name: Services CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - ".github/workflows/services-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/services-ci.yml"
+
+env:
+  REGISTRY:   ghcr.io
+  IMAGE_BASE: ${{ github.repository_owner }}/prc
+
+jobs:
+  # ── Build & Test each service ───────────────────────────────────────────────
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - ApiGateway
+          - IdentityService
+          - ClubService
+          - RaceService
+          - FederationService
+          - RenderingService
+          - IntegrationService
+          - AdminService
+          - SubscriptionService
+          - NotificationService
+          - PublicService
+          - BackupService
+          - AuditService
+          - FileService
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        working-directory: backend
+        run: dotnet restore ${{ matrix.service }}/${{ matrix.service }}.csproj
+
+      - name: Build
+        working-directory: backend
+        run: dotnet build ${{ matrix.service }}/${{ matrix.service }}.csproj -c Release --no-restore
+
+      - name: Test
+        working-directory: backend
+        run: |
+          if [ -d "${{ matrix.service }}.Tests" ]; then
+            dotnet test ${{ matrix.service }}.Tests --no-restore --verbosity normal
+          else
+            echo "No tests project found — skipping"
+          fi
+
+  # ── Docker build & push (main branch only) ─────────────────────────────────
+  docker-publish:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - ApiGateway
+          - IdentityService
+          - ClubService
+          - RaceService
+          - FederationService
+          - RenderingService
+          - IntegrationService
+          - AdminService
+          - SubscriptionService
+          - NotificationService
+          - PublicService
+          - BackupService
+          - AuditService
+          - FileService
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase image name
+        id: img
+        run: echo "name=${REGISTRY}/${IMAGE_BASE,,}-${SERVICE,,}" >> "$GITHUB_OUTPUT"
+        env:
+          SERVICE: ${{ matrix.service }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.img.outputs.name }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context:    backend
+          file:       backend/${{ matrix.service }}/Dockerfile
+          platforms:  linux/amd64,linux/arm64
+          push:       true
+          tags:       ${{ steps.meta.outputs.tags }}
+          labels:     ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to:   type=gha,mode=max,scope=${{ matrix.service }}
